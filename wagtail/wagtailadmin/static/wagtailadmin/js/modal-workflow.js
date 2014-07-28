@@ -14,11 +14,11 @@ function ModalWorkflow(opts) {
     var responseCallbacks = opts.responses || {};
 
     /* remove any previous modals before continuing (closing doesn't remove them from the dom) */
-    $('body > .modal').remove();
+    $('body > .modal[aria-hidden="true"]').remove();
 
     // set default contents of container
     var container = $('<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">\n    <div class="modal-dialog">\n        <div class="modal-content">\n            <button type="button" class="close icon text-replace icon-cross" data-dismiss="modal" aria-hidden="true">&times;</button>\n            <div class="modal-body"></div>\n        </div><!-- /.modal-content -->\n    </div><!-- /.modal-dialog -->\n</div>');
-    
+
     // add container to body and hide it, so content can be added to it before display
     $('body').append(container);
     container.modal('hide');
