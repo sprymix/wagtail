@@ -110,10 +110,15 @@ def list(request, content_type_app_name, content_type_model_name,
     })
 
 
+def _redirect_to(content_type_app_name, content_type_model_name):
+    return redirect('wagtailsnippets_list', content_type_app_name,
+                    content_type_model_name)
+
+
 @permission_required('wagtailadmin.access_admin')  # further permissions are enforced within the view
 def create(request, content_type_app_name, content_type_model_name,
            template='wagtailsnippets/snippets/create.html',
-           redirect_target='wagtailsnippets_list'):
+           redirect_to=_redirect_to):
     content_type = get_content_type_from_url_params(content_type_app_name, content_type_model_name)
     if not user_can_edit_snippet_type(request.user, content_type):
         raise PermissionDenied
@@ -138,7 +143,7 @@ def create(request, content_type_app_name, content_type_model_name,
                     instance=instance
                 )
             )
-            return redirect(redirect_target, content_type.app_label, content_type.model)
+            return redirect_to(content_type.app_label, content_type.model)
         else:
             messages.error(request, _("The snippet could not be created due to errors."))
             edit_handler = edit_handler_class(instance=instance, form=form)
@@ -156,7 +161,7 @@ def create(request, content_type_app_name, content_type_model_name,
 @permission_required('wagtailadmin.access_admin')  # further permissions are enforced within the view
 def edit(request, content_type_app_name, content_type_model_name, id,
          template='wagtailsnippets/snippets/edit.html',
-         redirect_target='wagtailsnippets_list'):
+         redirect_to=_redirect_to):
     content_type = get_content_type_from_url_params(content_type_app_name, content_type_model_name)
     if not user_can_edit_snippet_type(request.user, content_type):
         raise PermissionDenied
@@ -181,8 +186,7 @@ def edit(request, content_type_app_name, content_type_model_name, id,
                     instance=instance
                 )
             )
-            return redirect(redirect_target, content_type.app_label,
-                            content_type.model)
+            return redirect_to(content_type.app_label, content_type.model)
         else:
             messages.error(request, _("The snippet could not be saved due to errors."))
             edit_handler = edit_handler_class(instance=instance, form=form)
@@ -201,7 +205,7 @@ def edit(request, content_type_app_name, content_type_model_name, id,
 @permission_required('wagtailadmin.access_admin')  # further permissions are enforced within the view
 def delete(request, content_type_app_name, content_type_model_name, id,
            template='wagtailsnippets/snippets/confirm_delete.html',
-           redirect_target='wagtailsnippets_list'):
+           redirect_to=_redirect_to):
     content_type = get_content_type_from_url_params(content_type_app_name, content_type_model_name)
     if not user_can_edit_snippet_type(request.user, content_type):
         raise PermissionDenied
@@ -220,8 +224,7 @@ def delete(request, content_type_app_name, content_type_model_name, id,
                 instance=instance
             )
         )
-        return redirect(redirect_target, content_type.app_label,
-                                         content_type.model)
+        return redirect_to(content_type.app_label, content_type.model)
 
     return render(request, template, {
         'content_type': content_type,
