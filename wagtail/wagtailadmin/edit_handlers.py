@@ -238,18 +238,22 @@ class EditHandler(object):
         """
         return []
 
+    def missing_fields(self):
+        rendered_fields = self.rendered_fields()
+        return [
+            self.form[field_name]
+            for field_name in self.form.fields
+            if field_name not in rendered_fields
+        ]
+
     def render_missing_fields(self):
         """
         Helper function: render all of the fields of the form that are not accounted for
         in rendered_fields
         """
-        rendered_fields = self.rendered_fields()
         missing_fields_html = [
-            text_type(self.form[field_name])
-            for field_name in self.form.fields
-            if field_name not in rendered_fields
-        ]
-
+            text_type(f if f.field.required else f.as_hidden())
+            for f in self.missing_fields()]
         return mark_safe(''.join(missing_fields_html))
 
     def render_form_content(self):
@@ -349,7 +353,7 @@ class BaseMultiFieldPanel(BaseCompositeEditHandler):
     def classes(self):
         classes = super(BaseMultiFieldPanel, self).classes()
         classes.append("multi-field")
-   
+
         return classes
 
 def MultiFieldPanel(children, heading="", classname=""):
@@ -375,10 +379,10 @@ class BaseFieldPanel(EditHandler):
             classes.append("required")
         if self.bound_field.errors:
             classes.append("error")
-        
+
         classes.append(self.field_type())
         classes.append("single-field")
-        
+
         return classes
 
     def field_type(self):
@@ -616,14 +620,14 @@ def InlinePanel(base_model, relation_name, panels=None, label='', help_text=''):
 
 
 # This allows users to include the publishing panel in their own per-model override
-# without having to write these fields out by hand, potentially losing 'classname' 
+# without having to write these fields out by hand, potentially losing 'classname'
 # and therefore the associated styling of the publishing panel
 def PublishingPanel():
     return MultiFieldPanel([
         FieldRowPanel([
             FieldPanel('go_live_at'),
             FieldPanel('expire_at'),
-        ], classname="label-above"),   
+        ], classname="label-above"),
     ], ugettext_lazy('Scheduled publishing'), classname="publishing")
 
 
