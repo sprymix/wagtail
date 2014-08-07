@@ -56,6 +56,9 @@ class BaseImageBackend(object):
 
         return image
 
+    def crop_to_rectangle(self, image, rect):
+        raise NotImplementedError('subclasses of BaseImageBackend must provide a crop_to_rectangle() method')
+
     def resize_to_max(self, image, size, focal_point=None):
         """
         Resize image down to fit within the given dimensions, preserving aspect ratio.

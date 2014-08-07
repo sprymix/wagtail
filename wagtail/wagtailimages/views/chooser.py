@@ -3,12 +3,15 @@ import json
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext as _
 
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
 
 from wagtail.wagtailimages.models import get_image_model
-from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm
+from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm, \
+                                        ImageCropperForm
 from wagtail.wagtailimages.formats import get_image_format
 
 
@@ -39,6 +42,9 @@ def chooser(request):
         uploadform = ImageForm()
     else:
         uploadform = None
+
+    will_select_format = request.GET.get('select_format')
+    will_select_rendition = request.GET.get('select_rendition')
 
     q = None
     if 'q' in request.GET or 'p' in request.GET:
@@ -71,7 +77,8 @@ def chooser(request):
             'images': images,
             'is_searching': is_searching,
             'query_string': q,
-            'will_select_format': request.GET.get('select_format')
+            'will_select_format': will_select_format,
+            'will_select_rendition': will_select_rendition
         })
     else:
         searchform = SearchForm()
@@ -93,7 +100,8 @@ def chooser(request):
         'searchform': searchform,
         'is_searching': False,
         'query_string': q,
-        'will_select_format': request.GET.get('select_format'),
+        'will_select_format': will_select_format,
+        'will_select_rendition': will_select_rendition,
         'popular_tags': Image.popular_tags(),
     })
 
@@ -121,10 +129,22 @@ def chooser_upload(request):
 
         if form.is_valid():
             form.save()
-            if request.GET.get('select_format'):
+
+            will_select_format = request.GET.get('select_format')
+            will_select_rendition = request.GET.get('select_rendition')
+
+            if will_select_format:
                 form = ImageInsertionForm(initial={'alt_text': image.default_alt_text})
                 return render_modal_workflow(
-                    request, 'wagtailimages/chooser/select_format.html', 'wagtailimages/chooser/select_format.js',
+                    request, 'wagtailimages/chooser/select_format.html',
+                    'wagtailimages/chooser/select_format.js',
+                    {'image': image, 'form': form}
+                )
+            elif will_select_rendition:
+                form = ImageCropperForm()
+                return render_modal_workflow(
+                    request, 'wagtailimages/chooser/select_rendition.html',
+                    'wagtailimages/chooser/select_rendition.js',
                     {'image': image, 'form': form}
                 )
             else:
@@ -178,5 +198,56 @@ def chooser_select_format(request, image_id):
 
     return render_modal_workflow(
         request, 'wagtailimages/chooser/select_format.html', 'wagtailimages/chooser/select_format.js',
+        {'image': image, 'form': form}
+    )
+
+
+@permission_required('wagtailadmin.access_admin')
+def chooser_select_rendition(request, image_id):
+    image = get_object_or_404(get_image_model(), id=image_id)
+
+    if request.POST:
+        form = ImageCropperForm(request.POST)
+
+        if form.is_valid():
+            filter_spec = 'crop-{left},{top}:{right},{bottom}'.format(
+                                                            **form.cleaned_data)
+            rendition = image.get_user_rendition(filter_spec)
+
+        elif not form.cleaned_data:
+            # If no coordinates were submitted, assume that the entire image
+            # should be used.
+            #
+            filter_spec = 'original'
+
+        else:
+            # something went wrong
+            #
+            raise ValidationError(_("Errors encountered while cropping."),
+                                  code='invalid')
+
+        rendition = image.get_user_rendition(filter_spec)
+        preview_image = image.get_rendition(filter_spec + '|max-130x100')
+
+        rendition_json = json.dumps({
+            'id': rendition.id,
+            'title': image.title,
+            'preview': {
+                'url': preview_image.url,
+                'width': preview_image.width,
+                'height': preview_image.height,
+            },
+        })
+        return render_modal_workflow(
+            request, None, 'wagtailimages/chooser/image_chosen.js',
+            {'image_json': rendition_json}
+        )
+
+    else:
+        form = ImageCropperForm()
+
+    return render_modal_workflow(
+        request, 'wagtailimages/chooser/select_rendition.html',
+        'wagtailimages/chooser/select_rendition.js',
         {'image': image, 'form': form}
     )

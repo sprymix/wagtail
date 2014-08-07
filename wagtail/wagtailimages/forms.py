@@ -46,3 +46,16 @@ class URLGeneratorForm(forms.Form):
     )
     width = forms.IntegerField(_("Width"), min_value=0)
     height = forms.IntegerField(_("Height"), min_value=0)
+
+
+class HiddenNumberInput(forms.IntegerField):
+    widget = forms.HiddenInput
+
+
+class ImageCropperForm(forms.Form):
+    """Form for selecting a cropped version of the image."""
+
+    left = HiddenNumberInput()
+    top = HiddenNumberInput()
+    right = HiddenNumberInput()
+    bottom = HiddenNumberInput()

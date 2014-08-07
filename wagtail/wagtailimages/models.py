@@ -29,6 +29,19 @@ from wagtail.wagtailimages.utils.feature_detection import FeatureDetector, openc
 from wagtail.wagtailadmin.utils import get_object_usage
 
 
+def _generate_output_filename(input_filename, filter_spec, focal_point_key='focus-none'):
+    input_filename_parts = os.path.basename(input_filename).split('.')
+    filename_without_extension = '.'.join(input_filename_parts[:-1])
+    filename_extension = '.'.join(input_filename_parts[-1:])
+    extra_name_length = len(filter_spec) + len(filename_extension)
+    # trim filename base so that we're well under 100 chars
+    filename_without_extension = filename_without_extension[:99 - extra_name_length]
+    output_filename_parts = [filename_without_extension, focal_point_key,
+                             filter_spec, filename_extension]
+    output_filename = '.'.join(output_filename_parts)
+    return output_filename
+
+
 @python_2_unicode_compatible
 class AbstractImage(models.Model, TagSearchable):
     title = models.CharField(max_length=255, verbose_name=_('Title') )
@@ -159,11 +172,9 @@ class AbstractImage(models.Model, TagSearchable):
             else:
                 focal_point_key = "focus-none"
 
-            input_filename_parts = os.path.basename(file_field.file.name).split('.')
-            filename_without_extension = '.'.join(input_filename_parts[:-1])
-            filename_without_extension = filename_without_extension[:60]  # trim filename base so that we're well under 100 chars
-            output_filename_parts = [filename_without_extension, focal_point_key, filter.spec] + input_filename_parts[-1:]
-            output_filename = '.'.join(output_filename_parts)
+            output_filename = _generate_output_filename(
+                                    file_field.file.name, filter.spec,
+                                    focal_point_key)
 
             generated_image_file = File(generated_image, name=output_filename)
 
@@ -179,6 +190,34 @@ class AbstractImage(models.Model, TagSearchable):
                     focal_point_key=None,
                     defaults={'file': generated_image_file}
                 )
+
+        return rendition
+
+    def get_user_rendition(self, filter):
+        if not hasattr(filter, 'process_image'):
+            # assume we've been passed a filter spec string, rather than a
+            # Filter object TODO: keep an in-memory cache of filters, to avoid a
+            # db lookup
+            filter, created = Filter.objects.get_or_create(spec=filter)
+
+        try:
+            rendition = self.user_renditions.get(filter=filter)
+        except ObjectDoesNotExist:
+            file_field = self.file
+
+            # If we have a backend attribute then pass it to process
+            # image - else pass 'default'
+            backend_name = getattr(self, 'backend', 'default')
+            generated_image = filter.process_image(
+                                    file_field.file, backend_name=backend_name)
+
+            output_filename = _generate_output_filename(
+                                    file_field.file.name, filter.spec)
+
+            generated_image_file = File(generated_image, name=output_filename)
+
+            rendition, created = self.user_renditions.get_or_create(
+                filter=filter, defaults={'file': generated_image_file})
 
         return rendition
 
@@ -269,33 +308,56 @@ class Filter(models.Model):
         'height': 'resize_to_height',
         'fill': 'resize_to_fill',
         'original': 'no_operation',
+        'crop': 'crop_to_rectangle'
     }
 
     class InvalidFilterSpecError(ValueError):
         pass
 
-    def _parse_spec_string(self):
-        # parse the spec string and return the method name and method arg.
-        # There are various possible formats to match against:
+    def __init__(self, *args, **kwargs):
+        super(Filter, self).__init__(*args, **kwargs)
+        self.method = None  # will be populated when needed, by parsing the spec string
+        self.spec_pipeline = []
+
+    def _parse_spec_string(self, spec=None):
+        # parse the spec string and save the results to
+        # self.method_name and self.method_arg. There are various possible
+        # formats to match against:
         # 'original'
         # 'width-200'
         # 'max-320x200'
+        # 'crop-10,10:50,50'
+        #
+        # any format may be combine with another one by '|'
+        # e.g. 'crop-50,50:150,150|max-50x50'
 
-        if self.spec == 'original':
+        if spec is None:
+            spec = self.spec
+
+        if spec == 'original':
             return Filter.OPERATION_NAMES['original'], None
 
-        match = re.match(r'(width|height)-(\d+)$', self.spec)
+        match = re.match(r'(width|height)-(\d+)$', spec)
         if match:
             return Filter.OPERATION_NAMES[match.group(1)], int(match.group(2))
 
-        match = re.match(r'(max|min|fill)-(\d+)x(\d+)$', self.spec)
+        match = re.match(r'(max|min|fill)-(\d+)x(\d+)$', spec)
         if match:
             width = int(match.group(2))
             height = int(match.group(3))
             return Filter.OPERATION_NAMES[match.group(1)], (width, height)
 
+        match = re.match(r'(crop)-(\d+),(\d+):(\d+),(\d+)$', spec)
+        if match:
+            left = int(match.group(2))
+            top = int(match.group(3))
+            right = int(match.group(4))
+            bottom = int(match.group(5))
+            return (Filter.OPERATION_NAMES[match.group(1)],
+                    (left, top, right, bottom))
+
         # Spec is not one of our recognised patterns
-        raise Filter.InvalidFilterSpecError("Invalid image filter spec: %r" % self.spec)
+        raise Filter.InvalidFilterSpecError("Invalid image filter spec: %r" % spec)
 
     @cached_property
     def _method(self):
@@ -316,17 +378,19 @@ class Filter(models.Model):
         # Get backend
         backend = get_image_backend(backend_name)
 
-        # Parse spec string
-        method_name, method_arg = self._method
+        if not self.spec_pipeline:
+            for spec_part in str(self.spec).split('|'):
+                self.spec_pipeline.append(self._parse_spec_string(spec_part))
 
         # Open image
         input_file.open('rb')
         image = backend.open_image(input_file)
         file_format = image.format
 
-        # Process image
-        method = getattr(backend, method_name)
-        image = method(image, method_arg, focal_point=focal_point)
+        # execute each of the transformations in the pipeline in sequence
+        for method_name, method_arg in self.spec_pipeline:
+            method = getattr(backend, method_name)
+            image = method(image, method_arg)
 
         # Make sure we have an output file
         if output_file is None:
@@ -378,9 +442,50 @@ class Rendition(AbstractRendition):
         )
 
 
+class UserRendition(AbstractRendition):
+    image = models.ForeignKey('Image', related_name='user_renditions')
+
+    def get_rendition(self, filter):
+        # we ned to construct a new filter combining what we've been passed and
+        # the filter used to get THIS rendition
+        if not hasattr(filter, 'process_image'):
+            filter = '|'.join([self.filter.spec, filter])
+        else:
+            filter = '|'.join([self.filter.spec, filter.spec])
+
+        filter, created = Filter.objects.get_or_create(spec=filter)
+
+        try:
+            rendition = self.image.renditions.get(filter=filter)
+        except ObjectDoesNotExist:
+            file_field = self.image.file
+
+            # If we have a backend attribute then pass it to process
+            # image - else pass 'default'
+            backend_name = getattr(self, 'backend', 'default')
+            generated_image = filter.process_image(file_field.file,
+                                                   backend_name=backend_name)
+
+            output_filename = _generate_output_filename(
+                                    file_field.file.name, filter.spec)
+
+            generated_image_file = File(generated_image, name=output_filename)
+
+            rendition, created = self.image.renditions.get_or_create(
+                filter=filter, defaults={'file': generated_image_file})
+
+        return rendition
+
+
 # Receive the pre_delete signal and delete the file associated with the model instance.
 @receiver(pre_delete, sender=Rendition)
 def rendition_delete(sender, instance, **kwargs):
     # Pass false so FileField doesn't save the model.
     instance.file.delete(False)
 
+
+# Receive the pre_delete signal and delete the file associated with the model instance.
+@receiver(pre_delete, sender=UserRendition)
+def user_rendition_delete(sender, instance, **kwargs):
+    # Pass false so FileField doesn't save the model.
+    instance.file.delete(False)

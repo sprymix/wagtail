@@ -1,0 +1,19 @@
+{% load wagtailimages_tags %}
+{% load i18n %}
+{% trans "Crop image" as choose_str %}
+{% include "wagtailadmin/shared/header.html" with title=choose_str %}
+
+<section class="active nice-padding image-cropper">
+    <div class="crop-image">
+        {% image image original %}
+    </div>
+    <form action="{% url 'wagtailimages_chooser_select_rendition' image.id %}" method="POST">
+        {% csrf_token %}
+        <ul class="fields">
+            {% for field in form %}
+                {{ field }}
+            {% endfor %}
+            <li><input type="submit" value="{% trans 'Crop' %}" /></li>
+        </ul>
+    </form>
+</section>

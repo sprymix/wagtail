@@ -33,3 +33,21 @@ class PillowBackend(BaseImageBackend):
                 image = image.convert('RGB')
 
         return image.mode, image.tostring()
+
+    def crop_to_rectangle(self, image, rect):
+        (original_width, original_height) = image.size
+        (left, top, right, bottom) = rect
+
+        # final dimensions should not exceed original dimensions
+        left = max(0, left)
+        top = max(0, top)
+        right = min(original_width, right)
+        bottom = min(original_height, bottom)
+
+        if (left == right ==0 and right == original_width
+                and bottom == original_height):
+            return image
+
+        return image.crop(
+            (left, top, right, bottom)
+        )

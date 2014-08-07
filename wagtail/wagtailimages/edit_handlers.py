@@ -11,3 +11,15 @@ def ImageChooserPanel(field_name):
     return type('_ImageChooserPanel', (BaseImageChooserPanel,), {
         'field_name': field_name,
     })
+
+
+class BaseRenditionChooserPanel(BaseChooserPanel):
+    field_template = "wagtailimages/edit_handlers/image_chooser_panel.html"
+    object_type_name = "image"
+    js_function_name = "createRenditionChooser"
+
+
+def RenditionChooserPanel(field_name):
+    return type('_RenditionChooserPanel', (BaseRenditionChooserPanel,), {
+        'field_name': field_name,
+    })
