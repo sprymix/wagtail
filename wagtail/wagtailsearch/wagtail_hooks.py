@@ -18,7 +18,7 @@ def register_admin_urls():
 @hooks.register('construct_main_menu')
 def construct_main_menu(request, menu_items):
     # TEMPORARY: Only show if the user is a superuser
-    if request.user.is_superuser:
+    if request.user.is_superuser and False:
         menu_items.append(
             MenuItem(_('Editors picks'), urlresolvers.reverse('wagtailsearch_editorspicks_index'), classnames='icon icon-pick', order=900)
         )
