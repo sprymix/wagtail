@@ -1,10 +1,64 @@
-/* 
-    These are the generic stylings for forms of any type. 
+/*
+    These are the generic stylings for forms of any type.
     If you're styling something specific to the page editing interface,
     it probably ought to go in layouts/page-editor.scss
 */
 
+
+#admin-loading-spinner-wrapper{
+    position:absolute;
+    bottom:0;
+    text-align:center;
+    height:100%;
+    width:100%;
+    font-size:0em;
+    z-index:999999;
+    background:white;
+    opacity:0.8;
+    @include transition(all 0.5s ease);
+
+    &.remove{
+        bottom:-100%;
+    }
+
+    &:before {
+        content: '';
+        width:0px;
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+        margin-left:-0.4em;
+    }
+}
+
+#admin-loading-spinner{
+    position:relative;
+    display:inline-block;
+    width:120px;
+    height:120px;
+    vertical-align:middle;
+
+    &:after{
+        font-size:120px;
+        line-height:120px;
+        color:$color-teal;
+        position:absolute;
+        left:0;
+        top:0;
+        font-family:wagtail;
+        content:"1";
+        width:1em;
+        animation: spin 0.8s infinite linear;
+        -webkit-animation: spin 0.8s infinite linear;
+        -moz-animation: spin 0.8s infinite linear;
+    }
+}
+
+
+
+
 form {
+    position:relative;
     ul, li{
         list-style-type:none;
     }
@@ -54,10 +108,10 @@ input, textarea, select, .richtext, .tagit{
 
     /* what the hell firefox? Spare us your opinions */
     &::-moz-focus-inner {
-        padding: 0 !important; 
+        padding: 0 !important;
         border: 0 !important;
-        margin-top:-3px !important; 
-        margin-bottom: -2px !important; 
+        margin-top:-3px !important;
+        margin-bottom: -2px !important;
         line-height:1em !important;
     }
 
@@ -111,7 +165,7 @@ input, textarea, select, .richtext, .tagit{
         }
     }
 
-    
+
 }
 
 /* radio and check boxes */
@@ -179,7 +233,7 @@ input[type=checkbox]:checked:before{
     color:$color-teal;
 }
 
-/* Core button style 
+/* Core button style
 Note that these styles include methods to render buttons the same x-browser, described here:
 http://cbjdigital.com/blog/2010/08/bulletproof_css_input_button_heights */
 input[type=submit], input[type=reset], input[type=button], .button, button{
@@ -222,7 +276,7 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
     &.icon.text-replace:before{
         font-size:auto;
     }
-    
+
     &:hover{
         background-color: $color-button-hover;
         color:white;
@@ -258,7 +312,7 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
             border-color:transparent;
             background-color: $color-button-no-hover;
         }
-    }  
+    }
 
     &.bicolor{
         border:0;
@@ -272,7 +326,7 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
             width:2em;
             line-height:1.85em;
             height:100%;
-            text-align:center;    
+            text-align:center;
             background-color:rgba(0,0,0,0.2);
             display:block;
         }
@@ -300,7 +354,7 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
 /* Special styles to counteract Firefox's completely unwarranted assumptions about button styles */
 input[type=submit], input[type=reset], input[type=button], button{
     padding:0 1em;
-    height: 2.4em; 
+    height: 2.4em;
     line-height:inherit;
 
     &.button-small{
@@ -347,7 +401,7 @@ input[type=submit], input[type=reset], input[type=button], button{
         color:white;
         overflow:hidden;
         @include border-radius(2px);
-        
+
         li{
             background-color: $color-teal;
             float:left;
@@ -438,7 +492,7 @@ li.focused > .help{
     opacity:1;
 }
 
-/* 
+/*
     This is expected to go on the parent of the input/select/textarea
     so in most cases .input
 */
@@ -676,7 +730,7 @@ ul.inline li:first-child, li.inline:first-child{
         }
     }
     .chosen{
-        padding-left:$thumbnail-width;   
+        padding-left:$thumbnail-width;
 
         &:before{
             content:"";
@@ -788,7 +842,7 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
     input[type=submit], input[type=reset], input[type=button], .button, button{
         font-size:0.95em;
         padding:0 1.4em;
-        height: 3em; 
+        height: 3em;
         line-height:3em;
 
         &.button-small{
@@ -821,7 +875,7 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
 
         &.button-small, &.bicolor,
         &.button-small.bicolor{
-           line-height:inherit; 
+           line-height:inherit;
         }
 
         &.button-small{
@@ -843,6 +897,8 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
 
     .field-content{
         @include column(10,0);
+        padding-right:0;
+        padding-left:0;
     } 
 
     .field-col{
@@ -867,5 +923,4 @@ input[type=submit], input[type=reset], input[type=button], .button, button{
             }
         }
     }
-  
 }

@@ -47,8 +47,10 @@ function(modal) {
     ajaxifyLinks(modal.body);
 
     $('form.image-upload', modal.body).submit(function() {
-        var formdata = new FormData(this);
+        // turn on the spinner
+        $('#admin-loading-spinner-wrapper', modal.body).removeClass('remove');
 
+        var formdata = new FormData(this);
         $.ajax({
             url: this.action,
             data: formdata,
@@ -57,9 +59,13 @@ function(modal) {
             type: 'POST',
             dataType: 'text',
             success: function(response){
+                // turn off the spinner
+                $('#admin-loading-spinner-wrapper', modal.body).addClass('remove');
                 modal.loadResponseText(response);
             },
             error: function(xhr, textStatus, errorThrown) {
+                // turn off the spinner
+                $('#admin-loading-spinner-wrapper', modal.body).addClass('remove');
                 // Display the error in the upload form
                 if (xhr.status == 413) {
                     // make the error message for large files user-friendly

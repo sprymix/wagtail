@@ -35,6 +35,10 @@
     {% if uploadform %}
         <section id="upload" class="{% if uploadform.errors %}active{% endif %} nice-padding">
             <form class="image-upload" action="{% url 'wagtailimages_chooser_upload' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% endif %}" method="POST" enctype="multipart/form-data">
+                <div id="admin-loading-spinner-wrapper" class="remove">
+                    <div id="admin-loading-spinner"></div>
+                </div>
+
                 {% csrf_token %}
                 <ul class="fields">
                     {% for field in uploadform %}
