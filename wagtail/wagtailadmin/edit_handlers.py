@@ -174,7 +174,7 @@ class EditHandler(object):
                 formsets=cls.required_formsets(), widgets=cls.widget_overrides())
         return cls._form_class
 
-    def __init__(self, instance=None, form=None):
+    def __init__(self, instance=None, form=None, parent_instance=None):
         if not instance:
             raise ValueError("EditHandler did not receive an instance object")
         self.instance = instance
@@ -183,13 +183,15 @@ class EditHandler(object):
             raise ValueError("EditHandler did not receive a form object")
         self.form = form
 
+        self.parent_instance = parent_instance
+
     # Heading / help text to display to the user
     heading = ""
     help_text = ""
 
     def classes(self):
         """
-        Additional CSS classnames to add to whatever kind of object this is at output. 
+        Additional CSS classnames to add to whatever kind of object this is at output.
         Subclasses of EditHandler should override this, invoking super(B, self).classes() to
         append more classes specific to the situation.
         """
@@ -294,11 +296,13 @@ class BaseCompositeEditHandler(EditHandler):
 
         return cls._required_formsets
 
-    def __init__(self, instance=None, form=None):
-        super(BaseCompositeEditHandler, self).__init__(instance=instance, form=form)
+    def __init__(self, instance=None, form=None, parent_instance=None):
+        super(BaseCompositeEditHandler, self).__init__(instance=instance, form=form,
+                                                       parent_instance=parent_instance)
 
         self.children = [
-            handler_class(instance=self.instance, form=self.form)
+            handler_class(instance=self.instance, form=self.form,
+                          parent_instance=self.parent_instance)
             for handler_class in self.__class__.children
         ]
 
@@ -365,8 +369,9 @@ def MultiFieldPanel(children, heading="", classname=""):
 
 
 class BaseFieldPanel(EditHandler):
-    def __init__(self, instance=None, form=None):
-        super(BaseFieldPanel, self).__init__(instance=instance, form=form)
+    def __init__(self, instance=None, form=None, parent_instance=None):
+        super(BaseFieldPanel, self).__init__(instance=instance, form=form,
+                                             parent_instance=parent_instance)
         self.bound_field = self.form[self.field_name]
 
         self.heading = self.bound_field.label
@@ -560,8 +565,9 @@ class BaseInlinePanel(EditHandler):
         else:
             return {}
 
-    def __init__(self, instance=None, form=None):
-        super(BaseInlinePanel, self).__init__(instance=instance, form=form)
+    def __init__(self, instance=None, form=None, parent_instance=None):
+        super(BaseInlinePanel, self).__init__(instance=instance, form=form,
+                                              parent_instance=parent_instance)
 
         self.formset = form.formsets[self.__class__.relation_name]
 
@@ -576,7 +582,8 @@ class BaseInlinePanel(EditHandler):
                 subform.fields['ORDER'].widget = forms.HiddenInput()
 
             self.children.append(
-                child_edit_handler_class(instance=subform.instance, form=subform)
+                child_edit_handler_class(instance=subform.instance, form=subform,
+                                         parent_instance=self.instance)
             )
 
         # if this formset is valid, it may have been re-ordered; respect that
@@ -589,7 +596,8 @@ class BaseInlinePanel(EditHandler):
         if self.formset.can_order:
             empty_form.fields['ORDER'].widget = forms.HiddenInput()
 
-        self.empty_child = child_edit_handler_class(instance=empty_form.instance, form=empty_form)
+        self.empty_child = child_edit_handler_class(instance=empty_form.instance,
+                                form=empty_form, parent_instance=self.instance)
 
     template = "wagtailadmin/edit_handlers/inline_panel.html"
 
