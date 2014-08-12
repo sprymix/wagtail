@@ -114,3 +114,18 @@ $zindex-modal-background: 500;
         padding:0 0 2em 0;
     }
 }
+
+// image cropper
+.image-cropper{
+    .fields{
+        .field.aspect-ratio{
+            label{
+                width: 25%
+            }
+
+            span{
+                margin-right: 40px
+            }
+        }
+    }
+}
