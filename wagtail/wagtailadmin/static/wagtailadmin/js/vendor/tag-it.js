@@ -303,7 +303,12 @@
 
         _cleanedInput: function() {
             // Returns the contents of the tag input, cleaned and ready to be passed to createTag
-            return $.trim(this.tagInput.val().replace(/^"(.*)"$/, '$1'));
+            return $.trim(this.tagInput.val());
+        },
+
+        _cleanedOutput: function(value) {
+            // Returns the contents of the tag input, cleaned and ready to be passed to createTag
+            return $.trim(value.replace(/^"(.*)"$/, '$1'));
         },
 
         _lastTag: function() {
@@ -399,8 +404,10 @@
                 return false;
             }
 
-            if (!this.options.allowDuplicates && !this._isNew(value)) {
-                var existingTag = this._findTagByLabel(value);
+            var labelText = this._cleanedOutput(value),
+                existingTag = null;
+
+            if (!this.options.allowDuplicates && (existingTag = this._findTagByLabel(labelText))) {
                 if (this._trigger('onTagExists', null, {
                     existingTag: existingTag,
                     duringInitialization: duringInitialization
@@ -417,7 +424,7 @@
                 return false;
             }
 
-            var label = $(this.options.onTagClicked ? '<a class="tagit-label tag"></a>' : '<span class="tagit-label tag"></span>').text(value);
+            var label = $(this.options.onTagClicked ? '<a class="tagit-label tag"></a>' : '<span class="tagit-label tag"></span>').text(labelText);
 
             // Create tag.
             var tag = $('<li></li>')
