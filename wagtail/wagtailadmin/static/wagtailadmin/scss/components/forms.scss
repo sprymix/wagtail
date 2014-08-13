@@ -480,7 +480,7 @@ li.focused > .help{
     font-size:13px;
 }
 
-.error input, .error textarea, .error select, .error .tagit{
+.error input, .error textarea, .error select, .error .tagit, .error-formset{
     border-color:$color-red;
     background-color:$color-input-error-bg;
 }

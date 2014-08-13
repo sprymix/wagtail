@@ -1,14 +1,26 @@
 {{ self.formset.management_form }}
-<ul class="multiple" id="id_{{ self.formset.prefix }}-FORMS">
-    {% for child in self.children %}
-        {% include "wagtailadmin/edit_handlers/inline_panel_child.html" %}
-    {% endfor %}
-</ul>
 
-<script type="text/django-form-template" id="id_{{ self.formset.prefix }}-EMPTY_FORM_TEMPLATE">
-    {% include "wagtailadmin/edit_handlers/inline_panel_child.html" with child=self.empty_child %}
-</script>
+{% with self.formset.non_form_errors as generic_errors %}
 
-<p class="add">
-    <a class="button bicolor icon icon-plus" id="id_{{ self.formset.prefix }}-ADD" value="Add">Add {{ self.heading|lower }}</a>
-</p>
+    <div class="{% if generic_errors %}error-formset{% endif %}">
+        <ul class="multiple"
+            id="id_{{ self.formset.prefix }}-FORMS">
+            {% for child in self.children %}
+                {% include "wagtailadmin/edit_handlers/inline_panel_child.html" %}
+            {% endfor %}
+        </ul>
+
+        <script type="text/django-form-template" id="id_{{ self.formset.prefix }}-EMPTY_FORM_TEMPLATE">
+            {% include "wagtailadmin/edit_handlers/inline_panel_child.html" with child=self.empty_child %}
+        </script>
+
+        <p class="add">
+            <a class="button bicolor icon icon-plus" id="id_{{ self.formset.prefix }}-ADD" value="Add">Add {{ self.heading|lower }}</a>
+        </p>
+    </div>
+
+    {% if generic_errors %}
+        <div class="error-message">{{ generic_errors }}</div>
+    {% endif %}
+
+{% endwith %}
