@@ -7,9 +7,10 @@ class BaseImageChooserPanel(BaseChooserPanel):
     js_function_name = "createImageChooser"
 
 
-def ImageChooserPanel(field_name):
+def ImageChooserPanel(field_name, classname=''):
     return type('_ImageChooserPanel', (BaseImageChooserPanel,), {
         'field_name': field_name,
+        'classname': classname,
     })
 
 
@@ -19,7 +20,8 @@ class BaseRenditionChooserPanel(BaseChooserPanel):
     js_function_name = "createRenditionChooser"
 
 
-def RenditionChooserPanel(field_name):
+def RenditionChooserPanel(field_name, classname=''):
     return type('_RenditionChooserPanel', (BaseRenditionChooserPanel,), {
         'field_name': field_name,
+        'classname': classname,
     })
