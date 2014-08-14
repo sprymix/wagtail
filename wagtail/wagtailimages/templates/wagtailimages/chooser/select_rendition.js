@@ -22,14 +22,6 @@ function(modal) {
         jcapi = this;
     });
 
-    function applyCropValues() {
-        var data = jcapi.tellSelect();
-        left.attr({value: Math.round(data.x)});
-        top.attr({value: Math.round(data.y)});
-        right.attr({value: Math.round(data.x2)});
-        bottom.attr({value: Math.round(data.y2)});
-    };
-
     var ratio_re = /(\d+):(\d+)/;
     // change aspect ratio based on the radio selections
     $('form input[name="aspect-ratio"]', modal.body).change(function(event) {
@@ -42,8 +34,32 @@ function(modal) {
         }
     });
 
-    $('form', modal.body).submit(function() {
-        applyCropValues();
+    var form = $('form', modal.body);
+
+    function clearForm() {
+        left.removeAttr('value');
+        top.removeAttr('value');
+        right.removeAttr('value');
+        bottom.removeAttr('value');
+    };
+
+    function applyCropValues() {
+        var data = jcapi.tellSelect();
+
+        if (data.w == 0 || data.h == 0) {
+            clearForm();
+        } else {
+            left.attr({value: Math.round(data.x)});
+            top.attr({value: Math.round(data.y)});
+            right.attr({value: Math.round(data.x2)});
+            bottom.attr({value: Math.round(data.y2)});
+        }
+    };
+
+    $('form input.crop-button').click(applyCropValues);
+    $('form input.skip-button').click(clearForm);
+
+    $('form', modal.body).submit(function(event) {
         var formdata = new FormData(this);
 
         $.post(this.action, $(this).serialize(), function(response){

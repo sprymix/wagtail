@@ -33,7 +33,12 @@
                 </div>
             </li>
 
-            <li><input type="submit" value="{% trans 'Crop' %}" /></li>
+            <li>
+                <input type="submit" class="crop-button"
+                       value="{% trans 'Crop' %}" />
+                <input type="submit" class="skip-button"
+                       value="{% trans 'Skip' %}" />
+            </li>
         </ul>
     </form>
 </section>
