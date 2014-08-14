@@ -41,7 +41,9 @@ def index(request, parent_page_id=None):
 
     # Get page ordering
     ordering = request.GET.get('ordering', 'title')
-    if ordering not in ['title', '-title', 'content_type', '-content_type', 'live', '-live', 'ord']:
+    if ordering not in ['title', '-title', 'content_type', '-content_type',
+                        'live', '-live', 'owner', '-owner',
+                        'go_live_at', '-go_live_at', 'ord']:
         ordering = 'title'
 
     # Pagination

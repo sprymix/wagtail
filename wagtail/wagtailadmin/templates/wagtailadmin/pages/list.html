@@ -11,6 +11,8 @@
     <col width="12%" />
     <col width="12%" />
     <col width="10%" />
+    <col width="15%" />
+    <col width="10%" />
     <thead>
         {% if moving or choosing %}
             <tr class="table-headers">
@@ -23,6 +25,8 @@
                 {% endif %}
                 <th class="type">{% trans 'Type' %}</th>
                 <th class="status">{% trans 'Status' %}</th>
+                <th class="owner">{% trans 'Created by' %}</th>
+                <th class="publish-date">{% trans 'Publish date' %}</th>
                 <th></th>
             </tr>
         {% endif %}
@@ -64,7 +68,7 @@
                                     {{ parent_page.title }}
                             {% endif %}
                         </h2>
-                        
+
                         {% include "wagtailadmin/pages/_privacy_indicator.html" with page=parent_page %}
 
                         <ul class="actions">
@@ -100,16 +104,18 @@
                         <span class="status-tag {% if parent_page.status_string != "draft" %}primary{% endif %}">{{ parent_page.status_string|capfirst }}</span>
                     {% endif %}
                 </td>
+                <td class="owner"></td>
+                <td class="publish-date"></td>
                 <td></td>
             </tr>
         {% endif %}
-    
+
         {% if not moving and not choosing %}
             <tr class="table-headers">
                 {% if orderable %}
                     <th class="ord">
                         {% if ordering == "ord" %}
-                            <a href="{% url 'wagtailadmin_explore' parent_page.id %}" class="icon icon-order text-replace" title="{% trans 'Disable ordering of child pages' %}">{% trans 'Order' %}</a></th> 
+                            <a href="{% url 'wagtailadmin_explore' parent_page.id %}" class="icon icon-order text-replace" title="{% trans 'Disable ordering of child pages' %}">{% trans 'Order' %}</a></th>
                         {% else %}
                             <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering=ord" class="icon icon-order text-replace" title="{% trans 'Enable ordering of child pages' %}">{% trans 'Order' %}</a></th>
                         {% endif %}
@@ -134,7 +140,7 @@
                         </a>
                     {% else %}
                         {% trans 'Type' %}
-                    {% endif %}                   
+                    {% endif %}
                 </th>
                 <th class="status">
                     {% if sortable %}
@@ -143,6 +149,24 @@
                         </a>
                     {% else %}
                         {% trans 'Status' %}
+                    {% endif %}
+                </th>
+                <th class="owner">
+                    {% if sortable %}
+                        <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "owner" %}-{% endif %}owner" class="icon icon-arrow-{% if ordering == "-owner" %}up-after{% else %}down-after{% endif %} {% if ordering == "owner" or ordering == "-owner" %}teal {% endif %}">
+                            {% trans 'Created by' %}
+                        </a>
+                    {% else %}
+                        {% trans 'Created by' %}
+                    {% endif %}
+                </th>
+                <th class="publish-date">
+                    {% if sortable %}
+                        <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "go_live_at" %}-{% endif %}go_live_at" class="icon icon-arrow-{% if ordering == "-go_live_at" %}up-after{% else %}down-after{% endif %} {% if ordering == "go_live_at" or ordering == "-go_live_at" %}teal {% endif %}">
+                            {% trans 'Publish date' %}
+                        </a>
+                    {% else %}
+                        {% trans 'Publish date' %}
                     {% endif %}
                 </th>
                 <th></th>
@@ -230,6 +254,18 @@
                              <span class="status-tag {% if page.status_string != "draft" %}primary{% endif %}">{{ page.status_string }}</span>
                         {% endif %}
                     </td>
+
+                    <td class="owner">{{ page.owner }}</td>
+                    <td class="publish-date">
+                        {% if page.go_live_at %}
+                            {{ page.go_live_at }}
+                        {% elif page.live %}
+                            Live
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+
                     <td class="{% if allow_navigation %}{% if choosing %}{% if page.can_descend %} children{% endif%}{% elif moving %}{% if page.can_descend %} children{% endif%}{% elif allow_navigation and page.is_navigable %} children{% else %}no-children{% endif %}{% endif %}">
                         {% if allow_navigation %}
                             {% if moving %}
