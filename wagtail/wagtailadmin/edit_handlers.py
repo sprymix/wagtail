@@ -18,6 +18,11 @@ from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy
 
+try:
+    import json
+except ImportError:
+    from django.utils import simplejson as json
+
 from wagtail.wagtailcore.models import Page
 from wagtail.wagtailcore.utils import camelcase_to_underscore
 from wagtail.wagtailcore.fields import RichTextArea
@@ -432,12 +437,17 @@ def FieldPanel(field_name, classname=""):
 
 class BaseRichTextFieldPanel(BaseFieldPanel):
     def render_js(self):
-        return mark_safe("makeRichTextEditable(fixPrefix('%s'));" % self.bound_field.id_for_label)
+        return mark_safe("makeRichTextEditable(fixPrefix('{}'), {});".format(
+            self.bound_field.id_for_label,
+            json.dumps(self.__class__.editor_plugins)
+        ))
 
 
-def RichTextFieldPanel(field_name):
+def RichTextFieldPanel(field_name, editor_plugins=None, classname=""):
     return type(str('_RichTextFieldPanel'), (BaseRichTextFieldPanel,), {
         'field_name': field_name,
+        'editor_plugins': editor_plugins,
+        'classname': classname
     })
 
 
