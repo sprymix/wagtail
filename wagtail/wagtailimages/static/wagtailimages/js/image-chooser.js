@@ -57,6 +57,20 @@ function createRenditionChooser(id) {
         });
     });
 
+    $('.action-recrop', chooserElement).click(function() {
+        var url = [window.chooserUrls.imageChooser,
+                   $(this).attr('data-original-image-id'),
+                   '/select_rendition/'].join('');
+        ModalWorkflow({
+            'url': url,
+            'responses': {
+                'imageChosen': function(imageData) {
+                    input.val(imageData.id).trigger('change', imageData);
+                }
+            }
+        });
+    });
+
     $('.action-clear', chooserElement).click(function() {
         input.val('').trigger('change');
     });

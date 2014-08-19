@@ -15,7 +15,7 @@ def ImageChooserPanel(field_name, classname=''):
 
 
 class BaseRenditionChooserPanel(BaseChooserPanel):
-    field_template = "wagtailimages/edit_handlers/image_chooser_panel.html"
+    field_template = "wagtailimages/edit_handlers/rendition_chooser_panel.html"
     object_type_name = "image"
     js_function_name = "createRenditionChooser"
 

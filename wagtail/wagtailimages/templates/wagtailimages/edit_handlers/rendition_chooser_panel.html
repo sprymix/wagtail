@@ -1,0 +1,38 @@
+{% extends "wagtailadmin/shared/field.html" %}
+{% load wagtailimages_tags %}
+{% load i18n %}
+
+{% block form_field %}
+
+    <div id="{{ field.id_for_label }}-chooser" class="chooser {% block chooser_class %}image-chooser{% endblock %} {% if not is_chosen %}blank{% endif %}">
+
+        <div class="chosen">
+            {% block chosen_state_view %}
+                <div class="preview-image">
+                    {% if image %}
+                        {% image image max-130x130 %}
+                    {% else %}
+                        <img>
+                    {% endif %}
+                </div>
+            {% endblock %}
+
+            <div class="actions">
+                {% if not field.field.required %}
+                    <input type="button" class="action-clear button-small button-secondary" value="{% block clear_button_label %}{% trans "Clear image" %}{% endblock %}">
+                {% endif %}
+                <input type="button" class="action-recrop button-small button-secondary" value="{% block choose_rendition_button_label %}{% trans "Re-crop image" %}{% endblock %}"
+                data-original-image-id="{{ image.image.id }}">
+                <input type="button" class="action-choose button-small button-secondary" value="{% block choose_another_button_label %}{% trans "Choose another image" %}{% endblock %}">
+            </div>
+        </div>
+
+        <div class="unchosen">
+            <input type="button" class="action-choose button-small button-secondary" value="{% block choose_button_label %}{% trans "Choose an image" %}{% endblock %}">
+        </div>
+
+    </div>
+
+    {{ field }}
+
+{% endblock %}
