@@ -31,6 +31,7 @@ function createRenditionChooser(id) {
     var chooserElement = $('#' + id + '-chooser');
     var previewImage = chooserElement.find('.preview-image img');
     var input = $('#' + id);
+    var crop_b = $('input.action-recrop', chooserElement);
 
     input.change(function(ev, imageData) {
         if(imageData) {
@@ -41,6 +42,8 @@ function createRenditionChooser(id) {
             'alt': imageData.title
           });
           chooserElement.removeClass('blank');
+          crop_b.attr({'data-original-image-id': imageData.original_id});
+          crop_b.attr({'data-spec': imageData.spec});
         } else {
           chooserElement.addClass('blank');
         }
@@ -57,10 +60,15 @@ function createRenditionChooser(id) {
         });
     });
 
-    $('.action-recrop', chooserElement).click(function() {
-        var url = [window.chooserUrls.imageChooser,
+    crop_b.click(function() {
+        // from original image id and crop spec construct a new URL
+        var spec = $(this).attr('data-spec').replace('crop-', '')
+                                            .replace(':', ','),
+            url = [window.chooserUrls.imageChooser,
                    $(this).attr('data-original-image-id'),
-                   '/select_rendition/'].join('');
+                   '/select_rendition/?crop=', spec
+                   ].join('');
+
         ModalWorkflow({
             'url': url,
             'responses': {

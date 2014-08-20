@@ -232,6 +232,8 @@ def chooser_select_rendition(request, image_id):
         rendition_json = json.dumps({
             'id': rendition.id,
             'title': image.title,
+            'original_id': image.id,
+            'spec': rendition.filter.spec,
             'preview': {
                 'url': preview_image.url,
                 'width': preview_image.width,
@@ -244,10 +246,13 @@ def chooser_select_rendition(request, image_id):
         )
 
     else:
+        # get filter spec if it was passed
+        #
+        crop = request.GET.get('crop')
         form = ImageCropperForm()
 
-    return render_modal_workflow(
-        request, 'wagtailimages/chooser/select_rendition.html',
-        'wagtailimages/chooser/select_rendition.js',
-        {'image': image, 'form': form}
-    )
+        return render_modal_workflow(
+            request, 'wagtailimages/chooser/select_rendition.html',
+            'wagtailimages/chooser/select_rendition.js',
+            {'image': image, 'form': form, 'crop': crop}
+        )
