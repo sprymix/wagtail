@@ -57,6 +57,27 @@ function(modal) {
             dataType: 'text',
             success: function(response){
                 modal.loadResponseText(response);
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                // Display the error in the upload form
+                if (xhr.status == 413) {
+                    // make the error message for large files user-friendly
+                    errorThrown = 'The file is too large, please upload a smaller file.';
+                }
+
+                var li = $('form.document-upload li:has(.file_field)',
+                           modal.body),
+                    err = li.find('p.error-message')
+                li.addClass('error');
+
+                // if we already have an error-message element, write into it
+                if (err.length) {
+                    err.html(errorThrown);
+                } else {
+                    // add a <p class="error-message">...</p> to the image_field
+                    li.find('.field-content').append(
+                        '<p class="error-message">' + errorThrown + '</p>');
+                }
             }
         });
 
