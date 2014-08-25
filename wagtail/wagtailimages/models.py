@@ -449,7 +449,7 @@ class UserRendition(AbstractRendition):
     image = models.ForeignKey('Image', related_name='user_renditions')
 
     def get_rendition(self, filter):
-        # we ned to construct a new filter combining what we've been passed and
+        # we need to construct a new filter combining what we've been passed and
         # the filter used to get THIS rendition
         if not hasattr(filter, 'process_image'):
             filter = '|'.join([self.filter.spec, filter])
