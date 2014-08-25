@@ -12,7 +12,7 @@ class Command(BaseCommand):
         # Get list of indexed models
         indexed_models = [model for model in models.get_models()
                           if issubclass(model, Indexed)
-                          and not getattr(model, 'model_is_abstract', False)]
+                          and not getattr(model, 'exclude_from_search_index', False)]
 
         # Object set
         object_set = {}
