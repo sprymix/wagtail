@@ -24,20 +24,22 @@ $breakpoint-desktop-large: 75em; /* 1200px */
 $breakpoint-desktop-larger: 100em; /* 1600px */
 
 /* colours */
-$color-teal: #ff3f3f;
-$color-teal-darker: darken($color-teal, 10%);
+$color-teal: #00bff3;
+$color-teal-darker: #008eb4;
 $color-teal-dark: darken($color-teal, 30%);
 $color-blue: #71b2d4;
-$color-red: #cd3238;
+$color-red: #f42f2f;
 $color-orange:#e9b04d;
-$color-green: #189370;
-$color-salmon: #f37e77;
-$color-salmon-light: #fcf2f2;
+$color-green: #1dd47c;
+$color-salmon: #ace5f5;
+$color-salmon-light: #ececec;
 
 /* darker to lighter */
 $color-grey-1: #333333;
 $color-grey-1-1: #404040;
 $color-grey-2: #666666;
+$color-grey-2-1: #a2a2a2;
+$color-grey-2-2: #c7c7c7;
 $color-grey-3: #d9d9d9;
 $color-grey-4: #e6e6e6;
 $color-grey-5: #fafafa;
