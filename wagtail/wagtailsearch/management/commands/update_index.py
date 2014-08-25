@@ -10,7 +10,9 @@ class Command(BaseCommand):
         self.stdout.write("Getting object list")
 
         # Get list of indexed models
-        indexed_models = [model for model in models.get_models() if issubclass(model, Indexed)]
+        indexed_models = [model for model in models.get_models()
+                          if issubclass(model, Indexed)
+                          and not getattr(model, 'model_is_abstract', False)]
 
         # Object set
         object_set = {}
