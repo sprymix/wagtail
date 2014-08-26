@@ -309,7 +309,10 @@ class Filter(models.Model):
         'height': 'resize_to_height',
         'fill': 'resize_to_fill',
         'original': 'no_operation',
-        'crop': 'crop_to_rectangle'
+        'crop': 'crop_to_rectangle',
+        'forcewidth': 'force_resize_to_width',
+        'forceheight': 'force_resize_to_height',
+        'forcefit': 'force_resize_to_fit',
     }
 
     class InvalidFilterSpecError(ValueError):
@@ -356,6 +359,16 @@ class Filter(models.Model):
             bottom = int(match.group(5))
             return (Filter.OPERATION_NAMES[match.group(1)],
                     (left, top, right, bottom))
+
+        match = re.match(r'(forcewidth|forceheight)-(\d+)$', spec)
+        if match:
+            return Filter.OPERATION_NAMES[match.group(1)], int(match.group(2))
+
+        match = re.match(r'(forcefit)-(\d+)x(\d+)$', spec)
+        if match:
+            width = int(match.group(2))
+            height = int(match.group(3))
+            return Filter.OPERATION_NAMES[match.group(1)], (width, height)
 
         # Spec is not one of our recognised patterns
         raise Filter.InvalidFilterSpecError("Invalid image filter spec: %r" % spec)

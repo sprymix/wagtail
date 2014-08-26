@@ -107,14 +107,17 @@ class BaseImageBackend(object):
 
         return self.resize(image, final_size)
 
-    def resize_to_width(self, image, target_width, focal_point=None):
+    def resize_to_width(self, image, target_width, focal_point=None,
+                        force=False):
         """
         Resize image down to the given width, preserving aspect ratio.
         Will leave image unchanged if it's already within that width.
+        If the force flag is True, will resize image to exactly the specified
+        width.
         """
         (original_width, original_height) = image.size
 
-        if original_width <= target_width:
+        if not force and original_width <= target_width:
             return image
 
         scale = float(target_width) / original_width
@@ -123,14 +126,17 @@ class BaseImageBackend(object):
 
         return self.resize(image, final_size)
 
-    def resize_to_height(self, image, target_height, focal_point=None):
+    def resize_to_height(self, image, target_height, focal_point=None,
+                         force=False):
         """
         Resize image down to the given height, preserving aspect ratio.
         Will leave image unchanged if it's already within that height.
+        If the force flag is True, will resize image to exactly the specified
+        height.
         """
         (original_width, original_height) = image.size
 
-        if original_height <= target_height:
+        if not force and original_height <= target_height:
             return image
 
         scale = float(target_height) / original_height
@@ -154,3 +160,40 @@ class BaseImageBackend(object):
     def no_operation(self, image, param, focal_point=None):
         """Return the image unchanged"""
         return image
+
+    def force_resize_to_width(self, image, target_width, focal_point=None):
+        """
+        Resize image down to the given width, preserving aspect ratio.
+        Will always resize image to exactly the specified width.
+        """
+        return self.resize_to_width(image, target_width, focal_point=focal_point,
+                                    force=True)
+
+    def force_resize_to_height(self, image, target_height, focal_point=None):
+        """
+        Resize image down to the given height, preserving aspect ratio.
+        Will always resize image to exactly the specified height.
+        """
+        return self.resize_to_height(image, target_height,
+                                     focal_point=focal_point,
+                                     force=True)
+
+    def force_resize_to_fit(self, image, size, focal_point=None):
+        """
+        Resize down and crop image to fill the given dimensions. Most suitable
+        for thumbnails. (At least one of the image dimensions will match the
+        specified size, while the other will be less than or equal to the
+        respective specification)
+        """
+        (original_width, original_height) = image.size
+        (target_width, target_height) = size
+
+        scale_w = float(target_width) / original_width
+        scale_h = float(target_height) / original_height
+
+        if scale_w < scale_h:
+            final_size = (target_width, int(original_height * scale_w))
+        else:
+            final_size = (int(original_width * scale_h), target_height)
+
+        return self.resize(image, final_size)
