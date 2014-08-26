@@ -1,14 +1,19 @@
 import json
+import uuid
 
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import permission_required
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.template import RequestContext
+from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
 
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
 
 from wagtail.wagtaildocs.models import Document
-from wagtail.wagtaildocs.forms import DocumentForm
+from wagtail.wagtaildocs.forms import DocumentForm, DocumentFormMulti
 
 
 @permission_required('wagtailadmin.access_admin')
@@ -73,6 +78,7 @@ def chooser(request):
         'uploadform': uploadform,
         'searchform': searchform,
         'is_searching': False,
+        'uploadid': uuid.uuid4(),
     })
 
 
@@ -88,25 +94,56 @@ def document_chosen(request, document_id):
     )
 
 
+def json_response(document):
+    return HttpResponse(json.dumps(document), content_type='application/json')
+
+
+@require_POST
 @permission_required('wagtaildocs.add_document')
 def chooser_upload(request):
-    if request.POST:
-        document = Document(uploaded_by_user=request.user)
-        form = DocumentForm(request.POST, request.FILES, instance=document)
+    if not request.is_ajax():
+        return HttpResponseBadRequest("Cannot POST to this view without AJAX")
 
-        if form.is_valid():
-            form.save()
-            document_json = json.dumps({'id': document.id, 'title': document.title})
-            return render_modal_workflow(
-                request, None, 'wagtaildocs/chooser/document_chosen.js',
-                {'document_json': document_json}
-            )
-    else:
-        form = DocumentForm()
+    if not request.FILES:
+        return HttpResponseBadRequest("Must upload a file")
 
-    documents = Document.objects.order_by('title')
+    # Save it
+    doc = Document(uploaded_by_user=request.user,
+                   title=request.FILES['files[]'].name,
+                   file=request.FILES['files[]'])
+    doc.save()
 
-    return render_modal_workflow(
-        request, 'wagtaildocs/chooser/chooser.html', 'wagtaildocs/chooser/chooser.js',
-        {'documents': documents, 'uploadform': form}
-    )
+    # Success! Send back an edit form for this doc to the user
+    form = DocumentFormMulti(instance=doc, prefix='doc-%d' % doc.id)
+
+    return json_response({
+        'success': True,
+        'doc_id': int(doc.id),
+        'form': render_to_string('wagtaildocs/chooser/update.html', {
+            'doc': doc,
+            'form': form,
+        }, context_instance=RequestContext(request)),
+    })
+
+
+@require_POST
+@permission_required('wagtailadmin.access_admin')
+def chooser_select(request, doc_id):
+    document = get_object_or_404(Document, id=doc_id)
+
+    if not request.is_ajax():
+        return HttpResponseBadRequest("Cannot POST to this view without AJAX")
+
+    if not document.is_editable_by_user(request.user):
+        raise PermissionDenied
+
+    form = DocumentFormMulti(request.POST, request.FILES, instance=document,
+                             prefix='doc-' + doc_id)
+
+    if form.is_valid():
+        form.save()
+        document_json = json.dumps({'id': document.id, 'title': document.title})
+        return render_modal_workflow(
+            request, None, 'wagtaildocs/chooser/document_chosen.js',
+            {'document_json': document_json}
+        )

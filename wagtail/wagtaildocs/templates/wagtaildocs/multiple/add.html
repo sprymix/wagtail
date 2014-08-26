@@ -1,0 +1,46 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n compress static %}
+{% block titletag %}{% trans "Add multiple documents" %}{% endblock %}
+{% block bodyclass %}menu-documents{% endblock %}
+
+{% block content %}
+    {% trans "Add documents" as add_str %}
+    {% include "wagtailadmin/shared/header.html" with title=add_str icon="doc-full-inverse" %}
+
+    <div id="doc-multi-upload">
+        <div class="nice-padding">
+            <div class="drop-zone">
+                <p>{% trans "Drag and drop documents into this area to upload immediately." %}</p>
+
+                <form action="{% url 'wagtaildocs_add_multiple' %}"
+                      method="POST" enctype="multipart/form-data">
+                    <div class="replace-file-input">
+                        <button class="bicolor icon icon-plus">{% trans "Or choose from your computer" %}</button>
+                        <input class="fileupload" type="file" name="files[]" data-url="{% url 'wagtaildocs_add_multiple' %}" multiple>
+                    </div>
+                    {% csrf_token %}
+                </form>
+            </div>
+
+            <div class="progress progress-secondary">
+                <div class="bar" style="width: 0%;">0%</div>
+            </div>
+
+            <ul class="upload-list multiple"></ul>
+        </div>
+        {% include "wagtaildocs/multiple/list_item.html" %}
+
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    {% include "wagtailadmin/pages/_editor_js.html" %}
+    {% url 'wagtailadmin_tag_autocomplete' as autocomplete_url %}
+    <script>
+        $(function() { add_file_upload_widget($('#doc-multi-upload')); });
+        window.simple_upload_url = "{% url 'wagtaildocs_add_document' %}";
+        window.tagit_opts = {
+            autocomplete: {source: "{{ autocomplete_url|addslashes }}"}
+        };
+    </script>
+{% endblock %}

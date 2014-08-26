@@ -70,6 +70,7 @@ def editor_js():
     js_files = [
         'wagtailimages/js/hallo-plugins/hallo-wagtailimage.js',
         'wagtailimages/js/image-chooser.js',
+        'wagtailimages/js/add-multiple.js',
     ]
     js_includes = format_html_join('\n', '<script src="{0}{1}"></script>',
         ((settings.STATIC_URL, filename) for filename in js_files)

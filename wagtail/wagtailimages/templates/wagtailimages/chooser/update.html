@@ -1,0 +1,17 @@
+{% load i18n %}
+
+<form class="image-select"
+      action="{% url 'wagtailimages_chooser_select' image.id %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% endif %}"
+      method="POST" enctype="multipart/form-data">
+    <ul class="fields">
+        {% csrf_token %}
+        {% for field in form %}
+            {% include "wagtailadmin/shared/field_as_li.html" %}
+        {% endfor %}
+        <li>
+            <input type="submit" value="{% trans 'Proceed' %}" />
+            <a href="{% url 'wagtailimages_delete_multiple' image.id %}" class="delete button button-secondary no">{% trans "Delete" %}</a>
+        </li>
+    </ul>
+</form>
+<script type="text/javascript">add_select_image_widget();</script>

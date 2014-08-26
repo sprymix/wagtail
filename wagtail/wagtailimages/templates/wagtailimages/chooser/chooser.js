@@ -46,51 +46,6 @@ function(modal) {
 
     ajaxifyLinks(modal.body);
 
-    $('form.image-upload', modal.body).submit(function() {
-        // turn on the spinner
-        $('#admin-loading-spinner-wrapper', modal.body).removeClass('remove');
-
-        var formdata = new FormData(this);
-        $.ajax({
-            url: this.action,
-            data: formdata,
-            processData: false,
-            contentType: false,
-            type: 'POST',
-            dataType: 'text',
-            success: function(response){
-                // turn off the spinner
-                $('#admin-loading-spinner-wrapper', modal.body).addClass('remove');
-                modal.loadResponseText(response);
-            },
-            error: function(xhr, textStatus, errorThrown) {
-                // turn off the spinner
-                $('#admin-loading-spinner-wrapper', modal.body).addClass('remove');
-                // Display the error in the upload form
-                if (xhr.status == 413) {
-                    // make the error message for large files user-friendly
-                    errorThrown = 'The image is too large, please upload a smaller file.';
-                }
-
-                var li = $('form.image-upload li:has(.image_field)',
-                           modal.body),
-                    err = li.find('p.error-message')
-                li.addClass('error');
-
-                // if we already have an error-message element, write into it
-                if (err.length) {
-                    err.html(errorThrown);
-                } else {
-                    // add a <p class="error-message">...</p> to the image_field
-                    li.find('.field-content').append(
-                        '<p class="error-message">' + errorThrown + '</p>');
-                }
-            }
-        });
-
-        return false;
-    });
-
     $('form.image-search', modal.body).submit(search);
 
     $('#id_q').on('input', function() {
@@ -110,4 +65,46 @@ function(modal) {
     $('#id_tags', modal.body).tagit({
         autocomplete: {source: "{{ autocomplete_url|addslashes }}"}
     });
+
+    /* Create a function for adding image widgets (e.g. used together with
+       drag/drop). */
+    window.add_select_image_widget = function() {
+        $('form.image-select', modal.body).submit(function() {
+            var formdata = new FormData(this);
+            $.ajax({
+                url: this.action,
+                data: formdata,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                dataType: 'text',
+                success: function(response){
+                    modal.loadResponseText(response);
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    // Display the error in the upload form
+                    if (xhr.status == 413) {
+                        // make the error message for large files user-friendly
+                        errorThrown = 'The image is too large, please upload a smaller file.';
+                    }
+
+                    var li = $('form.image-select li:has(.image_field)',
+                               modal.body),
+                        err = li.find('p.error-message')
+                    li.addClass('error');
+
+                    // if we already have an error-message element, write into it
+                    if (err.length) {
+                        err.html(errorThrown);
+                    } else {
+                        // add a <p class="error-message">...</p> to the image_field
+                        li.find('.field-content').append(
+                            '<p class="error-message">' + errorThrown + '</p>');
+                    }
+                }
+            });
+
+            return false;
+        });
+    };
 }

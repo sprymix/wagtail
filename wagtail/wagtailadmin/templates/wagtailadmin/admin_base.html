@@ -6,7 +6,9 @@
         <link rel="stylesheet" href="{{ STATIC_URL }}wagtailadmin/scss/vendor/jquery-ui/jquery-ui-1.10.3.verdant.css" />
         <link rel="stylesheet" href="{{ STATIC_URL }}wagtailadmin/scss/core.scss" type="text/x-scss" />
         <link rel="stylesheet" href="{{ STATIC_URL }}wagtailimages/js/vendor/Jcrop/jquery.Jcrop.min.css" />
+        <link rel="stylesheet" href="{{ STATIC_URL }}wagtailimages/scss/add-multiple.scss" type="text/x-scss" />
     {% endcompress %}
+    {% include "wagtailadmin/shared/tag_field_css.html" %}
 
     {% block extra_css %}{% endblock %}
 {% endblock %}
@@ -27,6 +29,13 @@
         <script>
             window.explorer_menu_url = "{% url 'wagtailadmin_explorer_nav' %}";
         </script>
+        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/load-image.min.js"></script>
+        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/canvas-to-blob.min.js"></script>
+        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.iframe-transport.js"></script>
+        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.fileupload.js"></script>
+        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.fileupload-process.js"></script>
+        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.fileupload-image.js"></script>
+        <script src="{{ STATIC_URL }}wagtailadmin/js/vendor/tag-it.js"></script>
     {% endcompress %}
 
     {% block extra_js %}{% endblock %}

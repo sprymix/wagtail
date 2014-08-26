@@ -1,18 +1,25 @@
 import json
+import uuid
 
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext as _
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.template import RequestContext
+from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
 
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
 
 from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm, \
-                                        ImageCropperForm
+                                        ImageCropperForm, \
+                                        get_image_form_for_multi
 from wagtail.wagtailimages.formats import get_image_format
+from wagtail.wagtailimages.utils.validators import validate_image_format
 
 
 def get_image_json(image):
@@ -103,6 +110,7 @@ def chooser(request):
         'will_select_format': will_select_format,
         'will_select_rendition': will_select_rendition,
         'popular_tags': Image.popular_tags(),
+        'uploadid': uuid.uuid4(),
     })
 
 
@@ -116,52 +124,113 @@ def image_chosen(request, image_id):
     )
 
 
+def json_response(document):
+    return HttpResponse(json.dumps(document), content_type='application/json')
+
+
+@require_POST
 @permission_required('wagtailimages.add_image')
 def chooser_upload(request):
     Image = get_image_model()
-    ImageForm = get_image_form()
+    ImageForm = get_image_form_for_multi()
 
-    searchform = SearchForm()
+    if not request.is_ajax():
+        return HttpResponseBadRequest("Cannot POST to this view without AJAX")
 
-    if request.POST:
-        image = Image(uploaded_by_user=request.user)
-        form = ImageForm(request.POST, request.FILES, instance=image)
+    if not request.FILES:
+        return HttpResponseBadRequest("Must upload a file")
 
-        if form.is_valid():
-            form.save()
+    # Check that the uploaded file is valid
+    try:
+        validate_image_format(request.FILES['files[]'])
+    except ValidationError as e:
+        return json_response({
+            'success': False,
+            'error_message': '\n'.join(e.messages),
+        })
 
-            will_select_format = request.GET.get('select_format')
-            will_select_rendition = request.GET.get('select_rendition')
+    # Save it
+    image = Image(uploaded_by_user=request.user, title=request.FILES['files[]'].name, file=request.FILES['files[]'])
+    image.save()
 
-            if will_select_format:
-                form = ImageInsertionForm(initial={'alt_text': image.default_alt_text})
-                return render_modal_workflow(
-                    request, 'wagtailimages/chooser/select_format.html',
-                    'wagtailimages/chooser/select_format.js',
-                    {'image': image, 'form': form}
-                )
-            elif will_select_rendition:
-                form = ImageCropperForm()
-                return render_modal_workflow(
-                    request, 'wagtailimages/chooser/select_rendition.html',
-                    'wagtailimages/chooser/select_rendition.js',
-                    {'image': image, 'form': form}
-                )
-            else:
-                # not specifying a format; return the image details now
-                return render_modal_workflow(
-                    request, None, 'wagtailimages/chooser/image_chosen.js',
-                    {'image_json': get_image_json(image)}
-                )
+    # Success! Send back an edit form for this image to the user
+    form = ImageForm(instance=image, prefix='image-%d' % image.id)
+
+    # Keep follow-up settings
+    will_select_format = request.GET.get('select_format')
+    will_select_rendition = request.GET.get('select_rendition')
+
+    return json_response({
+        'success': True,
+        'image_id': int(image.id),
+        'form': render_to_string('wagtailimages/chooser/update.html', {
+            'image': image,
+            'form': form,
+            'will_select_format': will_select_format,
+            'will_select_rendition': will_select_rendition
+        }, context_instance=RequestContext(request)),
+    })
+
+
+@require_POST
+@permission_required('wagtailimages.add_image')
+def chooser_select(request, image_id):
+    Image = get_image_model()
+    ImageForm = get_image_form_for_multi()
+
+    image = get_object_or_404(Image, id=image_id)
+
+    if not request.is_ajax():
+        return HttpResponseBadRequest("Cannot POST to this view without AJAX")
+
+    if not image.is_editable_by_user(request.user):
+        raise PermissionDenied
+
+    form = ImageForm(request.POST, request.FILES, instance=image,
+                     prefix='image-' + image_id)
+
+    if form.is_valid():
+        form.save()
+
+        # several possibilities starting from here, based on the GET params
+        #
+        will_select_format = request.GET.get('select_format')
+        will_select_rendition = request.GET.get('select_rendition')
+
+
+        if will_select_format:
+            form = ImageInsertionForm(
+                            initial={'alt_text': image.default_alt_text})
+            return render_modal_workflow(
+                request, 'wagtailimages/chooser/select_format.html',
+                'wagtailimages/chooser/select_format.js',
+                {'image': image, 'form': form}
+            )
+        elif will_select_rendition:
+            form = ImageCropperForm()
+            return render_modal_workflow(
+                request, 'wagtailimages/chooser/select_rendition.html',
+                'wagtailimages/chooser/select_rendition.js',
+                {'image': image, 'form': form}
+            )
+        else:
+            # not specifying a format; return the image details now
+            return render_modal_workflow(
+                request, None, 'wagtailimages/chooser/image_chosen.js',
+                {'image_json': get_image_json(image)}
+            )
+
     else:
-        form = ImageForm()
-
-    images = Image.objects.order_by('title')
-
-    return render_modal_workflow(
-        request, 'wagtailimages/chooser/chooser.html', 'wagtailimages/chooser/chooser.js',
-        {'images': images, 'uploadform': form, 'searchform': searchform}
-    )
+        # something was wrong with the submitted data
+        #
+        return json_response({
+            'success': False,
+            'image_id': int(image_id),
+            'form': render_to_string('wagtailimages/chooser/update.html', {
+                'image': image,
+                'form': form,
+            }, context_instance=RequestContext(request)),
+        })
 
 
 @permission_required('wagtailadmin.access_admin')
