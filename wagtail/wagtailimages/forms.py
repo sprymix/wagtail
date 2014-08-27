@@ -59,7 +59,8 @@ class ImageCropperForm(forms.Form):
     top = HiddenNumberInput()
     right = HiddenNumberInput()
     bottom = HiddenNumberInput()
-    force_selection = forms.BooleanField(widget=forms.HiddenInput())
+    force_selection = forms.BooleanField(required=False,
+                                         widget=forms.HiddenInput())
 
     ratios = ('1:1', '4:3', '16:9', '2:1', 'free')
     default_ratio = 'free'
