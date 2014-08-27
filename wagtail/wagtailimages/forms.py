@@ -74,7 +74,7 @@ class ImageCropperForm(forms.Form):
                     setattr(self, name, val)
 
         if self.disable_selection:
-            kwargs['initial'] = kwargs.get('initial', {})
+            kwargs['initial'] = kwargs.get('initial') or {}
             kwargs['initial']['force_selection'] = True
 
         super(ImageCropperForm, self).__init__(*args, **kwargs)
