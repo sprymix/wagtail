@@ -20,15 +20,6 @@ function(modal) {
             trueSize: trueSize
         };
 
-        // we may have a pre-selected cropping window
-        if (left.val() != null && right.val() != null
-                && top.val() != null && bottom.val() != null) {
-            jc_settings.setSelect = [parseInt(left.val()),
-                                     parseInt(top.val()),
-                                     parseInt(right.val()),
-                                     parseInt(bottom.val())]
-        }
-
         // create a way to refer to the JCrop API
         var jcapi;
 
@@ -76,6 +67,20 @@ function(modal) {
                 bottom.attr({value: Math.round(data.y2)});
             }
         };
+
+        // we may have a pre-selected cropping window
+        if (left.val() != null && right.val() != null
+                && top.val() != null && bottom.val() != null) {
+
+            if (left.val() == right.val() && top.val() == bottom.val()) {
+                clearForm();
+            } else {
+                jc_settings.setSelect = [parseInt(left.val()),
+                                         parseInt(top.val()),
+                                         parseInt(right.val()),
+                                         parseInt(bottom.val())]
+            }
+        }
 
         $('form input.crop-button').click(applyCropValues);
         $('form input.skip-button').click(clearForm);
