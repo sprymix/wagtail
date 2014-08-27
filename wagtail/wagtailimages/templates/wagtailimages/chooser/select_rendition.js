@@ -12,7 +12,8 @@ function(modal) {
         var left = $('form input[name="left"]', modal.body),
             top = $('form input[name="top"]', modal.body),
             right = $('form input[name="right"]', modal.body),
-            bottom = $('form input[name="bottom"]', modal.body);
+            bottom = $('form input[name="bottom"]', modal.body),
+            force_selection = $('form input[name="force_selection"]', modal.body);
 
         // Jcrop settings
         jc_settings = {
@@ -20,29 +21,37 @@ function(modal) {
         };
 
         // we may have a pre-selected cropping window
-        var crop = '{{ crop }}'.split(',');
-        if (crop.length != 4) {
-            crop = null;
-        } else {
-            jc_settings.setSelect = crop;
+        if (left.val() != null && right.val() != null
+                && top.val() != null && bottom.val() != null) {
+            jc_settings.setSelect = [parseInt(left.val()),
+                                     parseInt(top.val()),
+                                     parseInt(right.val()),
+                                     parseInt(bottom.val())]
         }
 
         // create a way to refer to the JCrop API
         var jcapi;
 
-        var ratio_re = /(\d+):(\d+)/;
-        // change aspect ratio based on the radio selections
-        $('form input[name="aspect-ratio"]', modal.body).change(function(event) {
-            var match = ratio_re.exec(event.target.value),
-                ratio;
+        var ratio_re = /(\d+):(\d+)/,
+            ratio_radio = $('form input[name="aspect-ratio"]', modal.body);
+
+        function get_aspect_ratio(raw_value) {
+            var match = ratio_re.exec(raw_value);
 
             if (match) {
-                ratio = parseInt(match[1]) / parseInt(match[2]);
+                return parseInt(match[1]) / parseInt(match[2]);
             } else {
-                ratio = null;
+                return null;
             }
+        }
+
+        jc_settings.aspectRatio = get_aspect_ratio(
+                                        ratio_radio.filter(':checked').val())
+
+        // change aspect ratio based on the radio selections
+        ratio_radio.change(function(event) {
             jcapi.setOptions({
-                aspectRatio: ratio
+                aspectRatio: get_aspect_ratio(event.target.value)
             });
         });
 
@@ -81,10 +90,15 @@ function(modal) {
             return false;
         });
 
-        $(".crop-image img", modal.body).ready(function() {
-            $(".crop-image img", modal.body).Jcrop(jc_settings, function() {
-                jcapi = this;
-            });
+        // we may have preselected aspect ratio
+        if (force_selection.val() == 'True') {
+            jc_settings.onRelease = function() {
+                this.animateTo([0, 0, trueSize[0], trueSize[1]]);
+            };
+        }
+
+        $(".crop-image img", modal.body).Jcrop(jc_settings, function() {
+            jcapi = this;
         });
     };
 

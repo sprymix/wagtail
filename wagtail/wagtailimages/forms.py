@@ -59,3 +59,22 @@ class ImageCropperForm(forms.Form):
     top = HiddenNumberInput()
     right = HiddenNumberInput()
     bottom = HiddenNumberInput()
+    force_selection = forms.BooleanField(widget=forms.HiddenInput())
+
+    ratios = ('1:1', '4:3', '16:9', '2:1', 'free')
+    default_ratio = 'free'
+    disable_selection = False
+
+    def __init__(self, *args, **kwargs):
+
+        for name in ('ratios', 'default_ratio', 'disable_selection'):
+            if name in kwargs:
+                val = kwargs.pop(name)
+                if val is not None:
+                    setattr(self, name, val)
+
+        if self.disable_selection:
+            kwargs['initial'] = kwargs.get('initial', {})
+            kwargs['initial']['force_selection'] = True
+
+        super(ImageCropperForm, self).__init__(*args, **kwargs)

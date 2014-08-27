@@ -17,21 +17,14 @@
                 <div class="field aspect-ratio">
                     <label>Cropping aspect ratio</label>
                     <div class="field-content">
-                        <input type="radio" name="aspect-ratio" value="1:1" />
-                        <span>1:1</span>
-
-                        <input type="radio" name="aspect-ratio" value="4:3" />
-                        <span>4:3</span>
-
-                        <input type="radio" name="aspect-ratio" value="16:9" />
-                        <span>16:9</span>
-
-                        <input type="radio" name="aspect-ratio" value="2:1" />
-                        <span>2:1</span>
-
-                        <input type="radio" name="aspect-ratio" value="free"
-                               checked="true" />
-                        <span>free</span>
+                        {% for ratio in form.ratios %}
+                            <input type="radio" name="aspect-ratio"
+                                   value="{{ ratio }}"
+                                   {% if ratio == form.default_ratio %}checked{% endif %}
+                                   {% if form.disable_selection %}disabled{% endif %}
+                                   />
+                            <span>{{ ratio }}</span>
+                        {% endfor %}
                     </div>
                 </div>
             </li>
@@ -39,8 +32,10 @@
             <li>
                 <input type="submit" class="crop-button"
                        value="{% trans 'Crop' %}" />
-                <input type="submit" class="skip-button"
-                       value="{% trans 'Whole image' %}" />
+                {% if not form.force_selection.value %}
+                    <input type="submit" class="skip-button"
+                           value="{% trans 'Whole image' %}" />
+                {% endif %}
             </li>
         </ul>
     </form>

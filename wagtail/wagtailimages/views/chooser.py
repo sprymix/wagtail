@@ -40,6 +40,38 @@ def get_image_json(image):
     })
 
 
+def get_cropper_settings(request):
+    '''Helper that extracts the settings for the ImageCropperForm from request
+    data.'''
+
+    # get filter spec if it was passed
+    #
+    initial = None
+    crop = request.GET.get('crop')
+    force_selection = request.GET.get('force_selection', False)
+    disable_selection = request.GET.get('disable_selection')
+    default_ratio = request.GET.get('default_ratio')
+    ratios = request.GET.get('ratios')
+
+    if crop:
+        crop = crop.split(',')
+        if len(crop) == 4:
+            initial = {
+                'left': crop[0],
+                'top': crop[1],
+                'right': crop[2],
+                'bottom': crop[3],
+                'force_selection': force_selection
+            }
+    if ratios is not None:
+        ratios = tuple(ratios.split(','))
+
+    return dict(initial=initial,
+                ratios=ratios,
+                default_ratio=default_ratio,
+                disable_selection=disable_selection)
+
+
 @permission_required('wagtailadmin.access_admin')
 def chooser(request):
     Image = get_image_model()
@@ -207,7 +239,7 @@ def chooser_select(request, image_id):
                 {'image': image, 'form': form}
             )
         elif will_select_rendition:
-            form = ImageCropperForm()
+            form = ImageCropperForm(**get_cropper_settings(request))
             return render_modal_workflow(
                 request, 'wagtailimages/chooser/select_rendition.html',
                 'wagtailimages/chooser/select_rendition.js',
@@ -317,11 +349,10 @@ def chooser_select_rendition(request, image_id):
     else:
         # get filter spec if it was passed
         #
-        crop = request.GET.get('crop')
-        form = ImageCropperForm()
+        form = ImageCropperForm(**get_cropper_settings(request))
 
         return render_modal_workflow(
             request, 'wagtailimages/chooser/select_rendition.html',
             'wagtailimages/chooser/select_rendition.js',
-            {'image': image, 'form': form, 'crop': crop}
+            {'image': image, 'form': form}
         )
