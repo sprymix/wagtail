@@ -1,7 +1,7 @@
 {% load i18n %}
 
 <form class="image-select"
-      action="{% url 'wagtailimages_chooser_select' image.id %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% endif %}"
+      action="{% url 'wagtailimages_chooser_select' image.id %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}"
       method="POST" enctype="multipart/form-data">
     <ul class="fields">
         {% csrf_token %}

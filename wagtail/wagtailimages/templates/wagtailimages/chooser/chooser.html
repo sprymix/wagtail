@@ -38,7 +38,7 @@
                 <div class="drop-zone">
                     <p>{% trans "Drag and drop images into this area to upload immediately." %}</p>
 
-                    <form action="{% url 'wagtailimages_chooser_upload' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% endif %}"
+                    <form action="{% url 'wagtailimages_chooser_upload' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}"
                     method="POST" enctype="multipart/form-data">
                         <div class="replace-file-input">
                             <button class="bicolor icon icon-plus">{% trans "Or choose from your computer" %}</button>

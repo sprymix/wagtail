@@ -1,5 +1,6 @@
 import json
 import uuid
+import urllib
 
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -48,10 +49,10 @@ def get_cropper_settings(request):
     #
     initial = None
     crop = request.GET.get('crop')
-    force_selection = request.GET.get('force_selection', False)
-    disable_selection = request.GET.get('disable_selection')
-    default_ratio = request.GET.get('default_ratio')
     ratios = request.GET.get('ratios')
+    default_ratio = request.GET.get('ar')
+    force_selection = request.GET.get('fsel') == 'T'
+    disable_selection = request.GET.get('dsel') == 'T'
 
     if crop:
         crop = crop.split(',')
@@ -70,6 +71,19 @@ def get_cropper_settings(request):
                 ratios=ratios,
                 default_ratio=default_ratio,
                 disable_selection=disable_selection)
+
+
+def get_cropper_params(request):
+    '''Helper that extracts cropper params so they can be appended to the
+    URL.'''
+
+    params = {}
+    for name in ('crop', 'ratios', 'ar', 'fsel', 'dsel'):
+        val = request.GET.get(name)
+        if val is not None:
+            params[name] = val
+
+    return urllib.urlencode(params)
 
 
 @permission_required('wagtailadmin.access_admin')
@@ -143,6 +157,7 @@ def chooser(request):
         'will_select_rendition': will_select_rendition,
         'popular_tags': Image.popular_tags(),
         'uploadid': uuid.uuid4(),
+        'additional_params': get_cropper_params(request),
     })
 
 
@@ -199,7 +214,8 @@ def chooser_upload(request):
             'image': image,
             'form': form,
             'will_select_format': will_select_format,
-            'will_select_rendition': will_select_rendition
+            'will_select_rendition': will_select_rendition,
+            'additional_params': get_cropper_params(request),
         }, context_instance=RequestContext(request)),
     })
 
@@ -261,6 +277,7 @@ def chooser_select(request, image_id):
             'form': render_to_string('wagtailimages/chooser/update.html', {
                 'image': image,
                 'form': form,
+                'additional_params': get_cropper_params(request),
             }, context_instance=RequestContext(request)),
         })
 

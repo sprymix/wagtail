@@ -4,7 +4,16 @@
 
 {% block form_field %}
 
-    <div id="{{ field.id_for_label }}-chooser" class="chooser {% block chooser_class %}image-chooser{% endblock %} {% if not is_chosen %}blank{% endif %}">
+    <div id="{{ field.id_for_label }}-chooser"
+         class="chooser {% block chooser_class %}image-chooser{% endblock %} {% if not is_chosen %}blank{% endif %}"
+
+         data-original-image-id="{{ image.image.id }}"
+         data-spec="{{ image.filter.spec }}"
+         {% if crop %}data-crop="{{ crop }}"{% endif %}
+         {% if ratios %}data-ratios="{{ ratios }}"{% endif %}
+         {% if default_ratio %}data-default_ratio="{{ default_ratio }}"{% endif %}
+         {% if disable_selection %}data-disable_selection="{{ disable_selection }}"{% endif %}
+         {% if force_selection %}data-force_selection="{{ force_selection }}"{% endif %}>
 
         <div class="chosen">
             {% block chosen_state_view %}
@@ -21,9 +30,7 @@
                 {% if not field.field.required %}
                     <input type="button" class="action-clear button-small button-secondary" value="{% block clear_button_label %}{% trans "Clear image" %}{% endblock %}">
                 {% endif %}
-                <input type="button" class="action-recrop button-small button-secondary" value="{% block choose_rendition_button_label %}{% trans "Re-crop image" %}{% endblock %}"
-                data-original-image-id="{{ image.image.id }}"
-                data-spec="{{ image.filter.spec }}">
+                <input type="button" class="action-recrop button-small button-secondary" value="{% block choose_rendition_button_label %}{% trans "Re-crop image" %}{% endblock %}">
                 <input type="button" class="action-choose button-small button-secondary" value="{% block choose_another_button_label %}{% trans "Choose another image" %}{% endblock %}">
             </div>
         </div>

@@ -49,9 +49,52 @@ function createRenditionChooser(id) {
         }
     });
 
+    // build up the special params to be used witht he URL
+    function get_params() {
+        // there are many possible specs that need to be included in the URL
+        var image_id = chooserElement.attr('data-original-image-id'),
+            spec = chooserElement.attr('data-spec').replace('crop-', '')
+                                                   .replace(':', ','),
+            crop = chooserElement.attr('data-crop'),
+            ratios = chooserElement.attr('data-ratios'),
+            default_ratio = chooserElement.attr('data-default_ratio'),
+            disable_selection = chooserElement.attr('data-disable_selection'),
+            force_selection = chooserElement.attr('data-force_selection');
+
+        // convert disable and force selection setitngs to a single char
+        disable_selection = disable_selection ? disable_selection[0] : null;
+        force_selection = force_selection ? force_selection[0] : null;
+
+        var params_dict = {
+            // if we specify crop it overrides spec
+            crop: crop || spec,
+            ratios: ratios,
+            ar: default_ratio,
+            fsel: force_selection,
+            dsel: disable_selection
+        };
+
+        // build URL with the params_dict
+        var params = [];
+        $.each(params_dict, function(name, val) {
+            if (val != null) {
+                params.push(name, '=', encodeURIComponent(val), '&');
+            }
+        });
+        // pop the last '&'
+        params.pop();
+        return params.join('');
+    }
+    var additional_params = get_params();
+
     $('.action-choose', chooserElement).click(function() {
+        // build URL with the additional params
+        var url = [window.chooserUrls.imageChooser,
+                   '?select_rendition=True&', additional_params];
+        url = url.join('');
+
         ModalWorkflow({
-            'url': window.chooserUrls.imageChooser + '?select_rendition=True',
+            'url': url,
             'responses': {
                 'imageChosen': function(imageData) {
                     input.val(imageData.id).trigger('change', imageData);
@@ -61,13 +104,10 @@ function createRenditionChooser(id) {
     });
 
     crop_b.click(function() {
-        // from original image id and crop spec construct a new URL
-        var spec = $(this).attr('data-spec').replace('crop-', '')
-                                            .replace(':', ','),
-            url = [window.chooserUrls.imageChooser,
-                   $(this).attr('data-original-image-id'),
-                   '/select_rendition/?crop=', spec
-                   ].join('');
+        // build URL with the additional params
+        var url = [window.chooserUrls.imageChooser, image_id,
+                   '/select_rendition/?', additional_params];
+        url = url.join('');
 
         ModalWorkflow({
             'url': url,
