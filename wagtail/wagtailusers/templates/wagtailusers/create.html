@@ -11,9 +11,9 @@
     <ul class="tab-nav merged">
         <li class="active"><a href="#account">{% trans "Account" %}</a></li>
         <li><a href="#roles">{% trans "Roles" %}</a></li>
-    </ul>   
+    </ul>
 
-    <form action="{% url 'wagtailusers_create' %}" method="POST">
+    <form action="{% url 'wagtailusers_create' %}" method="POST" novalidate>
         <div class="tab-content">
             {% csrf_token %}
             <section id="account" class="active nice-padding">
@@ -24,7 +24,7 @@
                     {% include "wagtailadmin/shared/field_as_li.html" with field=form.last_name %}
                     {% include "wagtailadmin/shared/field_as_li.html" with field=form.password1 %}
                     {% include "wagtailadmin/shared/field_as_li.html" with field=form.password2 %}
-                    
+
                     <li><a href="#roles" class="button lowpriority tab-toggle icon icon-arrow-right-after" />{% trans "Roles" %}</a></li>
                 </ul>
             </section>
