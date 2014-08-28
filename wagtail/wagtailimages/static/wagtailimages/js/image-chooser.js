@@ -52,8 +52,7 @@ function createRenditionChooser(id) {
     // build up the special params to be used witht he URL
     function get_params() {
         // there are many possible specs that need to be included in the URL
-        var image_id = chooserElement.attr('data-original-image-id'),
-            spec = chooserElement.attr('data-spec').replace('crop-', '')
+        var spec = chooserElement.attr('data-spec').replace('crop-', '')
                                                    .replace(':', ','),
             crop = chooserElement.attr('data-crop'),
             ratios = chooserElement.attr('data-ratios'),
@@ -85,7 +84,8 @@ function createRenditionChooser(id) {
         params.pop();
         return params.join('');
     }
-    var additional_params = get_params();
+    var additional_params = get_params(),
+        image_id = chooserElement.attr('data-original-image-id');
 
     $('.action-choose', chooserElement).click(function() {
         // build URL with the additional params
