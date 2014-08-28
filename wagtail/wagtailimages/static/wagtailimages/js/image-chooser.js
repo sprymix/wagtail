@@ -42,8 +42,8 @@ function createRenditionChooser(id) {
             'alt': imageData.title
           });
           chooserElement.removeClass('blank');
-          crop_b.attr({'data-original-image-id': imageData.original_id});
-          crop_b.attr({'data-spec': imageData.spec});
+          chooserElement.attr({'data-original-image-id': imageData.original_id});
+          chooserElement.attr({'data-spec': imageData.spec});
         } else {
           chooserElement.addClass('blank');
         }
@@ -84,10 +84,10 @@ function createRenditionChooser(id) {
         params.pop();
         return params.join('');
     }
-    var additional_params = get_params(),
-        image_id = chooserElement.attr('data-original-image-id');
 
     $('.action-choose', chooserElement).click(function() {
+        var additional_params = get_params();
+
         // build URL with the additional params
         var url = [window.chooserUrls.imageChooser,
                    '?select_rendition=True&', additional_params];
@@ -104,6 +104,9 @@ function createRenditionChooser(id) {
     });
 
     crop_b.click(function() {
+        var additional_params = get_params(),
+            image_id = chooserElement.attr('data-original-image-id');
+
         // build URL with the additional params
         var url = [window.chooserUrls.imageChooser, image_id,
                    '/select_rendition/?', additional_params];
