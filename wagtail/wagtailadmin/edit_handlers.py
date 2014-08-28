@@ -255,18 +255,21 @@ class EditHandler(object):
 
     def render_missing_fields(self):
         """
-        Helper function: render all of the fields of the form that are not accounted for
-        in rendered_fields
+        Helper function: render all of the fields of the form that are not
+        accounted for in rendered_fields
         """
         missing_fields_html = [
-            text_type(f if f.field.required else f.as_hidden())
+            # hide fields that are not required OR that have an initial value
+            text_type(f if f.field.required
+                           and f.field.initial is None else f.as_hidden())
             for f in self.missing_fields()]
+
         return mark_safe(''.join(missing_fields_html))
 
     def render_form_content(self):
         """
-        Render this as an 'object', along with any unaccounted-for fields to make this
-        a valid submittable form
+        Render this as an 'object', along with any unaccounted-for fields to
+        make this a valid submittable form
         """
         return mark_safe(self.render_as_object() + self.render_missing_fields())
 
