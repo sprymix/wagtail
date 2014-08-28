@@ -352,6 +352,7 @@ def chooser_select_rendition(request, image_id):
             'title': image.title,
             'original_id': image.id,
             'spec': rendition.filter.spec,
+            'html': rendition.img_tag(),
             'preview': {
                 'url': preview_image.url,
                 'width': preview_image.width,
