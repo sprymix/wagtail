@@ -49,10 +49,10 @@ function(modal) {
         var form = $('form', modal.body);
 
         function clearForm() {
-            left.removeAttr('value');
-            top.removeAttr('value');
-            right.removeAttr('value');
-            bottom.removeAttr('value');
+            left.attr({value: 0});
+            top.attr({value: 0});
+            right.attr({value: trueSize[0]});
+            bottom.attr({value: trueSize[1]});
         };
 
         function applyCropValues() {
