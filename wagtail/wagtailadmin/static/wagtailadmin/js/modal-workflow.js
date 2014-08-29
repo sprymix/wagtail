@@ -79,7 +79,11 @@ function ModalWorkflow(opts) {
         container.modal('hide');
     };
 
-    self.loadUrl(opts.url, opts.urlParams);
+    if (opts.method == 'post') {
+        self.postForm(opts.url, opts.formdata);
+    } else {
+        self.loadUrl(opts.url, opts.urlParams);
+    }
 
     return self;
 }
