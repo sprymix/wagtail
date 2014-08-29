@@ -100,6 +100,7 @@ function(modal) {
             jc_settings.onRelease = function() {
                 this.animateTo([0, 0, trueSize[0], trueSize[1]]);
             };
+            jc_settings.setSelect = jc_settings.setSelect || [0, 0, trueSize[0], trueSize[1]];
         }
 
         $(".crop-image img", modal.body).Jcrop(jc_settings, function() {

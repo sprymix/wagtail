@@ -31,7 +31,6 @@ function createRenditionChooser(id) {
     var chooserElement = $('#' + id + '-chooser');
     var previewImage = chooserElement.find('.preview-image img');
     var input = $('#' + id);
-    var crop_b = $('input.action-recrop', chooserElement);
 
     input.change(function(ev, imageData) {
         if(imageData) {
@@ -50,7 +49,7 @@ function createRenditionChooser(id) {
     });
 
     // build up the special params to be used witht he URL
-    function get_params() {
+    function get_params(ignorespec) {
         // there are many possible specs that need to be included in the URL
         var spec = chooserElement.attr('data-spec').replace('crop-', '')
                                                    .replace(':', ','),
@@ -63,6 +62,10 @@ function createRenditionChooser(id) {
         // convert disable and force selection setitngs to a single char
         disable_selection = disable_selection ? disable_selection[0] : null;
         force_selection = force_selection ? force_selection[0] : null;
+
+        if (ignorespec) {
+            spec = null;
+        }
 
         var params_dict = {
             // if we specify crop it overrides spec
@@ -86,7 +89,7 @@ function createRenditionChooser(id) {
     }
 
     $('.action-choose', chooserElement).click(function() {
-        var additional_params = get_params();
+        var additional_params = get_params('data-spec');
 
         // build URL with the additional params
         var url = [window.chooserUrls.imageChooser,
@@ -103,7 +106,7 @@ function createRenditionChooser(id) {
         });
     });
 
-    crop_b.click(function() {
+    $('input.action-recrop', chooserElement).click(function() {
         var additional_params = get_params(),
             image_id = chooserElement.attr('data-original-image-id');
 
