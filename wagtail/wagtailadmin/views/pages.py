@@ -208,6 +208,8 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
                 page.has_unpublished_changes = True
 
             parent_page.add_child(instance=page)  # assign tree parameters - will cause page to be saved
+            for fs in form.formsets.values():
+                fs.save()
 
             # Pass approved_go_live_at to save_revision
             page.save_revision(
@@ -323,11 +325,7 @@ def edit(request, page_id):
                 else:
                     page.live = True
 
-                # We need save the page this way to workaround a bug
-                # in django-modelcluster causing m2m fields to not
-                # be committed to the database. See github issue #192
-                form.save(commit=False)
-                page.save()
+                form.save()
 
                 # Clear approved_go_live_at for older revisions
                 page.revisions.update(
@@ -343,9 +341,7 @@ def edit(request, page_id):
                     Page.objects.filter(id=page.id).update(has_unpublished_changes=True)
                 else:
                     page.has_unpublished_changes = True
-                    form.save(commit=False)
-                    page.save()
-
+                    form.save()
 
             page.save_revision(
                 user=request.user,
