@@ -338,6 +338,32 @@ $(function() {
         insertRichTextDeleteControl(this);
     });
 
+    /* Set up "save & continue" button */
+    var stay_re = /stay=[^&]*/;
+    $('.actions input[type="submit"].stay').click(function(e) {
+        var form = $(this).closest('form'),
+            form_action_url = form.attr('action');
+
+        if (form_action_url.split('?').length > 1) {
+            if (stay_re.exec(form_action_url)) {
+                form.attr('action', form_action_url.replace(stay_re, 'stay=1'));
+            } else {
+                form.attr('action', form_action_url + '&stay=1');
+            }
+        } else {
+            form.attr('action', form_action_url + '?stay=1');
+        }
+    });
+
+    $('.actions input[type="submit"].leave').click(function(e) {
+        var form = $(this).closest('form'),
+            form_action_url = form.attr('action');
+
+        if (form_action_url.split('?').length > 1) {
+            form.attr('action', form_action_url.replace(stay_re, ''));
+        }
+    });
+
     /* Set up behaviour of preview button */
     $('.action-preview').click(function(e) {
         e.preventDefault();

@@ -230,7 +230,12 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
                 if hasattr(result, 'status_code'):
                     return result
 
-            return redirect('wagtailadmin_explore', page.get_parent().id)
+            # check whether we need to stay on this page or go to the parent
+            #
+            if request.GET.get('stay') == '1':
+                return redirect('wagtailadmin_pages_edit', page.id)
+            else:
+                return redirect('wagtailadmin_explore', page.get_parent().id)
         else:
             messages.error(request, _("The page could not be created due to validation errors"))
             edit_handler = edit_handler_class(instance=page, form=form)
@@ -362,7 +367,13 @@ def edit(request, page_id):
                 if hasattr(result, 'status_code'):
                     return result
 
-            return redirect('wagtailadmin_explore', page.get_parent().id)
+            # check whether we need to stay on this page or go to the parent
+            #
+            if request.GET.get('stay') == '1':
+                form = form_class(instance=page)
+                edit_handler = edit_handler_class(instance=page, form=form)
+            else:
+                return redirect('wagtailadmin_explore', page.get_parent().id)
         else:
             messages.error(request, _("The page could not be saved due to validation errors"))
 
