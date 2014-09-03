@@ -11,6 +11,16 @@ $(function(){
     // Add class to the body from which transitions may be hung so they don't appear to transition as the page loads
     $('body').addClass('ready');
 
+    /* highlight the nav-menu based on the page body class */
+    var body_cls = $('body').attr('class').split(' ');
+    for (i = 0; i < body_cls.length; i++) {
+        if (/^menu-/.test(body_cls[i])) {
+            // highlight the appropriate menu item
+            $('.nav-main .' + body_cls[i]).addClass('current');
+            break;
+        }
+    }
+
     // Enable toggle to open/close nav
     $(document).on('click', '#nav-toggle', function(){
         $('body').toggleClass('nav-open');

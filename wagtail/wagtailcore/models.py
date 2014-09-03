@@ -302,6 +302,8 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, indexed.Index
         indexed.FilterField('depth'),
     )
 
+    menu_class = 'menu-explorer'
+
     def __init__(self, *args, **kwargs):
         super(Page, self).__init__(*args, **kwargs)
         if not self.id and not self.content_type_id:
