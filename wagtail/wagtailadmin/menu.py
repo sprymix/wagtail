@@ -18,3 +18,15 @@ class MenuItem(object):
         return format_html(
             """<li class="menu-{0}"><a href="{1}" class="{2}">{3}</a></li>""",
             self.name, self.url, self.classnames, self.label)
+
+
+class PageActionButton(object):
+    def __init__(self, label, url, classnames='button button-small'):
+        self.label = label
+        self.url = url
+        self.classnames = classnames
+
+    def render_html(self):
+        return format_html(
+            """<li><a href="{0}" class="{1}">{2}</a></li>""",
+            self.url, self.classnames, self.label)

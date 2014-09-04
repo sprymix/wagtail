@@ -59,10 +59,15 @@ def index(request, parent_page_id=None):
         except EmptyPage:
             pages = paginator.page(paginator.num_pages)
 
+    extra_actions = []
+    for fn in hooks.get_hooks('extra_page_actions'):
+        fn(request, parent_page, extra_actions)
+
     return render(request, 'wagtailadmin/pages/index.html', {
         'parent_page': parent_page,
         'ordering': ordering,
         'pages': pages,
+        'extra_actions': extra_actions,
     })
 
 
