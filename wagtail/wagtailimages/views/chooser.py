@@ -53,6 +53,7 @@ def get_cropper_settings(request):
     default_ratio = request.GET.get('ar')
     force_selection = request.GET.get('fsel') == 'T'
     disable_selection = request.GET.get('dsel') == 'T'
+    post_processing_spec = request.GET.get('pps')
 
     if crop:
         crop = crop.split(',')
@@ -70,7 +71,8 @@ def get_cropper_settings(request):
     return dict(initial=initial,
                 ratios=ratios,
                 default_ratio=default_ratio,
-                disable_selection=disable_selection)
+                disable_selection=disable_selection,
+                post_processing_spec=post_processing_spec)
 
 
 def get_cropper_params(request):
@@ -78,7 +80,7 @@ def get_cropper_params(request):
     URL.'''
 
     params = {}
-    for name in ('crop', 'ratios', 'ar', 'fsel', 'dsel'):
+    for name in ('crop', 'ratios', 'ar', 'fsel', 'dsel', 'pps'):
         val = request.GET.get(name)
         if val is not None:
             params[name] = val
@@ -157,6 +159,7 @@ def chooser(request):
         'will_select_rendition': will_select_rendition,
         'popular_tags': Image.popular_tags(),
         'uploadid': uuid.uuid4(),
+        'post_processing_spec': request.GET.get('pps'),
         'additional_params': get_cropper_params(request),
     })
 
@@ -330,13 +333,10 @@ def chooser_select_rendition(request, image_id):
         if form.is_valid():
             filter_spec = 'crop-{left},{top}:{right},{bottom}'.format(
                                                             **form.cleaned_data)
+            post_processing_spec = request.GET.get('pps')
+            if post_processing_spec:
+                filter_spec = '{}|{}'.format(filter_spec, post_processing_spec)
             rendition = image.get_user_rendition(filter_spec)
-
-        elif not form.cleaned_data:
-            # If no coordinates were submitted, assume that the entire image
-            # should be used.
-            #
-            filter_spec = 'original'
 
         else:
             # something went wrong

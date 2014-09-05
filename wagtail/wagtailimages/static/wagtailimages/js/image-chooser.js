@@ -57,7 +57,8 @@ function createRenditionChooser(id) {
             ratios = chooserElement.attr('data-ratios'),
             default_ratio = chooserElement.attr('data-default_ratio'),
             disable_selection = chooserElement.attr('data-disable_selection'),
-            force_selection = chooserElement.attr('data-force_selection');
+            force_selection = chooserElement.attr('data-force_selection'),
+            pps = chooserElement.attr('data-pps');
 
         // convert disable and force selection setitngs to a single char
         disable_selection = disable_selection ? disable_selection[0] : null;
@@ -73,7 +74,8 @@ function createRenditionChooser(id) {
             ratios: ratios,
             ar: default_ratio,
             fsel: force_selection,
-            dsel: disable_selection
+            dsel: disable_selection,
+            pps: pps
         };
 
         // build URL with the params_dict

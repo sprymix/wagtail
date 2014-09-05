@@ -13,7 +13,8 @@ function(modal) {
             top = $('form input[name="top"]', modal.body),
             right = $('form input[name="right"]', modal.body),
             bottom = $('form input[name="bottom"]', modal.body),
-            force_selection = $('form input[name="force_selection"]', modal.body);
+            force_selection = $('form input[name="force_selection"]', modal.body),
+            area_size = $('.cropped-area .area-size', modal.body);
 
         // Jcrop settings
         jc_settings = {
@@ -45,6 +46,16 @@ function(modal) {
                 aspectRatio: get_aspect_ratio(event.target.value)
             });
         });
+
+        // helper function to display current selection
+        function showAreaSelection(data) {
+            data = data || jcapi.tellSelect();
+            if (data && data.w && data.h) {
+                area_size.text(parseInt(data.w) + ' x ' + parseInt(data.h));
+            } else {
+                area_size.text('n/a');
+            }
+        };
 
         var form = $('form', modal.body);
 
@@ -84,6 +95,9 @@ function(modal) {
 
         $('form input.crop-button').click(applyCropValues);
         $('form input.skip-button').click(clearForm);
+        $('form input.clear-button').click(function() {
+            jcapi.release();
+        });
 
         $('form', modal.body).submit(function(event) {
             var formdata = new FormData(this);
@@ -100,11 +114,19 @@ function(modal) {
             jc_settings.onRelease = function() {
                 this.animateTo([0, 0, trueSize[0], trueSize[1]]);
             };
-            jc_settings.setSelect = jc_settings.setSelect || [0, 0, trueSize[0], trueSize[1]];
+            jc_settings.setSelect = jc_settings.setSelect ||
+                                        [0, 0, trueSize[0], trueSize[1]];
+        } else {
+            jc_settings.onRelease = function() {
+                showAreaSelection({w:0, h:0});
+            }
         }
+        jc_settings.onSelect = showAreaSelection;
+        jc_settings.onChange = showAreaSelection;
 
         $(".crop-image img", modal.body).Jcrop(jc_settings, function() {
             jcapi = this;
+            showAreaSelection();
         });
     };
 

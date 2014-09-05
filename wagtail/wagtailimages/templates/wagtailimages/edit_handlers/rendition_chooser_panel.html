@@ -13,7 +13,8 @@
          {% if ratios %}data-ratios="{{ ratios }}"{% endif %}
          {% if default_ratio %}data-default_ratio="{{ default_ratio }}"{% endif %}
          {% if disable_selection %}data-disable_selection="{{ disable_selection }}"{% endif %}
-         {% if force_selection %}data-force_selection="{{ force_selection }}"{% endif %}>
+         {% if force_selection %}data-force_selection="{{ force_selection }}"{% endif %}
+         {% if post_processing_spec %}data-pps="{{ post_processing_spec }}"{% endif %}>
 
         <div class="chosen">
             {% block chosen_state_view %}

@@ -21,6 +21,7 @@ class BaseRenditionChooserPanel(BaseChooserPanel):
     field_template = "wagtailimages/edit_handlers/rendition_chooser_panel.html"
     object_type_name = "image"
     js_function_name = "createRenditionChooser"
+    post_processing_spec = None
 
     def render_as_field(self, show_help_text=True):
         instance_obj = self.get_chosen_item()
@@ -34,12 +35,13 @@ class BaseRenditionChooserPanel(BaseChooserPanel):
             'default_ratio': self.default_ratio,
             'disable_selection': self.disable_selection,
             'force_selection': self.force_selection,
+            'post_processing_spec': self.post_processing_spec,
         }))
 
 
 def RenditionChooserPanel(field_name, classname='', crop=None, ratios=None,
                           default_ratio=None, disable_selection=False,
-                          force_selection=False):
+                          force_selection=False, post_processing_spec=None):
     '''Create a panel that ultimately allows selecting and customizing an image.
 
         :param field_name:  the field this panel is rendering
@@ -53,6 +55,8 @@ def RenditionChooserPanel(field_name, classname='', crop=None, ratios=None,
         :param disable_selection:   whether aspect ratio choices are disabled
                                     (this setting also causes
                                      force_selection=True)
+        :param post_processing_spec:    additional processing to be applied to
+                                        the selected rendition
     '''
 
     # convert extra parameters into strings that will be used in templates
@@ -71,4 +75,5 @@ def RenditionChooserPanel(field_name, classname='', crop=None, ratios=None,
         'default_ratio': default_ratio,
         'disable_selection': disable_selection,
         'force_selection': force_selection,
+        'post_processing_spec': post_processing_spec,
     })

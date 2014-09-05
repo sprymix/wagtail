@@ -65,10 +65,12 @@ class ImageCropperForm(forms.Form):
     ratios = ('1:1', '4:3', '16:9', '2:1', 'free')
     default_ratio = 'free'
     disable_selection = False
+    post_processing_spec = None
 
     def __init__(self, *args, **kwargs):
 
-        for name in ('ratios', 'default_ratio', 'disable_selection'):
+        for name in ('ratios', 'default_ratio', 'disable_selection',
+                     'post_processing_spec'):
             if name in kwargs:
                 val = kwargs.pop(name)
                 if val is not None:

@@ -7,24 +7,32 @@
     <div class="crop-image">
         {% image image original %}
     </div>
-    <form action="{% url 'wagtailimages_chooser_select_rendition' image.id %}" method="POST">
+    <form action="{% url 'wagtailimages_chooser_select_rendition' image.id %}{% if form.post_processing_spec %}?pps={{ form.post_processing_spec|iriencode }}{% endif %}" method="POST">
         {% csrf_token %}
         <ul class="fields">
             {% for field in form %}
                 {{ field }}
             {% endfor %}
             <li>
-                <div class="field aspect-ratio">
-                    <label>Cropping aspect ratio</label>
+                <div class="label-above">
+                    <div class="field aspect-ratio">
+                        <label>Cropping aspect ratio</label>
+                        <div class="field-content">
+                            {% for ratio in form.ratios %}
+                                <input type="radio" name="aspect-ratio"
+                                       value="{{ ratio }}"
+                                       {% if ratio == form.default_ratio %}checked{% endif %}
+                                       {% if form.disable_selection %}disabled{% endif %}
+                                       />
+                                <span>{{ ratio }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="field cropped-area">
+                    <label>Cropped area</label>
                     <div class="field-content">
-                        {% for ratio in form.ratios %}
-                            <input type="radio" name="aspect-ratio"
-                                   value="{{ ratio }}"
-                                   {% if ratio == form.default_ratio %}checked{% endif %}
-                                   {% if form.disable_selection %}disabled{% endif %}
-                                   />
-                            <span>{{ ratio }}</span>
-                        {% endfor %}
+                        <div class="area-size"></div>
                     </div>
                 </div>
             </li>
@@ -35,6 +43,8 @@
                 {% if not form.force_selection.value %}
                     <input type="submit" class="skip-button"
                            value="{% trans 'Whole image' %}" />
+                    <input type="button" class="clear-button"
+                           value="{% trans 'Clear selection' %}" />
                 {% endif %}
             </li>
         </ul>

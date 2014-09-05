@@ -1,5 +1,6 @@
 import os.path
 import re
+import hashlib
 
 from six import BytesIO
 
@@ -32,12 +33,15 @@ from wagtail.wagtailadmin.utils import get_object_usage
 def _generate_output_filename(input_filename, filter_spec, focal_point_key='focus-none'):
     input_filename_parts = os.path.basename(input_filename).split('.')
     filename_without_extension = '.'.join(input_filename_parts[:-1])
-    filename_extension = '.'.join(input_filename_parts[-1:])
-    extra_name_length = len(filter_spec) + len(filename_extension)
+    filename_extension = input_filename_parts[-1]
+    # we want to condense arbitrarily long specs into a finite string
+    #
+    spec_hash = hashlib.sha1(filter_spec).hexdigest()
+    extra_name_length = len(spec_hash) + len(filename_extension)
     # trim filename base so that we're well under 100 chars
     filename_without_extension = filename_without_extension[:99 - extra_name_length]
     output_filename_parts = [filename_without_extension, focal_point_key,
-                             filter_spec, filename_extension]
+                             spec_hash, filename_extension]
     output_filename = '.'.join(output_filename_parts)
     return output_filename
 
@@ -321,7 +325,6 @@ class Filter(models.Model):
     def __init__(self, *args, **kwargs):
         super(Filter, self).__init__(*args, **kwargs)
         self.method = None  # will be populated when needed, by parsing the spec string
-        self.spec_pipeline = []
 
     def _parse_spec_string(self, spec=None):
         # parse the spec string and save the results to
@@ -332,46 +335,62 @@ class Filter(models.Model):
         # 'max-320x200'
         # 'crop-10,10:50,50'
         #
-        # any format may be combine with another one by '|'
+        # any format may be combined with another one by '|'
         # e.g. 'crop-50,50:150,150|max-50x50'
 
         if spec is None:
             spec = self.spec
 
-        if spec == 'original':
-            return Filter.OPERATION_NAMES['original'], None
+        result = []
+        for spec_part in str(spec).split('|'):
+            if spec_part == 'original':
+                result.append((Filter.OPERATION_NAMES['original'], None))
+                continue
 
-        match = re.match(r'(width|height)-(\d+)$', spec)
-        if match:
-            return Filter.OPERATION_NAMES[match.group(1)], int(match.group(2))
+            match = re.match(r'(width|height)-(\d+)$', spec_part)
+            if match:
+                result.append((Filter.OPERATION_NAMES[match.group(1)],
+                               int(match.group(2))))
+                continue
 
-        match = re.match(r'(max|min|fill)-(\d+)x(\d+)$', spec)
-        if match:
-            width = int(match.group(2))
-            height = int(match.group(3))
-            return Filter.OPERATION_NAMES[match.group(1)], (width, height)
+            match = re.match(r'(max|min|fill)-(\d+)x(\d+)$', spec_part)
+            if match:
+                width = int(match.group(2))
+                height = int(match.group(3))
+                result.append((Filter.OPERATION_NAMES[match.group(1)],
+                               (width, height)))
+                continue
 
-        match = re.match(r'(crop)-(\d+),(\d+):(\d+),(\d+)$', spec)
-        if match:
-            left = int(match.group(2))
-            top = int(match.group(3))
-            right = int(match.group(4))
-            bottom = int(match.group(5))
-            return (Filter.OPERATION_NAMES[match.group(1)],
-                    (left, top, right, bottom))
+            match = re.match(r'(crop)-(\d+),(\d+):(\d+),(\d+)$', spec_part)
+            if match:
+                left = int(match.group(2))
+                top = int(match.group(3))
+                right = int(match.group(4))
+                bottom = int(match.group(5))
+                result.append((Filter.OPERATION_NAMES[match.group(1)],
+                               (left, top, right, bottom)))
+                continue
 
-        match = re.match(r'(forcewidth|forceheight)-(\d+)$', spec)
-        if match:
-            return Filter.OPERATION_NAMES[match.group(1)], int(match.group(2))
+            match = re.match(r'(forcewidth|forceheight)-(\d+)$', spec_part)
+            if match:
+                result.append((Filter.OPERATION_NAMES[match.group(1)],
+                               int(match.group(2))))
+                continue
 
-        match = re.match(r'(forcefit)-(\d+)x(\d+)$', spec)
-        if match:
-            width = int(match.group(2))
-            height = int(match.group(3))
-            return Filter.OPERATION_NAMES[match.group(1)], (width, height)
+            match = re.match(r'(forcefit)-(\d+)x(\d+)$', spec_part)
+            if match:
+                width = int(match.group(2))
+                height = int(match.group(3))
+                result.append((Filter.OPERATION_NAMES[match.group(1)],
+                               (width, height)))
+                continue
 
-        # Spec is not one of our recognised patterns
-        raise Filter.InvalidFilterSpecError("Invalid image filter spec: %r" % spec)
+            # Spec is not one of our recognised patterns
+            raise Filter.InvalidFilterSpecError("Invalid image filter spec: %r"
+                                                % spec_part)
+
+        return result
+
 
     @cached_property
     def _method(self):
@@ -392,9 +411,7 @@ class Filter(models.Model):
         # Get backend
         backend = get_image_backend(backend_name)
 
-        if not self.spec_pipeline:
-            for spec_part in str(self.spec).split('|'):
-                self.spec_pipeline.append(self._parse_spec_string(spec_part))
+        spec_pipeline = self._parse_spec_string()
 
         # Open image
         input_file.open('rb')
@@ -402,7 +419,7 @@ class Filter(models.Model):
         file_format = image.format
 
         # execute each of the transformations in the pipeline in sequence
-        for method_name, method_arg in self.spec_pipeline:
+        for method_name, method_arg in spec_pipeline:
             method = getattr(backend, method_name)
             image = method(image, method_arg)
 
