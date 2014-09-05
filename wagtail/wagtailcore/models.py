@@ -914,13 +914,20 @@ class PageRevision(models.Model):
             self.page.revisions.exclude(id=self.id).update(submitted_for_moderation=False)
 
     def as_page_object(self):
-        obj = self.page.specific_class.from_json(self.content_json)
+        page_cls = self.page.specific_class
+        specific_page = self.page.specific
+        obj = page_cls.from_json(self.content_json)
 
         # Override the possibly-outdated tree parameter fields from this revision object
         # with up-to-date values
         obj.path = self.page.path
         obj.depth = self.page.depth
         obj.numchild = self.page.numchild
+
+        non_serializable = [f.name for f in page_cls._meta.fields
+                            if not f.serialize and not (f.rel or f.primary_key)]
+        for field_name in non_serializable:
+            setattr(obj, field_name, getattr(specific_page, field_name))
 
         # Populate url_path based on the revision's current slug and the parent page as determined
         # by path
