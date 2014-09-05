@@ -6,6 +6,9 @@ from django.contrib.auth import get_user_model
 from wagtail.wagtailusers.models import UserProfile
 from wagtail.wagtailcore.models import UserPagePermissionsProxy
 
+import itertools
+import pytz
+
 
 User = get_user_model()
 
@@ -24,9 +27,17 @@ class UserCreationForm(BaseUserCreationForm):
     first_name = forms.CharField(required=True, label=_("First Name"))
     last_name = forms.CharField(required=True, label=_("Last Name"))
 
+    timezone = forms.ChoiceField(
+        label=_("Timezone"),
+        required=False,
+        help_text=_("Timezone used to display dates in local time."),
+        choices=((None, ''),) + tuple(
+            zip(pytz.common_timezones, pytz.common_timezones))
+    )
+
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name", "is_superuser", "groups")
+        fields = ("username", "email", "first_name", "last_name", "is_superuser", "groups", "timezone")
         widgets = {
             'groups': forms.CheckboxSelectMultiple
         }
@@ -37,7 +48,7 @@ class UserCreationForm(BaseUserCreationForm):
         username = self.cleaned_data["username"]
         try:
             # When called from BaseUserCreationForm, the method fails if using a AUTH_MODEL_MODEL,
-            # This is because the following line tries to perform a lookup on 
+            # This is because the following line tries to perform a lookup on
             # the default "auth_user" table.
             User._default_manager.get(username=username)
         except User.DoesNotExist:
@@ -56,6 +67,12 @@ class UserCreationForm(BaseUserCreationForm):
         if commit:
             user.save()
             self.save_m2m()
+
+        if self.cleaned_data["timezone"]:
+            profile = UserProfile.get_for_user(user)
+            profile.timezone = self.cleaned_data["timezone"]
+            profile.save()
+
         return user
 
 
@@ -97,12 +114,29 @@ class UserEditForm(forms.ModelForm):
         help_text=_("Administrators have the ability to manage user accounts.")
     )
 
+    timezone = forms.ChoiceField(
+        label=_("Timezone"),
+        required=False,
+        help_text=_("Timezone used to display dates in local time."),
+        choices=((None, ''),) + tuple(
+            zip(pytz.common_timezones, pytz.common_timezones))
+    )
+
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name", "is_active", "is_superuser", "groups")
+        fields = ("username", "email", "first_name", "last_name", "is_active", "is_superuser", "groups", "timezone")
         widgets = {
             'groups': forms.CheckboxSelectMultiple
         }
+
+    def __init__(self, instance=None, initial=None, *args, **kwargs):
+        if instance is not None:
+            if initial is None:
+                initial = {}
+            initial['timezone'] = UserProfile.get_for_user(instance).timezone
+
+        super(UserEditForm, self).__init__(*args, instance=instance,
+                                           initial=initial, **kwargs)
 
     def clean_username(self):
         # Since User.username is unique, this check is redundant,
@@ -130,6 +164,11 @@ class UserEditForm(forms.ModelForm):
 
         if self.cleaned_data["password1"]:
             user.set_password(self.cleaned_data["password1"])
+        if self.cleaned_data["timezone"]:
+            profile = UserProfile.get_for_user(user)
+            profile.timezone = self.cleaned_data["timezone"]
+            profile.save()
+
         if commit:
             user.save()
             self.save_m2m()

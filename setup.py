@@ -36,6 +36,7 @@ install_requires = [
     "Unidecode>=0.04.14",
     "six==1.7.3",
     'requests==2.3.0',
+    "pytz>=2014.7"
 ]
 
 

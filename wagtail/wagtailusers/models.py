@@ -23,6 +23,12 @@ class UserProfile(models.Model):
             help_text=_("Receive notification when your page edit is rejected")
             )
 
+    timezone = models.CharField(
+            max_length=50,
+            default='UTC',
+            help_text=_("Timezone")
+            )
+
     @classmethod
     def get_for_user(cls, user):
         return cls.objects.get_or_create(user=user)[0]
