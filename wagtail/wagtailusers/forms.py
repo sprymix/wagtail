@@ -129,14 +129,17 @@ class UserEditForm(forms.ModelForm):
             'groups': forms.CheckboxSelectMultiple
         }
 
-    def __init__(self, instance=None, initial=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        initial = kwargs.get('initial')
+
         if instance is not None:
             if initial is None:
                 initial = {}
             initial['timezone'] = UserProfile.get_for_user(instance).timezone
+            kwargs['initial'] = initial
 
-        super(UserEditForm, self).__init__(*args, instance=instance,
-                                           initial=initial, **kwargs)
+        super(UserEditForm, self).__init__(*args, **kwargs)
 
     def clean_username(self):
         # Since User.username is unique, this check is redundant,
