@@ -925,7 +925,7 @@ class PageRevision(models.Model):
         obj.numchild = self.page.numchild
 
         non_serializable = [f.name for f in page_cls._meta.fields
-                            if not f.serialize and not (f.rel or f.primary_key)]
+                            if f.serialize == 'ignore_in_revision']
         for field_name in non_serializable:
             setattr(obj, field_name, getattr(specific_page, field_name))
 
