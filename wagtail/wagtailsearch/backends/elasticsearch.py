@@ -505,7 +505,7 @@ class ElasticSearch(BaseSearch):
                         },
                         'edgengram_tokenizer': {
                             'type': 'edgeNGram',
-                            'min_gram': 2,
+                            'min_gram': 3,
                             'max_gram': 15,
                             'side': 'front'
                         }
@@ -518,7 +518,7 @@ class ElasticSearch(BaseSearch):
                         },
                         'edgengram': {
                             'type': 'edgeNGram',
-                            'min_gram': 1,
+                            'min_gram': 3,
                             'max_gram': 15
                         }
                     }
