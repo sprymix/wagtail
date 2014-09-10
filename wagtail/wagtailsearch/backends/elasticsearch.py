@@ -305,10 +305,11 @@ class ElasticSearchQuery(object):
 
 
 class ElasticSearchResults(object):
-    def __init__(self, backend, query, prefetch_related=None):
+    def __init__(self, backend, query, prefetch_related=None, return_pks=False):
         self.backend = backend
         self.query = query
         self.prefetch_related = prefetch_related
+        self.return_pks = return_pks
         self.start = 0
         self.stop = None
         self._results_cache = None
@@ -329,7 +330,8 @@ class ElasticSearchResults(object):
 
     def _clone(self):
         klass = self.__class__
-        new = klass(self.backend, self.query, prefetch_related=self.prefetch_related)
+        new = klass(self.backend, self.query, prefetch_related=self.prefetch_related,
+                                              return_pks=self.return_pks)
         new.start = self.start
         new.stop = self.stop
         return new
@@ -355,7 +357,11 @@ class ElasticSearchResults(object):
         pks = [hit['fields']['pk'] for hit in hits['hits']['hits']]
 
         # ElasticSearch 1.x likes to pack pks into lists, unpack them if this has happened
-        pks = [pk[0] if isinstance(pk, list) else pk for pk in pks]
+        pks = [int(pk[0]) if isinstance(pk, list) else int(pk) for pk in pks]
+
+        if self.return_pks:
+            # Short-circuit if we were asked to return PKs only
+            return pks
 
         # Initialise results dictionary
         results = dict((str(pk), None) for pk in pks)
@@ -605,5 +611,6 @@ class ElasticSearch(BaseSearch):
         except NotFoundError:
             pass  # Document doesn't exist, ignore this exception
 
-    def _search(self, queryset, query_string, fields=None):
-        return ElasticSearchResults(self, ElasticSearchQuery(queryset, query_string, fields=fields))
+    def _search(self, queryset, query_string, fields=None, return_pks=False):
+        query = ElasticSearchQuery(queryset, query_string, fields=fields)
+        return ElasticSearchResults(self, query, return_pks=return_pks)
