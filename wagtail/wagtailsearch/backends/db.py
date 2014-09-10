@@ -4,6 +4,32 @@ from wagtail.wagtailsearch.backends.base import BaseSearch
 from wagtail.wagtailsearch.indexed import Indexed
 
 
+class DBSearchResults(object):
+    def __init__(self, backend, queryset, return_pks=False):
+        self.backend = backend
+        self.queryset = queryset
+        self.return_pks = return_pks
+
+    def __getitem__(self, key):
+        return self.__class__(self.backend, self.queryset.__getitem__(key),
+                              return_pks=self.return_pks)
+
+    def __iter__(self):
+        if self.return_pks:
+            return (instance.pk for instance in self.queryset)
+        else:
+            return iter(self.queryset)
+
+    def __len__(self):
+        return len(self.queryset)
+
+    def __repr__(self):
+        data = list(self[:21])
+        if len(data) > 20:
+            data[-1] = "...(remaining elements truncated)..."
+        return repr(data)
+
+
 class DBSearch(BaseSearch):
     def __init__(self, params):
         super(DBSearch, self).__init__(params)
@@ -26,7 +52,7 @@ class DBSearch(BaseSearch):
     def delete(self, obj):
         pass # Not needed
 
-    def _search(self, queryset, query_string, fields=None):
+    def _search(self, queryset, query_string, fields=None, return_pks=False):
         if query_string is not None:
             # Get fields
             if fields is None:
@@ -55,4 +81,4 @@ class DBSearch(BaseSearch):
             # Distinct
             queryset = queryset.distinct()
 
-        return queryset
+        return DBSearchResults(self, queryset, return_pks=return_pks)
