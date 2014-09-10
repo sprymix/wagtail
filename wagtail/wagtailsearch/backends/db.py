@@ -52,7 +52,8 @@ class DBSearch(BaseSearch):
     def delete(self, obj):
         pass # Not needed
 
-    def _search(self, queryset, query_string, fields=None, return_pks=False):
+    def _search(self, queryset, query_string, fields=None, return_pks=False,
+                                              include_partials=True):
         if query_string is not None:
             # Get fields
             if fields is None:

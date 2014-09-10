@@ -39,7 +39,8 @@ class BaseSearch(object):
         return NotImplemented
 
     def search(self, query_string, model_or_queryset, fields=None, filters=None,
-                     prefetch_related=None, return_pks=False):
+                     prefetch_related=None, return_pks=False,
+                     include_partials=True):
         # Find model/queryset
         if isinstance(model_or_queryset, QuerySet):
             model = model_or_queryset.model
@@ -71,4 +72,5 @@ class BaseSearch(object):
 
         # Search
         return self._search(queryset, query_string, fields=fields,
-                                                    return_pks=return_pks)
+                            return_pks=return_pks,
+                            include_partials=include_partials)

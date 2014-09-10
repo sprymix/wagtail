@@ -120,9 +120,18 @@ class FieldError(Exception):
 
 
 class ElasticSearchQuery(object):
-    def __init__(self, queryset, query_string, fields=None):
+    def __init__(self, queryset, query_string, fields=None,
+                                               include_partials=True):
         self.queryset = queryset
         self.query_string = query_string
+        self.include_partials = include_partials
+
+        if fields is None:
+            fields = ['_all']
+
+            if include_partials:
+                fields.append('_partials')
+
         self.fields = fields
 
     def _get_filters_from_where(self, where_node):
@@ -611,6 +620,8 @@ class ElasticSearch(BaseSearch):
         except NotFoundError:
             pass  # Document doesn't exist, ignore this exception
 
-    def _search(self, queryset, query_string, fields=None, return_pks=False):
-        query = ElasticSearchQuery(queryset, query_string, fields=fields)
+    def _search(self, queryset, query_string, fields=None, return_pks=False,
+                                              include_partials=True):
+        query = ElasticSearchQuery(queryset, query_string, fields=fields,
+                                             include_partials=include_partials)
         return ElasticSearchResults(self, query, return_pks=return_pks)
