@@ -377,13 +377,14 @@ def MultiFieldPanel(children, heading="", classname=""):
 
 
 class BaseFieldPanel(EditHandler):
-    def __init__(self, instance=None, form=None, parent_instance=None):
+    def __init__(self, instance=None, form=None, parent_instance=None,
+                       help_text=None, heading=None):
         super(BaseFieldPanel, self).__init__(instance=instance, form=form,
                                              parent_instance=parent_instance)
         self.bound_field = self.form[self.field_name]
 
-        self.heading = self.bound_field.label
-        self.help_text = self.bound_field.help_text
+        self.heading = self.__class__.heading or self.bound_field.label
+        self.help_text = self.__class__.help_text or self.bound_field.help_text
 
     def classes(self):
         classes = super(BaseFieldPanel, self).classes();
@@ -431,10 +432,12 @@ class BaseFieldPanel(EditHandler):
         return [self.field_name]
 
 
-def FieldPanel(field_name, classname=""):
+def FieldPanel(field_name, classname="", help_text=None, heading=None):
     return type(str('_FieldPanel'), (BaseFieldPanel,), {
         'field_name': field_name,
         'classname': classname,
+        'heading': heading,
+        'help_text': help_text
     })
 
 

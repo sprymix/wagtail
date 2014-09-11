@@ -39,13 +39,16 @@ class BaseRenditionChooserPanel(BaseChooserPanel):
         }))
 
 
-def RenditionChooserPanel(field_name, classname='', crop=None, ratios=None,
+def RenditionChooserPanel(field_name, classname='', help_text=None,
+                          heading=None, crop=None, ratios=None,
                           default_ratio=None, disable_selection=False,
                           force_selection=False, post_processing_spec=None):
     '''Create a panel that ultimately allows selecting and customizing an image.
 
         :param field_name:  the field this panel is rendering
         :param classname:   extra css classes to be added to the field
+        :param help_text:   help_text to use (overrides field.help_text)
+        :param heading:     heading to use (overrides field.title)
         :param crop:        a 4-tuple of cropping coordinates, it will override
                             the filter spec extracted from rendition
         :param ratios:      a list of aspect ratios available (using
@@ -70,6 +73,8 @@ def RenditionChooserPanel(field_name, classname='', crop=None, ratios=None,
     return type('_RenditionChooserPanel', (BaseRenditionChooserPanel,), {
         'field_name': field_name,
         'classname': classname,
+        'heading': heading,
+        'help_text': help_text,
         'crop': crop,
         'ratios': ratios,
         'default_ratio': default_ratio,
