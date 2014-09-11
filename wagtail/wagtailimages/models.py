@@ -30,23 +30,34 @@ from wagtail.wagtailimages.utils.feature_detection import FeatureDetector, openc
 from wagtail.wagtailadmin.utils import get_object_usage
 
 
-def _generate_output_filename(input_filename, filter_spec, focal_point_key='focus-none'):
+def _generate_output_filename(input_filename, filter_spec, focal_point_key='focus-none',
+                              max_len=80):
     input_filename_parts = os.path.basename(input_filename).split('.')
     filename_without_extension = '.'.join(input_filename_parts[:-1])
     filename_extension = input_filename_parts[-1]
+
+    if focal_point_key == 'focus-none':
+        focal_point_key = ''
+
     # we want to condense arbitrarily long specs into a finite string
     #
     spec_hash = hashlib.sha1(filter_spec).hexdigest()
     extra_name_length = (len(spec_hash) + len(filename_extension)
-                            + len(os.path.dirname(input_filename)))
+                            + len(focal_point_key)
+                            + 3)
 
-    if extra_name_length >= 99:
+    if extra_name_length >= max_len:
         raise RuntimeError('image file path is too long: {}'.format(input_filename))
 
     # trim filename base so that we're well under 100 chars
-    filename_without_extension = filename_without_extension[:99 - extra_name_length]
-    output_filename_parts = [filename_without_extension, focal_point_key,
-                             spec_hash, filename_extension]
+    filename_without_extension = filename_without_extension[:max_len - extra_name_length]
+    if focal_point_key:
+        output_filename_parts = [filename_without_extension, focal_point_key,
+                                 spec_hash, filename_extension]
+    else:
+        output_filename_parts = [filename_without_extension,
+                                 spec_hash, filename_extension]
+
     output_filename = '.'.join(output_filename_parts)
     return output_filename
 
