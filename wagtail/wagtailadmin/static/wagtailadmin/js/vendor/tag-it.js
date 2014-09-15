@@ -503,8 +503,9 @@
             if (this.options.singleField) {
                 var tags = this.assignedTags();
                 var removedTagLabel = this.tagLabel(tag);
+                var cleanedOutput = this._cleanedOutput;
                 tags = $.grep(tags, function(el){
-                    return el != removedTagLabel;
+                    return cleanedOutput(el) != removedTagLabel;
                 });
                 this._updateSingleTagsField(tags);
             }
