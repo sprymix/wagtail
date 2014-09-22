@@ -33,7 +33,7 @@ def explorer_nav(request):
 @permission_required('wagtailadmin.access_admin')
 def index(request, parent_page_id=None):
     if parent_page_id:
-        parent_page = get_object_or_404(Page, id=parent_page_id)
+        parent_page = get_object_or_404(Page, id=parent_page_id).specific
     else:
         parent_page = Page.get_first_root_node()
 
@@ -264,7 +264,7 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
 @permission_required('wagtailadmin.access_admin')
 def edit(request, page_id):
     latest_revision = get_object_or_404(Page, id=page_id).get_latest_revision()
-    page = get_object_or_404(Page, id=page_id).get_latest_revision_as_page()
+    page = get_object_or_404(Page, id=page_id).specific.get_latest_revision_as_page()
     parent = page.get_parent()
 
     page_perms = page.permissions_for_user(request.user)
@@ -402,7 +402,7 @@ def edit(request, page_id):
 
 @permission_required('wagtailadmin.access_admin')
 def delete(request, page_id):
-    page = get_object_or_404(Page, id=page_id)
+    page = get_object_or_404(Page, id=page_id).specific
     if not page.permissions_for_user(request.user).can_delete():
         raise PermissionDenied
 
@@ -437,7 +437,7 @@ def delete(request, page_id):
 
 @permission_required('wagtailadmin.access_admin')
 def view_draft(request, page_id):
-    page = get_object_or_404(Page, id=page_id).get_latest_revision_as_page()
+    page = get_object_or_404(Page, id=page_id).specific.get_latest_revision_as_page()
     return page.serve_preview(page.dummy_request(), page.default_preview_mode)
 
 
@@ -466,7 +466,7 @@ def get_preview_response(page, preview_mode):
 def preview_on_edit(request, page_id):
     # Receive the form submission that would typically be posted to the 'edit' view. If submission is valid,
     # return the rendered page; if not, re-render the edit form
-    page = get_object_or_404(Page, id=page_id).get_latest_revision_as_page()
+    page = get_object_or_404(Page, id=page_id).specific.get_latest_revision_as_page()
     edit_handler_class = get_page_edit_handler(page.__class__)
     form_class = edit_handler_class.get_form_class(page.__class__)
 
@@ -572,7 +572,7 @@ def preview_loading(request):
 
 @permission_required('wagtailadmin.access_admin')
 def unpublish(request, page_id):
-    page = get_object_or_404(Page, id=page_id)
+    page = get_object_or_404(Page, id=page_id).specific
     if not page.permissions_for_user(request.user).can_unpublish():
         raise PermissionDenied
 
@@ -603,7 +603,7 @@ def move_choose_destination(request, page_to_move_id, viewed_page_id=None):
         raise PermissionDenied
 
     if viewed_page_id:
-        viewed_page = get_object_or_404(Page, id=viewed_page_id)
+        viewed_page = get_object_or_404(Page, id=viewed_page_id).specific
     else:
         viewed_page = Page.get_first_root_node()
 
