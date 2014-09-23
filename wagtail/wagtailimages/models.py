@@ -203,6 +203,11 @@ class AbstractImage(models.Model, TagSearchable):
             backend_name = getattr(self, 'backend', 'default')
 
             try:
+                # CDN drivers are buggy and fail to raise proper exceptions
+                # on absence of files.
+                if not file_field.storage.exists(file_field.file.name):
+                    raise IOError('file not found')
+
                 generated_image = filter.process_image(file_field.file,
                                             backend_name=backend_name,
                                             focal_point=self.focal_point)
@@ -254,6 +259,11 @@ class AbstractImage(models.Model, TagSearchable):
             # image - else pass 'default'
             backend_name = getattr(self, 'backend', 'default')
             try:
+                # CDN drivers are buggy and fail to raise proper exceptions
+                # on absence of files.
+                if not file_field.storage.exists(file_field.file.name):
+                    raise IOError('file not found')
+
                 generated_image = filter.process_image(
                                         file_field.file,
                                         backend_name=backend_name)
@@ -550,6 +560,11 @@ class UserRendition(AbstractRendition):
             backend_name = getattr(self, 'backend', 'default')
 
             try:
+                # CDN drivers are buggy and fail to raise proper exceptions
+                # on absence of files.
+                if not file_field.storage.exists(file_field.file.name):
+                    raise IOError('file not found')
+
                 generated_image = filter.process_image(file_field.file,
                                                    backend_name=backend_name)
 
