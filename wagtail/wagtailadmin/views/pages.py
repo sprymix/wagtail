@@ -68,6 +68,7 @@ def index(request, parent_page_id=None):
         'ordering': ordering,
         'pages': pages,
         'extra_actions': extra_actions,
+        'hide_actions': ['copy'],
     })
 
 
