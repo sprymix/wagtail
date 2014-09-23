@@ -62,6 +62,22 @@ def _generate_output_filename(input_filename, filter_spec, focal_point_key='focu
     return output_filename
 
 
+def _rendition_for_missing_image(rendition_cls, image):
+    '''Provide dummy rendition for missing image files.
+
+    It's fairly routine for people to pull down remote databases to
+    their local dev versions without retrieving the corresponding
+    image files. In such a case, we would get an IOError at the point
+    where we try to create the resized version of a non-existent
+    image. Since this is a bit catastrophic for a missing image, we'll
+    substitute a dummy Rendition object so that we just output a
+    broken link instead.
+    '''
+    rendition = rendition_cls(image=image, width=0, height=0)
+    rendition.file.name = 'not-found'
+    return rendition
+
+
 @python_2_unicode_compatible
 class AbstractImage(models.Model, TagSearchable):
     title = models.CharField(max_length=255, verbose_name=_('Title') )
@@ -185,19 +201,27 @@ class AbstractImage(models.Model, TagSearchable):
             # If we have a backend attribute then pass it to process
             # image - else pass 'default'
             backend_name = getattr(self, 'backend', 'default')
-            generated_image = filter.process_image(file_field.file, backend_name=backend_name, focal_point=self.focal_point)
 
-            # generate new filename derived from old one, inserting the filter spec and focal point key before the extension
-            if self.focal_point is not None:
-                focal_point_key = "focus-" + self.focal_point.get_key()
-            else:
-                focal_point_key = "focus-none"
+            try:
+                generated_image = filter.process_image(file_field.file,
+                                            backend_name=backend_name,
+                                            focal_point=self.focal_point)
 
-            output_filename = _generate_output_filename(
-                                    file_field.file.name, filter.spec,
-                                    focal_point_key)
+                # generate new filename derived from old one, inserting the
+                # filter spec and focal point key before the extension
+                if self.focal_point is not None:
+                    focal_point_key = "focus-" + self.focal_point.get_key()
+                else:
+                    focal_point_key = "focus-none"
 
-            generated_image_file = File(generated_image, name=output_filename)
+                output_filename = _generate_output_filename(
+                                        file_field.file.name, filter.spec,
+                                        focal_point_key)
+
+                generated_image_file = File(generated_image,
+                                            name=output_filename)
+            except IOError:
+                return _rendition_for_missing_image(self.renditions.model, self)
 
             if self.focal_point:
                 rendition, created = self.renditions.get_or_create(
@@ -229,13 +253,19 @@ class AbstractImage(models.Model, TagSearchable):
             # If we have a backend attribute then pass it to process
             # image - else pass 'default'
             backend_name = getattr(self, 'backend', 'default')
-            generated_image = filter.process_image(
-                                    file_field.file, backend_name=backend_name)
+            try:
+                generated_image = filter.process_image(
+                                        file_field.file,
+                                        backend_name=backend_name)
 
-            output_filename = _generate_output_filename(
-                                    file_field.file.name, filter.spec)
+                output_filename = _generate_output_filename(
+                                        file_field.file.name, filter.spec)
 
-            generated_image_file = File(generated_image, name=output_filename)
+                generated_image_file = File(generated_image,
+                                            name=output_filename)
+            except IOError:
+                return _rendition_for_missing_image(self.user_renditions.model,
+                                                    self)
 
             rendition, created = self.user_renditions.get_or_create(
                 filter=filter, defaults={'file': generated_image_file})
@@ -513,13 +543,18 @@ class UserRendition(AbstractRendition):
             # If we have a backend attribute then pass it to process
             # image - else pass 'default'
             backend_name = getattr(self, 'backend', 'default')
-            generated_image = filter.process_image(file_field.file,
+
+            try:
+                generated_image = filter.process_image(file_field.file,
                                                    backend_name=backend_name)
 
-            output_filename = _generate_output_filename(
-                                    file_field.file.name, filter.spec)
+                output_filename = _generate_output_filename(
+                                        file_field.file.name, filter.spec)
 
-            generated_image_file = File(generated_image, name=output_filename)
+                generated_image_file = File(generated_image,
+                                            name=output_filename)
+            except IOError:
+                return _rendition_for_missing_image(type(self), self.image)
 
             rendition, created = self.image.renditions.get_or_create(
                 filter=filter, defaults={'file': generated_image_file})
