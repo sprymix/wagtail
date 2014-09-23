@@ -525,6 +525,11 @@ class Rendition(AbstractRendition):
 class UserRendition(AbstractRendition):
     image = models.ForeignKey('Image', related_name='user_renditions')
 
+    class Meta:
+        unique_together = (
+            ('image', 'filter', 'focal_point_key'),
+        )
+
     def get_rendition(self, filter):
         # we need to construct a new filter combining what we've been passed and
         # the filter used to get THIS rendition
