@@ -21,11 +21,15 @@ class SearchForm(forms.Form):
 
 class ExternalLinkChooserForm(forms.Form):
     url = forms.URLField(required=True)
+    new_window = forms.BooleanField(required=False, initial=True,
+            help_text=_('Whether this link should be openend in a new window'))
 
 
 class ExternalLinkChooserWithLinkTextForm(forms.Form):
     url = forms.URLField(required=True)
     link_text = forms.CharField(required=True)
+    new_window = forms.BooleanField(required=False, initial=True,
+            help_text=_('Whether this link should be openend in a new window'))
 
 
 class EmailLinkChooserForm(forms.Form):

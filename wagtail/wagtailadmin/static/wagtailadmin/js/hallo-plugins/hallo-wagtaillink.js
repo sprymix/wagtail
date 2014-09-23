@@ -51,6 +51,9 @@
 
                   a = document.createElement('a');
                   a.setAttribute('href', pageData.url);
+                  if (pageData.new_window) {
+                    a.setAttribute('target', '_blank');
+                  }
                   if (pageData.id) {
                     a.setAttribute('data-id', pageData.id);
                     a.setAttribute('data-linktype', 'page');
