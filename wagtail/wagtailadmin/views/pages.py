@@ -580,6 +580,7 @@ def unpublish(request, page_id):
     if request.POST:
         parent_id = page.get_parent().id
         page.live = False
+        page.has_unpublished_changes = True
         page.save()
 
         # Since page is unpublished clear the approved_go_live_at of all revisions
