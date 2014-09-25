@@ -62,7 +62,7 @@ def _generate_output_filename(input_filename, filter_spec, focal_point_key='focu
     return output_filename
 
 
-def _rendition_for_missing_image(rendition_cls, image):
+def _rendition_for_missing_image(rendition_cls, image, filter):
     '''Provide dummy rendition for missing image files.
 
     It's fairly routine for people to pull down remote databases to
@@ -74,7 +74,8 @@ def _rendition_for_missing_image(rendition_cls, image):
     broken link instead.
     '''
     rendition = rendition_cls(image=image, width=0, height=0)
-    rendition.file.name = 'not-found'
+    rendition.file.name = 'source-image-not-found'
+    rendition.filter = filter
     return rendition
 
 
@@ -226,7 +227,8 @@ class AbstractImage(models.Model, TagSearchable):
                 generated_image_file = File(generated_image,
                                             name=output_filename)
             except IOError:
-                return _rendition_for_missing_image(self.renditions.model, self)
+                return _rendition_for_missing_image(self.renditions.model, self,
+                                                    filter=filter)
 
             if self.focal_point:
                 rendition, created = self.renditions.get_or_create(
@@ -275,7 +277,7 @@ class AbstractImage(models.Model, TagSearchable):
                                             name=output_filename)
             except IOError:
                 return _rendition_for_missing_image(self.user_renditions.model,
-                                                    self)
+                                                    self, filter=filter)
 
             rendition, created = self.user_renditions.get_or_create(
                 filter=filter, defaults={'file': generated_image_file})
@@ -574,7 +576,8 @@ class UserRendition(AbstractRendition):
                 generated_image_file = File(generated_image,
                                             name=output_filename)
             except IOError:
-                return _rendition_for_missing_image(type(self), self.image)
+                return _rendition_for_missing_image(type(self), self.image,
+                                                    filter=filter)
 
             rendition, created = self.image.renditions.get_or_create(
                 filter=filter, defaults={'file': generated_image_file})
