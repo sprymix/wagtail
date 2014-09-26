@@ -28,7 +28,7 @@ class Migration(DataMigration):
             spec = dup['spec']
             all_f = Filter.objects.filter(spec=spec)
             keep = all_f[0]
-            drop = all_f[1:]
+            drop = Filter.objects.filter(pk__in=[d.pk for d in all_f[1:]])
 
             # find all the renditions using these filters, force them to use
             # only the filter we keep
@@ -36,7 +36,7 @@ class Migration(DataMigration):
             Rendition.objects.filter(filter__spec=spec).update(filter=keep)
             UserRendition.objects.filter(filter__spec=spec).update(filter=keep)
 
-            drop.delete(pk__in=[d.pk for d in drop])
+            drop.delete()
 
 
     def backwards(self, orm):
