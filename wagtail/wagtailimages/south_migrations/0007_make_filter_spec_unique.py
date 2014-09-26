@@ -36,7 +36,7 @@ class Migration(DataMigration):
             Rendition.objects.filter(filter__spec=spec).update(filter=keep)
             UserRendition.objects.filter(filter__spec=spec).update(filter=keep)
 
-            drop.delete()
+            drop.delete(pk__in=[d.pk for d in drop])
 
 
     def backwards(self, orm):
