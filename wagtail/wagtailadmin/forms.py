@@ -22,14 +22,18 @@ class SearchForm(forms.Form):
 class ExternalLinkChooserForm(forms.Form):
     url = forms.URLField(required=True)
     new_window = forms.BooleanField(required=False, initial=False,
-            help_text=_('Whether this link should be openend in a new window'))
+        help_text=_('Whether this link should be openend in a new window'))
+    omniture_data = forms.CharField(required=False,
+        help_text=_('Enter data in the following format: "eVar,eVarData,eventID,name"'))
 
 
-class ExternalLinkChooserWithLinkTextForm(forms.Form):
+class ExternalLinkChooserWithLinkTextForm(ExternalLinkChooserForm):
     url = forms.URLField(required=True)
     link_text = forms.CharField(required=True)
     new_window = forms.BooleanField(required=False, initial=False,
-            help_text=_('Whether this link should be openend in a new window'))
+        help_text=_('Whether this link should be openend in a new window'))
+    omniture_data = forms.CharField(required=False,
+        help_text=_('Enter data in the following format: "eVar,eVarData,eventID,name"'))
 
 
 class EmailLinkChooserForm(forms.Form):

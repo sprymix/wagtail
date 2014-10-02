@@ -102,6 +102,7 @@ def external_link(request):
                                     if prompt_for_link_text
                                         else form.cleaned_data['url'],
                     'new_window': form.cleaned_data['new_window'],
+                    'omniture_data': form.cleaned_data['omniture_data'],
                 }
             )
     else:
