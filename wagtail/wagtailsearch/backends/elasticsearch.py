@@ -108,7 +108,7 @@ class ElasticSearchMapping(object):
         return doc
 
     def __repr__(self):
-        return '<ElasticSearchMapping: %s>' % (self.model.__name__, )
+        return '<%s: %s>' % (self.__class__.__name__, self.model.__name__, )
 
 
 class FilterError(Exception):
@@ -489,15 +489,9 @@ class ElasticSearch(BaseSearch):
             timeout=self.es_timeout,
             **params)
 
-    def reset_index(self):
-        # Delete old index
-        try:
-            self.es.indices.delete(self.es_index)
-        except NotFoundError:
-            pass
-
+    def get_index_settings(self):
         # Settings
-        INDEX_SETTINGS = {
+        return {
             'settings': {
                 'analysis': {
                     'analyzer': {
@@ -541,12 +535,28 @@ class ElasticSearch(BaseSearch):
             }
         }
 
+    def reset_index(self):
+        # Delete old index
+        try:
+            self.es.indices.delete(self.es_index)
+        except NotFoundError:
+            pass
+
         # Create new index
-        self.es.indices.create(self.es_index, INDEX_SETTINGS)
+        self.es.indices.create(self.es_index, self.get_index_settings())
+
+    def get_mapping(self, model):
+        return ElasticSearchMapping(model)
+
+    def get_search_query(self, queryset, query_string, fields, **kwargs):
+        return ElasticSearchQuery(queryset, query_string, fields, **kwargs)
+
+    def get_search_results(self, *args, **kwargs):
+        return ElasticSearchResults(self, *args, **kwargs)
 
     def add_type(self, model):
         # Get mapping
-        mapping = ElasticSearchMapping(model)
+        mapping = self.get_mapping(model)
 
         # Put mapping
         self.es.indices.put_mapping(index=self.es_index, doc_type=mapping.get_document_type(), body=mapping.get_mapping())
@@ -560,7 +570,7 @@ class ElasticSearch(BaseSearch):
             return
 
         # Get mapping
-        mapping = ElasticSearchMapping(obj.__class__)
+        mapping = self.get_mapping(obj.__class__)
 
         # Add document to index
         self.es.index(self.es_index, mapping.get_document_type(), mapping.get_document(obj), id=mapping.get_document_id(obj))
@@ -574,7 +584,7 @@ class ElasticSearch(BaseSearch):
                 continue
 
             # Get mapping
-            mapping = ElasticSearchMapping(obj.__class__)
+            mapping = self.get_mapping(obj.__class__)
 
             # Get document type
             doc_type = mapping.get_document_type()
@@ -608,7 +618,7 @@ class ElasticSearch(BaseSearch):
             return
 
         # Get mapping
-        mapping = ElasticSearchMapping(obj.__class__)
+        mapping = self.get_mapping(obj.__class__)
 
         # Delete document
         try:
@@ -622,6 +632,6 @@ class ElasticSearch(BaseSearch):
 
     def _search(self, queryset, query_string, fields=None, return_pks=False,
                                               include_partials=True):
-        query = ElasticSearchQuery(queryset, query_string, fields=fields,
-                                             include_partials=include_partials)
-        return ElasticSearchResults(self, query, return_pks=return_pks)
+        query = self.get_search_query(queryset, query_string, fields=fields,
+                                            include_partials=include_partials)
+        return self.get_search_results(query, return_pks=return_pks)
