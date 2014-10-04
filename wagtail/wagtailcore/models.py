@@ -304,6 +304,8 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, indexed.Index
 
     menu_class = 'menu-explorer'
 
+    exclude_from_search_index = True
+
     def __init__(self, *args, **kwargs):
         super(Page, self).__init__(*args, **kwargs)
         if not self.id and not self.content_type_id:
