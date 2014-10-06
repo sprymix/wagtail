@@ -61,7 +61,8 @@
         <script>
             $(function() {
                 add_file_upload_widget($('#{{ uploadid }}'), {
-                    acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i
+                    acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
+                    oneFileOnly: true
                 });
             });
             window.simple_upload_url = "{% url 'wagtailimages_add_image' %}";

@@ -14,16 +14,40 @@ $(function(){
     }
 
     window.add_file_upload_widget = function(main_el, options) {
+        var oneFileUploaded = false,
+            oneFileOnly = options.oneFileOnly;
+        var dropZone = $('.drop-zone');
+
+        function _oneFileOnlyPicked() {
+            if (oneFileUploaded) {
+                return;
+            } else {
+                oneFileUploaded = true;
+                dropZone.hide(400);
+                $('.upload-list', main_el).children().remove();
+            }
+        }
+
+        function _oneFileOnlyClear() {
+            oneFileUploaded = false;
+            dropZone.show(400);
+        }
+
         options = $.extend({
             dataType: 'html',
             sequentialUploads: true,
-            dropZone: $('.drop-zone'),
+            dropZone: dropZone,
             previewMinWidth:150,
             previewMaxWidth:150,
             previewMinHeight:150,
             previewMaxHeight:150,
 
             add: function (e, data) {
+                // special processing for one file only uploads
+                if (oneFileOnly) {
+                    _oneFileOnlyPicked();
+                }
+
                 var $this = $(this);
                 var that = $this.data('blueimp-fileupload') || $this.data('fileupload')
                 var li = $($('.upload-list-item', main_el).html()).addClass('upload-uploading')
@@ -51,6 +75,11 @@ $(function(){
                         data.submit();
                     }
                 }).fail(function () {
+                    // special processing for one file only uploads
+                    if (oneFileOnly) {
+                        _oneFileOnlyClear();
+                    }
+
                     if (data.files.error) {
                         data.context.each(function (index) {
                             var error = data.files[index].error;
@@ -101,6 +130,11 @@ $(function(){
                     // run tagit enhancement
                     $('.tag_field input', itemElement).tagit(window.tagit_opts);
                 } else {
+                    // special processing for one file only uploads
+                    if (oneFileOnly) {
+                        _oneFileOnlyClear();
+                    }
+
                     itemElement.addClass('upload-failure');
                     $('.right .error_messages', itemElement).append(response.error_message);
                 }
@@ -108,6 +142,11 @@ $(function(){
             },
 
             fail: function(e, data){
+                // special processing for one file only uploads
+                if (oneFileOnly) {
+                    _oneFileOnlyClear();
+                }
+
                 var itemElement = $(data.context);
                 itemElement.addClass('upload-failure');
             },
@@ -131,6 +170,11 @@ $(function(){
                 if (data.success) {
                     itemElement.slideUp(function(){$(this).remove()});
                 }else{
+                    // special processing for one file only uploads
+                    if (oneFileOnly) {
+                        _oneFileOnlyClear();
+                    }
+
                     form.replaceWith(data.form);
                     // run tagit enhancement on new form
                     $('.tag_field input', form).tagit(window.tagit_opts);
@@ -149,6 +193,11 @@ $(function(){
             $.post(this.href, {csrfmiddlewaretoken: CSRFToken}, function(data) {
                 if (data.success) {
                     itemElement.slideUp(function(){$(this).remove()});
+
+                    // special processing for one file only uploads
+                    if (oneFileOnly) {
+                        _oneFileOnlyClear();
+                    }
                 }else{
 
                 }
