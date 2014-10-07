@@ -21,11 +21,12 @@ $(function(){
 
         function _oneFileOnlyPicked() {
             if (oneFileUploaded) {
-                return;
+                return true;
             } else {
                 oneFileUploaded = true;
                 dropZone.hide(400);
                 $('.upload-list', main_el).children().remove();
+                return false;
             }
         }
 
@@ -46,7 +47,9 @@ $(function(){
             add: function (e, data) {
                 // special processing for one file only uploads
                 if (oneFileOnly) {
-                    _oneFileOnlyPicked();
+                    if (_oneFileOnlyPicked()) {
+                        return;
+                    };
                 }
 
                 var $this = $(this);
