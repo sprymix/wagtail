@@ -14,6 +14,7 @@ $(function(){
     }
 
     window.add_file_upload_widget = function(main_el, options) {
+        options = options || {};
         var oneFileUploaded = false,
             oneFileOnly = options.oneFileOnly;
         var dropZone = $('.drop-zone');
@@ -155,7 +156,7 @@ $(function(){
                 var itemElement = $(data.context);
                 itemElement.removeClass('upload-uploading').addClass('upload-complete');
             }
-        }, options || {});
+        }, options);
 
         $('.fileupload', main_el).fileupload(options);
 
