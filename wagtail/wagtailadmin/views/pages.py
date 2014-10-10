@@ -191,7 +191,14 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
         form.clean = clean
 
         if form.is_valid():
-            page = form.save(commit=False)  # don't save yet, as we need treebeard to assign tree params
+            # Initialize the empty page in the treebeard so that we put the page
+            # in the correct place in the hierarchy. We cannot rely on automatic
+            # "add_child" since the parent and child pages may be of different
+            # classes. We also cannot use "add_child" with a committed child
+            # page.
+            #
+            parent_page.add_child(instance=page)
+            page = form.save()  # save the form data now
 
             is_publishing = bool(request.POST.get('action-publish')) and parent_page_perms.can_publish_subpage()
             is_submitting = bool(request.POST.get('action-submit'))
@@ -213,9 +220,9 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
                 page.live = False
                 page.has_unpublished_changes = True
 
-            parent_page.add_child(instance=page)  # assign tree parameters - will cause page to be saved
-            for fs in form.formsets.values():
-                fs.save()
+            # save whatever page updates we need
+            #
+            page.save()
 
             # Pass approved_go_live_at to save_revision
             page.save_revision(
@@ -763,7 +770,9 @@ def search(request):
             # page number
             p = request.GET.get("p", 1)
             is_searching = True
-            pages = Page.search(q, show_unpublished=True, search_title_only=True, prefetch_related=['content_type'])
+            pages = Page.search(q, show_unpublished=True,
+                                   search_title_only=False,
+                                   prefetch_related=['content_type'])
 
             # Pagination
             paginator = Paginator(pages, 20)
