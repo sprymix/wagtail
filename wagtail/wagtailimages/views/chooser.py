@@ -133,7 +133,9 @@ def chooser(request):
             'is_searching': is_searching,
             'query_string': q,
             'will_select_format': will_select_format,
-            'will_select_rendition': will_select_rendition
+            'will_select_rendition': will_select_rendition,
+            'post_processing_spec': request.GET.get('pps'),
+            'additional_params': get_cropper_params(request),
         })
     else:
         searchform = SearchForm()
