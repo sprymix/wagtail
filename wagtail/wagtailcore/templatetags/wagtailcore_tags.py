@@ -30,3 +30,8 @@ def slugurl(context, slug):
 @register.filter
 def richtext(value):
     return mark_safe('<div class="rich-text">' + expand_db_html(value) + '</div>')
+
+
+@register.simple_tag(takes_context=True)
+def pageactionbutton(context, button, page):
+    return button.render_html(page)

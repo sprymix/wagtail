@@ -26,7 +26,14 @@ class PageActionButton(object):
         self.url = url
         self.classnames = classnames
 
-    def render_html(self):
+    def render_html(self, page=None):
+        url = self.url
+
+        if callable(url):
+            # if the url is callable, assume it takes a page as only parameter
+            #
+            url = url(page)
+
         return format_html(
             """<li><a href="{0}" class="{1}">{2}</a></li>""",
-            self.url, self.classnames, self.label)
+            url, self.classnames, self.label)
