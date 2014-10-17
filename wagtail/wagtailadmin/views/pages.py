@@ -20,7 +20,8 @@ from wagtail.wagtailadmin import tasks, signals
 
 from wagtail.wagtailcore import hooks
 from wagtail.wagtailcore.models import Page, PageRevision, get_navigation_menu_items
-from wagtail.wagtailcore.signals import page_published, page_unpublished
+from wagtail.wagtailcore.signals import page_published, page_unpublished, \
+                                        page_updated
 
 
 @permission_required('wagtailadmin.access_admin')
@@ -347,7 +348,7 @@ def edit(request, page_id):
                 else:
                     page.live = True
 
-                form.save()
+                new_page = form.save()
 
                 # Clear approved_go_live_at for older revisions
                 page.revisions.update(
@@ -356,19 +357,26 @@ def edit(request, page_id):
                 )
             else:
                 # not publishing the page
+                page.has_unpublished_changes = True
                 if page.live:
                     # To avoid overwriting the live version, we only save the page
                     # to the revisions table
-                    form.save(commit=False)
+                    new_page = form.save(commit=False)
+                    # instead of saving all data, update just the flag
+                    #
                     Page.objects.filter(id=page.id).update(has_unpublished_changes=True)
                 else:
-                    page.has_unpublished_changes = True
-                    form.save()
+                    new_page = form.save()
 
             page.save_revision(
                 user=request.user,
                 submitted_for_moderation=is_submitting,
                 approved_go_live_at=approved_go_live_at
+            )
+
+            page_updated.send(
+                sender=type(page.specific),
+                instance=new_page
             )
 
             if is_publishing:
