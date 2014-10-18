@@ -55,12 +55,14 @@ class HiddenNumberInput(forms.IntegerField):
 class ImageCropperForm(forms.Form):
     """Form for selecting a cropped version of the image."""
 
-    left = HiddenNumberInput()
-    top = HiddenNumberInput()
-    right = HiddenNumberInput()
-    bottom = HiddenNumberInput()
-    force_selection = forms.BooleanField(required=False,
+    left = HiddenNumberInput(label='')
+    top = HiddenNumberInput(label='')
+    right = HiddenNumberInput(label='')
+    bottom = HiddenNumberInput(label='')
+    force_selection = forms.BooleanField(required=False, label='',
                                          widget=forms.HiddenInput())
+    width = forms.IntegerField(required=False, label=_('Width'))
+    height = forms.IntegerField(required=False, label=_('Height'))
 
     ratios = ('1:1', '4:3', '16:9', '2:1', 'free')
     default_ratio = 'free'

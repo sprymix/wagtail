@@ -11,8 +11,18 @@
         {% csrf_token %}
         <ul class="fields">
             {% for field in form %}
-                {{ field }}
+                {% if not field.label %}
+                    {{ field }}
+                {% endif %}
             {% endfor %}
+            {# hack! i'm relying on knowing what my labeled fields are #}
+            <li class="one-line">
+                {% for field in form %}
+                    {% if field.label %}
+                        {% include "wagtailadmin/shared/field.html" %}
+                    {% endif %}
+                {% endfor %}
+            </li>
             <li>
                 <div class="label-above">
                     <div class="field aspect-ratio">
@@ -27,12 +37,6 @@
                                 <span>{{ ratio }}</span>
                             {% endfor %}
                         </div>
-                    </div>
-                </div>
-                <div class="field cropped-area">
-                    <label>Cropped area</label>
-                    <div class="field-content">
-                        <div class="area-size"></div>
                     </div>
                 </div>
             </li>
