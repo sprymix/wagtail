@@ -50,11 +50,36 @@ function(modal) {
         jc_settings.aspectRatio = get_aspect_ratio(
                                         ratio_radio.filter(':checked').val())
 
+
+        function _widthChange() {
+            if (jcapi) {
+                var data = jcapi.tellSelect(),
+                    ratio = data.w / data.h;
+                if (ratio) {
+                    height.val(Math.round(parseInt(width.val() || 0) / ratio));
+                }
+            }
+        }
+        function _heightChange() {
+            if (jcapi) {
+                var data = jcapi.tellSelect(),
+                    ratio = data.w / data.h;
+                if (ratio) {
+                    width.val(Math.round(parseInt(height.val() || 0) * ratio));
+                }
+            }
+        }
+
+        // react to updates to width & height
+        width.on('input', _widthChange);
+        height.on('input', _heightChange);
+
         // change aspect ratio based on the radio selections
         ratio_radio.change(function(event) {
             jcapi.setOptions({
                 aspectRatio: get_aspect_ratio(event.target.value)
             });
+            _widthChange();
         });
 
         // helper function to display current selection
@@ -62,6 +87,7 @@ function(modal) {
             data = data || jcapi.tellSelect();
             if (data && data.w && data.h) {
                 area_size.text(parseInt(data.w) + ' x ' + parseInt(data.h));
+                _widthChange();
             } else {
                 area_size.text('n/a');
             }
@@ -106,9 +132,6 @@ function(modal) {
         $('form input.clear-button').click(function() {
             jcapi.release();
         });
-
-        console.log('AAA:', form.attr('action'),
-                    width.val(), height.val());
 
         form.submit(function(event) {
             // if the user has specified a "fit" restriction, replace any prior
