@@ -113,9 +113,9 @@ function(modal) {
         form.submit(function(event) {
             // if the user has specified a "fit" restriction, replace any prior
             // "pps" with fit-WxH
+            var action = form.attr('action');
             if (height.val() && width.val()) {
-                var action = form.attr('action'),
-                    fit = 'forcefit-' + width.val() + 'x' + height.val();
+                    var fit = 'forcefit-' + width.val() + 'x' + height.val();
                 if (pps_re.test(form.attr('action'))) {
                     action = action.replace(/pps=[^\&]*/g, 'pps=' + fit);
                 } else {
@@ -126,7 +126,6 @@ function(modal) {
                     }
                 }
             }
-            form.attr('action').replace(/pps=[^\&]*/g, 'pps=' + 'fit-40x40');
 
             var formdata = new FormData(this);
 
