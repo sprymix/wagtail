@@ -127,11 +127,24 @@ $zindex-modal-background: 500;
                 margin-right: 40px
             }
         }
+        .cropped-area{
+            .area-size{
+                // display: inline-block;
+                padding-top: 1.3em;
+            }
+        }
         .one-line {
             .field {
                 width: 47%;
                 display: inline-block;
-                padding: 0 10px 0 0;
+                padding: 0 20px 0 0;
+
+                label {
+                    width: 30%;
+                }
+                .field-content {
+                    width: 70%;
+                }
             }
         }
     }

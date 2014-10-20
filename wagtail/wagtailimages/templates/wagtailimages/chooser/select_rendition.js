@@ -2,7 +2,8 @@ function(modal) {
     function attach_jcrop() {
         // Some large images are scaled down when displayed, so we need to account
         // for that.
-        var trueSize;
+        var trueSize, pps_re = /pps=[^\&]*/g;
+        var form = $('form', modal.body);
 
         $(".crop-image img", modal.body).each(function(n, el) {
             trueSize = [parseInt($(el).attr('width')),
@@ -10,7 +11,7 @@ function(modal) {
         });
 
         // prevent pressing "enter" from submitting the form
-        $('form', modal.body).bind('keypress', function (e) {
+        form.bind('keypress', function (e) {
             if (e.keyCode == 13) {
                 return false;
             }
@@ -22,7 +23,8 @@ function(modal) {
             bottom = $('form input[name="bottom"]', modal.body),
             force_selection = $('form input[name="force_selection"]', modal.body),
             width = $('form input[name="width"]', modal.body),
-            height = $('form input[name="height"]', modal.body);
+            height = $('form input[name="height"]', modal.body),
+            area_size = $('.cropped-area .area-size', modal.body);
 
         // Jcrop settings
         jc_settings = {
@@ -59,53 +61,11 @@ function(modal) {
         function showAreaSelection(data) {
             data = data || jcapi.tellSelect();
             if (data && data.w && data.h) {
-                width.val(parseInt(data.w));
-                height.val(parseInt(data.h));
+                area_size.text(parseInt(data.w) + ' x ' + parseInt(data.h));
             } else {
-                width.setValue('');
-                height.setValue('');
+                area_size.text('n/a');
             }
         };
-
-        function resizeSelection(w, h) {
-            var size = [parseInt(w || 0), parseInt(h || 0)]
-            jcapi.setOptions({
-                maxSize: size,
-                minSize: size
-            });
-            jcapi.setOptions({
-                maxSize: [0 ,0],
-                minSize: [0 ,0]
-            });
-        }
-
-        function _widthChange(event) {
-            resizeSelection(parseInt(width.val() || 0), 0);
-        }
-        function _heightChange(event) {
-            // Height is "second class citizen" in JCrop for some reason, so we
-            // scale the width as well if needed.
-            var ratio = get_aspect_ratio(
-                            ratio_radio.filter(':checked').val()) || 0,
-                h = parseInt(height.val() || 0);
-            resizeSelection(Math.round(h * ratio), h);
-        }
-
-        // react to updates to width & height
-        width.change(_widthChange).keypress(function(e) {
-            if (e.keyCode == 13) {
-                _widthChange(e);
-                return false;
-            }
-        });
-        height.change(_heightChange).keypress(function(e) {
-            if (e.keyCode == 13) {
-                _heightChange(e);
-                return false;
-            }
-        });
-
-        var form = $('form', modal.body);
 
         function clearForm() {
             left.attr({value: 0});
@@ -147,10 +107,30 @@ function(modal) {
             jcapi.release();
         });
 
-        $('form', modal.body).submit(function(event) {
+        console.log('AAA:', form.attr('action'),
+                    width.val(), height.val());
+
+        form.submit(function(event) {
+            // if the user has specified a "fit" restriction, replace any prior
+            // "pps" with fit-WxH
+            if (height.val() && width.val()) {
+                var action = form.attr('action'),
+                    fit = 'forcefit-' + width.val() + 'x' + height.val();
+                if (pps_re.test(form.attr('action'))) {
+                    action = action.replace(/pps=[^\&]*/g, 'pps=' + fit);
+                } else {
+                    if (/\?/g.test(action)) {
+                        action = action + '&' + fit;
+                    } else {
+                        action = action + '?' + fit;
+                    }
+                }
+            }
+            form.attr('action').replace(/pps=[^\&]*/g, 'pps=' + 'fit-40x40');
+
             var formdata = new FormData(this);
 
-            $.post(this.action, $(this).serialize(), function(response){
+            $.post(action, $(this).serialize(), function(response){
                 modal.loadResponseText(response);
             }, 'text');
 

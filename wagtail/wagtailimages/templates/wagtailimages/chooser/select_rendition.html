@@ -15,6 +15,16 @@
                     {{ field }}
                 {% endif %}
             {% endfor %}
+
+            <li>
+                <div class="field cropped-area">
+                    <label>Cropped area</label>
+                    <div class="field-content">
+                        <div class="area-size"></div>
+                    </div>
+                </div>
+            </li>
+
             {# hack! i'm relying on knowing what my labeled fields are #}
             <li class="one-line">
                 {% for field in form %}
