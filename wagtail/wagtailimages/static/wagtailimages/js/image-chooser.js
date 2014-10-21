@@ -51,8 +51,7 @@ function createRenditionChooser(id) {
     // build up the special params to be used witht he URL
     function get_params(ignorespec) {
         // there are many possible specs that need to be included in the URL
-        var spec = chooserElement.attr('data-spec').replace('crop-', '')
-                                                   .replace(':', ','),
+        var spec = chooserElement.attr('data-spec'),
             crop = chooserElement.attr('data-crop'),
             ratios = chooserElement.attr('data-ratios'),
             default_ratio = chooserElement.attr('data-default_ratio'),
@@ -64,13 +63,18 @@ function createRenditionChooser(id) {
         disable_selection = disable_selection ? disable_selection[0] : null;
         force_selection = force_selection ? force_selection[0] : null;
 
-        if (ignorespec) {
-            spec = null;
+        var spec_dict = filter_spec_to_dict(spec),
+            crop_spec = null,
+            fit;
+        if (!ignorespec && spec_dict['crop']) {
+            crop_spec = spec_dict['crop'].replace(':', ',');
+            fit = spec_dict['forcefit'];
         }
 
         var params_dict = {
-            // if we specify crop it overrides spec
-            crop: crop || spec,
+            // if we specify crop it overrides crop_spec
+            crop: crop || crop_spec,
+            fit: fit,
             ratios: ratios,
             ar: default_ratio,
             fsel: force_selection,
@@ -91,7 +95,7 @@ function createRenditionChooser(id) {
     }
 
     $('.action-choose', chooserElement).click(function() {
-        var additional_params = get_params('data-spec');
+        var additional_params = get_params(true);
 
         // build URL with the additional params
         var url = [window.chooserUrls.imageChooser,
@@ -130,4 +134,21 @@ function createRenditionChooser(id) {
     $('.action-clear', chooserElement).click(function() {
         input.val('').trigger('change');
     });
+}
+
+
+function filter_spec_to_dict(spec) {
+    var dict = {}, parts;
+
+    if (spec) {
+        parts = spec.split('|');
+        for (i = 0; i < parts.length; i++) {
+            var filter = parts[i].split('-');
+            if (filter.length == 2) {
+                dict[filter[0]] = filter[1];
+            }
+        }
+    }
+
+    return dict;
 }

@@ -134,23 +134,8 @@ function(modal) {
         });
 
         form.submit(function(event) {
-            // if the user has specified a "fit" restriction, replace any prior
-            // "pps" with fit-WxH
-            var action = form.attr('action');
-            if (height.val() && width.val()) {
-                    var fit = 'forcefit-' + width.val() + 'x' + height.val();
-                if (pps_re.test(form.attr('action'))) {
-                    action = action.replace(/pps=[^\&]*/g, 'pps=' + fit);
-                } else {
-                    if (/\?/g.test(action)) {
-                        action = action + '&' + fit;
-                    } else {
-                        action = action + '?' + fit;
-                    }
-                }
-            }
-
-            var formdata = new FormData(this);
+            var action = form.attr('action'),
+                formdata = new FormData(this);
 
             $.post(action, $(this).serialize(), function(response){
                 modal.loadResponseText(response);

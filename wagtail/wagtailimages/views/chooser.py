@@ -47,8 +47,9 @@ def get_cropper_settings(request):
 
     # get filter spec if it was passed
     #
-    initial = None
+    initial = {}
     crop = request.GET.get('crop')
+    fit = request.GET.get('fit')
     ratios = request.GET.get('ratios')
     default_ratio = request.GET.get('ar')
     force_selection = request.GET.get('fsel') == 'T'
@@ -58,13 +59,21 @@ def get_cropper_settings(request):
     if crop:
         crop = crop.split(',')
         if len(crop) == 4:
-            initial = {
+            initial.update({
                 'left': crop[0],
                 'top': crop[1],
                 'right': crop[2],
                 'bottom': crop[3],
                 'force_selection': force_selection
-            }
+            })
+    if fit:
+        fit = fit.split('x')
+        if len(fit) == 2:
+            initial.update({
+                'width': fit[0],
+                'height': fit[1]
+            })
+
     if ratios is not None:
         ratios = tuple(ratios.split(','))
 
@@ -80,7 +89,7 @@ def get_cropper_params(request):
     URL.'''
 
     params = {}
-    for name in ('crop', 'ratios', 'ar', 'fsel', 'dsel', 'pps'):
+    for name in ('crop', 'ratios', 'ar', 'fsel', 'dsel', 'pps', 'fit'):
         val = request.GET.get(name)
         if val is not None:
             params[name] = val
@@ -333,8 +342,17 @@ def chooser_select_rendition(request, image_id):
         form = ImageCropperForm(request.POST)
 
         if form.is_valid():
+            # add cropping filter from the form data
+            #
             filter_spec = 'crop-{left},{top}:{right},{bottom}'.format(
                                                             **form.cleaned_data)
+            # add forcefit filter from the form data if needed
+            #
+            width = form.cleaned_data.get('width')
+            height = form.cleaned_data.get('height')
+            if width and height:
+                filter_spec += '|forcefit-{}x{}'.format(width, height)
+
             post_processing_spec = request.GET.get('pps')
             if post_processing_spec:
                 filter_spec = '{}|{}'.format(filter_spec, post_processing_spec)
