@@ -54,7 +54,8 @@ function(modal) {
         function _widthChange() {
             if (jcapi) {
                 var data = jcapi.tellSelect(),
-                    ratio = data.w / data.h;
+                    ratio = parseInt(data.w) / parseInt(data.h);
+
                 if (ratio) {
                     height.val(Math.round(parseInt(width.val() || 0) / ratio));
                 }
