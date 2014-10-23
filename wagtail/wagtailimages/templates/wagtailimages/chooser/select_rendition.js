@@ -52,21 +52,35 @@ function(modal) {
 
 
         function _widthChange() {
-            if (jcapi) {
-                var data = jcapi.tellSelect(),
-                    ratio = parseInt(data.w) / parseInt(data.h);
+            // if the value is 0 or equivalent, make the width and height fields
+            // blank
+            if (!parseInt(width.val())) {
+                width.val('');
+                height.val('');
+            } else {
+                if (jcapi) {
+                    var data = jcapi.tellSelect(),
+                        ratio = parseInt(data.w) / parseInt(data.h);
 
-                if (ratio) {
-                    height.val(Math.round(parseInt(width.val() || 0) / ratio));
+                    if (ratio) {
+                        height.val(Math.round(parseInt(width.val() || 0) / ratio));
+                    }
                 }
             }
         }
         function _heightChange() {
-            if (jcapi) {
-                var data = jcapi.tellSelect(),
-                    ratio = data.w / data.h;
-                if (ratio) {
-                    width.val(Math.round(parseInt(height.val() || 0) * ratio));
+            // if the value is 0 or equivalent, make the width and height fields
+            // blank
+            if (!parseInt(height.val())) {
+                width.val('');
+                height.val('');
+            } else {
+                if (jcapi) {
+                    var data = jcapi.tellSelect(),
+                        ratio = data.w / data.h;
+                    if (ratio) {
+                        width.val(Math.round(parseInt(height.val() || 0) * ratio));
+                    }
                 }
             }
         }
