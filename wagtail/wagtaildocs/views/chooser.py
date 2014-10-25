@@ -86,7 +86,11 @@ def chooser(request):
 def document_chosen(request, document_id):
     document = get_object_or_404(Document, id=document_id)
 
-    document_json = json.dumps({'id': document.id, 'title': document.title})
+    document_json = json.dumps({
+        'id': document.id,
+        'title': document.title,
+        'url': document.url
+    })
 
     return render_modal_workflow(
         request, None, 'wagtaildocs/chooser/document_chosen.js',
@@ -142,7 +146,11 @@ def chooser_select(request, doc_id):
 
     if form.is_valid():
         form.save()
-        document_json = json.dumps({'id': document.id, 'title': document.title})
+        document_json = json.dumps({
+            'id': document.id,
+            'title': document.title,
+            'url': document.url
+        })
         return render_modal_workflow(
             request, None, 'wagtaildocs/chooser/document_chosen.js',
             {'document_json': document_json}
