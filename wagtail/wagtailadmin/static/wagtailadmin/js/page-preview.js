@@ -9,15 +9,12 @@ function createPreviewButtonHandler(form, button) {
 
         var previewWindow = window.open($this.data('placeholder'), $this.data('windowname'));
 
-        if(/MSIE/.test(navigator.userAgent)){
-            submitPreview.call($this, false);
-        } else {
-            previewWindow.onload = function(){
-                submitPreview.call($this, true);
-            }
-        }
-
         function submitPreview(enhanced){
+            // save the tinyMCE data if present
+            if (tinyMCE) {
+                tinyMCE.triggerSave();
+            }
+
             $.ajax({
                 type: "POST",
                 url: $this.data('action'),
@@ -62,6 +59,14 @@ function createPreviewButtonHandler(form, button) {
                     previewWindow.document.close();
                 }
             });
+        }
+
+        if(/MSIE/.test(navigator.userAgent)){
+            submitPreview.call($this, false);
+        } else {
+            previewWindow.onload = function(){
+                submitPreview.call($this, true);
+            }
         }
     }
 }
