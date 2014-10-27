@@ -89,7 +89,7 @@ def document_chosen(request, document_id):
     document_json = json.dumps({
         'id': document.id,
         'title': document.title,
-        'url': document.url
+        'url': document.file.url
     })
 
     return render_modal_workflow(
@@ -149,7 +149,7 @@ def chooser_select(request, doc_id):
         document_json = json.dumps({
             'id': document.id,
             'title': document.title,
-            'url': document.url
+            'url': document.file.url
         })
         return render_modal_workflow(
             request, None, 'wagtaildocs/chooser/document_chosen.js',
