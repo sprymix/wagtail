@@ -216,17 +216,16 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
             future_go_live = go_live_at and go_live_at > timezone.now()
             approved_go_live_at = None
 
+            if future_go_live and is_publishing:
+                # Set approved_go_live_at only if is publishing
+                # and the future_go_live is actually in future
+                approved_go_live_at = go_live_at
+                is_publishing = False
+
             if is_publishing:
+                page.live = True
                 page.has_unpublished_changes = False
                 page.expired = False
-                if future_go_live:
-                    page.live = False
-                    # Set approved_go_live_at only if is publishing
-                    # and the future_go_live is actually in future
-                    approved_go_live_at = go_live_at
-                    is_publishing = False
-                else:
-                    page.live = True
             else:
                 page.live = False
                 page.has_unpublished_changes = True
@@ -339,15 +338,16 @@ def edit(request, page_id):
             future_go_live = go_live_at and go_live_at > timezone.now()
             approved_go_live_at = None
 
+            if future_go_live and is_publishing:
+                # Set approved_go_live_at only if is publishing
+                # and the future_go_live is actually in future
+                approved_go_live_at = go_live_at
+                is_publishing = False
+
             if is_publishing:
+                page.live = True
                 page.has_unpublished_changes = False
                 page.expired = False
-                if future_go_live:
-                    page.live = False
-                    # Set approved_go_live_at only if publishing
-                    approved_go_live_at = go_live_at
-                else:
-                    page.live = True
 
                 new_page = form.save()
 
