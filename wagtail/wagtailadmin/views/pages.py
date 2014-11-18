@@ -224,6 +224,7 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
                     # Set approved_go_live_at only if is publishing
                     # and the future_go_live is actually in future
                     approved_go_live_at = go_live_at
+                    is_publishing = False
                 else:
                     page.live = True
             else:
