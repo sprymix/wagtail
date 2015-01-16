@@ -24,7 +24,7 @@ def index(request):
     Image = get_image_model()
 
     # Get images
-    images = Image.objects.order_by('-created_at')
+    images = Image.objects.filter(show_in_catalogue=True).order_by('-created_at')
 
     # Permissions
     if not request.user.has_perm('wagtailimages.change_image'):

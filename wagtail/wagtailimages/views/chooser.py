@@ -119,12 +119,14 @@ def chooser(request):
             # page number
             p = request.GET.get("p", 1)
 
-            images = Image.search(q, results_per_page=12, page=p)
+            images = Image.search(q, results_per_page=12, page=p,
+                                  filters={'show_in_catalogue': True})
 
             is_searching = True
 
         else:
-            images = Image.objects.order_by('-created_at')
+            images = Image.objects.filter(show_in_catalogue=True) \
+                                  .order_by('-created_at')
             p = request.GET.get("p", 1)
             paginator = Paginator(images, 12)
 
@@ -149,7 +151,8 @@ def chooser(request):
     else:
         searchform = SearchForm()
 
-        images = Image.objects.order_by('-created_at')
+        images = Image.objects.filter(show_in_catalogue=True) \
+                              .order_by('-created_at')
         p = request.GET.get("p", 1)
         paginator = Paginator(images, 12)
 

@@ -101,6 +101,7 @@ class AbstractImage(models.Model, TagSearchable):
     height = models.IntegerField(editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, editable=False)
+    show_in_catalogue = models.BooleanField(default=True)
 
     tags = TaggableManager(blank=True, verbose_name=_('Tags'),
             help_text=_('To enter multi-word tags, use double quotes: "some tag".'))
@@ -120,6 +121,7 @@ class AbstractImage(models.Model, TagSearchable):
 
     search_fields = TagSearchable.search_fields + (
         indexed.FilterField('uploaded_by_user'),
+        indexed.FilterField('show_in_catalogue'),
     )
 
     def __str__(self):
