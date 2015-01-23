@@ -1087,8 +1087,6 @@ class PagePermissionTester(object):
     def can_edit(self):
         if not self.user.is_active:
             return False
-        if self.page_is_root:  # root node is not a page and can never be edited, even by superusers
-            return False
         return self.user.is_superuser or ('edit' in self.permissions) or ('add' in self.permissions and self.page.owner_id == self.user.id)
 
     def can_delete(self):
@@ -1127,9 +1125,6 @@ class PagePermissionTester(object):
     def can_publish(self):
         if not self.user.is_active:
             return False
-        if self.page_is_root:
-            return False
-
         return self.user.is_superuser or ('publish' in self.permissions)
 
     def can_set_view_restrictions(self):

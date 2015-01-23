@@ -300,7 +300,7 @@ def edit(request, page_id):
         # Stick an extra validator into the form to make sure that the slug is not already in use
         def clean_slug(slug):
             # Make sure the slug isn't already in use
-            if parent.get_children().filter(slug=slug).exclude(id=page_id).count() > 0:
+            if parent and parent.get_children().filter(slug=slug).exclude(id=page_id).count() > 0:
                 raise ValidationError(_("This slug is already in use"))
             return slug
         form.fields['slug'].clean = clean_slug
@@ -400,7 +400,11 @@ def edit(request, page_id):
                 form = form_class(instance=page)
                 edit_handler = edit_handler_class(instance=page, form=form)
             else:
-                return redirect('wagtailadmin_explore', page.get_parent().id)
+                parent = page.get_parent()
+                if parent:
+                    return redirect('wagtailadmin_explore', parent.id)
+                else:
+                    return redirect('wagtailadmin_explore', page.id)
         else:
             messages.error(request, _("The page could not be saved due to validation errors"))
 
