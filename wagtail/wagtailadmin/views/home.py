@@ -25,7 +25,7 @@ class SiteSummaryPanel(object):
     def render(self):
         return render_to_string('wagtailadmin/home/site_summary.html', {
             'total_pages': Page.objects.count() - 1,  # subtract 1 because the root node is not a real page
-            'total_images': get_image_model().objects.count(),
+            'total_images': get_image_model().objects.filter(show_in_catalogue=True).count(),
             'total_docs': Document.objects.count(),
             'search_form': SearchForm(),
         }, RequestContext(self.request))
