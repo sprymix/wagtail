@@ -282,7 +282,11 @@
             if (this.options.availableTags || this.options.tagSource || this.options.autocomplete.source) {
                 var autocompleteOptions = {
                     select: function(event, ui) {
-                        that.createTag(ui.item.value);
+                        var tagValue = ui.item.value;
+                        if ($.trim(tagValue).charAt(0) != '"') {
+                            tagValue = '"' + tagValue + '"';
+                        }
+                        that.createTag(tagValue);
                         // Preventing the tag input to be updated with the chosen value.
                         return false;
                     }
