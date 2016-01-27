@@ -222,7 +222,16 @@
 
             // Events.
             this.tagInput
-                .keydown(function(event) {
+                .bind('paste', (function(event) {
+                    var data = event.originalEvent.clipboardData.getData('text');
+                    var tags = that._tokenize(data);
+
+                    for (var i = 0; i < tags.length; i+=1) {
+                        that.createTag(tags[i]);
+                    }
+
+                    event.preventDefault();
+                })).keydown(function(event) {
                     // Backspace is not detected within a keypress, so it must use keydown.
                     if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
                         var tag = that._lastTag();
@@ -274,7 +283,14 @@
                     // Create a tag when the element loses focus.
                     // If autocomplete is enabled and suggestion was clicked, don't add it.
                     if (!that.tagInput.data('autocomplete-open')) {
-                        that.createTag(that._cleanedInput());
+                        var input = that._cleanedInput();
+                        if (input) {
+                            var tags = that._tokenize(input);
+
+                            for (var i = 0; i < tags.length; i+=1) {
+                                that.createTag(tags[i]);
+                            }
+                        }
                     }
                 });
 
@@ -303,6 +319,43 @@
                     that.tagInput.data('autocomplete-open', false)
                 });
             }
+        },
+
+        _tokenize: function(string) {
+            var state = 'normal';
+            var tokens = [];
+            var token = '';
+            for (var i = 0; i < string.length; i += 1) {
+                if (string[i] == '"') {
+                    if (state == 'dquote') {
+                        if (token) {
+                            tokens.push(token);
+                            token = '';
+                        }
+                        state = 'normal';
+                    } else {
+                        state = 'dquote'
+                    }
+                } else if (string[i].search(/\s/) != -1) {
+                    if (state == 'dquote') {
+                        token += string[i];
+                    } else {
+                        if (token) {
+                            tokens.push(token);
+                            token = '';
+                        }
+                    }
+                } else {
+                    token += string[i];
+                }
+            }
+
+            // Unclosed quote
+            if (token) {
+                tokens.push(token);
+            }
+
+            return tokens;
         },
 
         _cleanedInput: function() {
