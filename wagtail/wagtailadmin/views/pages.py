@@ -79,6 +79,7 @@ def index(request, parent_page_id=None):
         'extra_actions': extra_actions,
         'extra_child_actions': extra_child_actions,
         'hide_actions': ['copy'],
+        'list_tpl': 'wagtailadmin/pages/list.html'
     })
 
 
