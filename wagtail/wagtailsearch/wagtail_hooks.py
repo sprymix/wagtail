@@ -21,6 +21,6 @@ class EditorsPicksMenuItem(MenuItem):
         return request.user.is_superuser and False
 
 
-@hooks.register('register_admin_menu_item')
+@hooks.register('register_settings_menu_item')
 def register_editors_picks_menu_item():
-    return EditorsPicksMenuItem(_('Editors picks'), urlresolvers.reverse('wagtailsearch_editorspicks_index'), classnames='icon icon-pick', order=900)
+    return EditorsPicksMenuItem(_('Promoted search results'), urlresolvers.reverse('wagtailsearch_editorspicks_index'), classnames='icon icon-pick', order=900)

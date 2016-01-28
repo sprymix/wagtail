@@ -10,6 +10,7 @@
     {% endif %}
     <col width="12%" />
     <col width="12%" />
+    <col width="12%" />
     <col width="10%" />
     <col width="15%" />
     <col width="10%" />
@@ -23,6 +24,7 @@
                 {% if show_parent %}
                     <th class="parent">{% trans 'Parent' %}</th>
                 {% endif %}
+                <th class="updated">{% trans 'Updated' %}</th>
                 <th class="type">{% trans 'Type' %}</th>
                 <th class="status">{% trans 'Status' %}</th>
                 <th class="owner">{% trans 'Created by' %}</th>
@@ -44,7 +46,7 @@
 
                             {% test_page_is_public parent_page as is_public %}
                             {% if not is_public %}
-                                <span class="privacy-indicator icon icon-locked" title="This page is protected from public view"></span>
+                                <span class="privacy-indicator icon icon-no-view" title="{% trans "This page is protected from public view" %}"></span>
                             {% endif %}
                         </h2>
                     {% elif choosing %}
@@ -57,7 +59,7 @@
 
                             {% test_page_is_public parent_page as is_public %}
                             {% if not is_public %}
-                                <span class="privacy-indicator icon icon-locked" title="This page is protected from public view"></span>
+                                <span class="privacy-indicator icon icon-no-view" title="This page is protected from public view"></span>
                             {% endif %}
                         </h2>
                     {% else %}
@@ -65,7 +67,11 @@
                             {% if parent_page_perms.can_edit and 'edit' not in hide_actions|default:'' %}
                                 <a href="{% url 'wagtailadmin_pages_edit' parent_page.id %}">{{ parent_page.title }}</a>
                             {% else %}
-                                    {{ parent_page.title }}
+                                {{ parent_page.title }}
+                            {% endif %}
+
+                            {% if parent_page.locked %}
+                                <span class="locked-indicator icon icon-locked" title="{% trans "This page is locked to further editing" %}"></span>
                             {% endif %}
                         </h2>
 
@@ -101,6 +107,7 @@
                         </ul>
                     {% endif %}
                 </td>
+                <td class="updated" valign="bottom">{% if parent_page.latest_revision_created_at %}<div class="human-readable-date" title="{{ parent_page.latest_revision_created_at|date:"d M Y H:i" }}">{{ parent_page.latest_revision_created_at|timesince }} ago</div>{% endif %}</td>
                 <td class="type" valign="bottom">{{ parent_page.content_type.model_class.get_verbose_name }}</td>
                 <td class="status" valign="bottom">
                     {% if not choosing and not moving and parent_page.live and not parent_page.is_root and 'view_live' not in hide_actions|default:'' %}
@@ -136,8 +143,17 @@
                     {% endif %}
                 </th>
                 {% if show_parent %}
-                    <th class="parent">Parent</th>
+                <th class="parent">{% trans 'Parent' %}</th>
                 {% endif %}
+                 <th class="updated">
+                    {% if sortable %}
+                        <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "latest_revision_created_at" %}-{% endif %}latest_revision_created_at" class="icon icon-arrow-{% if ordering == "-latest_revision_created_at" %}up-after{% else %}down-after{% endif %} {% if ordering == "latest_revision_created_at" or ordering == "-latest_revision_created_at" %}teal {% endif %}">
+                            {% trans 'Updated' %}
+                        </a>
+                    {% else %}
+                        {% trans 'Updated' %}
+                    {% endif %}                   
+                </th>
                 <th class="type">
                     {% if sortable %}
                         <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "content_type" %}-{% endif %}content_type" class="icon icon-arrow-{% if ordering == "-content_type" %}up-after{% else %}down-after{% endif %} {% if ordering == "content_type" or ordering == "-content_type" %}teal {% endif %}">
@@ -210,7 +226,11 @@
 
                             {% test_page_is_public page as is_public %}
                             {% if not is_public %}
-                            <span class="privacy-indicator icon icon-locked" title="This page is protected from public view"></span>
+                                <span class="privacy-indicator icon icon-no-view" title="{% trans 'This page is protected from public view' %}"></span>
+                            {% endif %}
+
+                            {% if page.locked %}
+                                <span class="locked-indicator icon icon-locked" title="{% trans 'This page is locked to further editing' %}"></span>
                             {% endif %}
                         </h2>
                         {% if not moving and not choosing %}
@@ -257,6 +277,7 @@
                             </td>
                         {% endwith %}
                     {% endif %}
+                    <td class="updated" valign="top">{% if page.latest_revision_created_at %}<div class="human-readable-date" title="{{ page.latest_revision_created_at|date:"d M Y H:i" }}">{{ page.latest_revision_created_at|timesince }} ago</div>{% endif %}</td>
                     <td class="type" valign="top">{{ page.content_type.model_class.get_verbose_name }}</td>
                     <td class="status" valign="top">
                         {% if not choosing and not moving and page.live and 'view_live' not in hide_actions|default:'' %}

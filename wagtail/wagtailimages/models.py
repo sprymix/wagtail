@@ -97,10 +97,10 @@ class AbstractImage(models.Model, TagSearchable):
     tags = TaggableManager(blank=True, verbose_name=_('Tags'),
             help_text=_('To enter multi-word tags, use double quotes: "some tag".'))
 
-    focal_point_x = models.PositiveIntegerField(null=True, editable=False)
-    focal_point_y = models.PositiveIntegerField(null=True, editable=False)
-    focal_point_width = models.PositiveIntegerField(null=True, editable=False)
-    focal_point_height = models.PositiveIntegerField(null=True, editable=False)
+    focal_point_x = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_y = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_width = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_height = models.PositiveIntegerField(null=True, blank=True)
 
     def get_usage(self):
         return get_object_usage(self)
@@ -232,7 +232,6 @@ class AbstractImage(models.Model, TagSearchable):
             else:
                 rendition, created = self.renditions.get_or_create(
                     filter=filter,
-                    focal_point_key='',
                     defaults={'file': generated_image_file}
                 )
 
@@ -384,6 +383,7 @@ class Filter(models.Model):
         # 'original'
         # 'width-200'
         # 'max-320x200'
+        # 'fill-200x200-c50'
         # 'crop-10,10:50,50'
         #
         # any format may be combined with another one by '|'
@@ -402,6 +402,15 @@ class Filter(models.Model):
             if match:
                 result.append((Filter.OPERATION_NAMES[match.group(1)],
                                int(match.group(2))))
+                continue
+
+            match = re.match(r'(fill)-(\d+)x(\d+)-c(\d+)$', self.spec)
+            if match:
+                width = int(match.group(2))
+                height = int(match.group(3))
+                crop_closeness = int(match.group(4))
+                result.append((Filter.OPERATION_NAMES[match.group(1)],
+                               (width, height, crop_closeness)))
                 continue
 
             match = re.match(r'(max|min|fill)-(\d+)x(\d+)$', spec_part)
@@ -441,7 +450,6 @@ class Filter(models.Model):
                                                 % spec_part)
 
         return result
-
 
     @cached_property
     def _method(self):
@@ -492,8 +500,7 @@ class AbstractRendition(models.Model):
     file = models.ImageField(upload_to='images', width_field='width', height_field='height')
     width = models.IntegerField(editable=False)
     height = models.IntegerField(editable=False)
-    focal_point_key = models.CharField(max_length=255, default='', null=False,
-                                       blank=True, editable=False)
+    focal_point_key = models.CharField(max_length=255, blank=True, default='', editable=False)
 
     @property
     def url(self):

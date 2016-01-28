@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'wagtail.wagtaildocs',
     'wagtail.wagtailsnippets',
     'wagtail.wagtailusers',
+    'wagtail.wagtailsites',
     'wagtail.wagtailimages',
     'wagtail.wagtailembeds',
     'wagtail.wagtailsearch',
@@ -72,6 +73,7 @@ INSTALLED_APPS = [
     'wagtail.contrib.wagtailstyleguide',
     'wagtail.contrib.wagtailsitemaps',
     'wagtail.contrib.wagtailroutablepage',
+    'wagtail.contrib.wagtailfrontendcache',
     'wagtail.tests',
 ]
 

@@ -9,7 +9,7 @@
 
         {% include "wagtailadmin/shared/breadcrumb.html" with page=parent_page %}
     </header>
-   
+
     <form id="page-reorder-form">
         {% csrf_token %}
 
@@ -31,9 +31,10 @@
                 var orderform = $('#page-reorder-form');
 
                 $('.listing tbody').sortable({
-                    cursor: "move", 
-                    containment: "parent", 
-                    handle: ".handle", 
+                    cursor: "move",
+                    tolerance: "pointer",
+                    containment: "parent",
+                    handle: ".handle",
                     items: "> tr",
                     axis: "y",
                     placeholder: "dropzone",
