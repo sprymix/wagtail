@@ -1,9 +1,8 @@
 import warnings
 
 from django.test import TestCase, Client
+from django.test.utils import override_settings
 from django.http import HttpRequest, Http404
-
-from wagtail.utils.deprecation import RemovedInWagtail06Warning
 
 from wagtail.wagtailcore.models import Page, Site
 from wagtail.tests.models import EventPage, EventIndex, SimplePage, PageWithOldStyleRouteMethod
@@ -100,6 +99,16 @@ class TestSiteRouting(TestCase):
 class TestRouting(TestCase):
     fixtures = ['test.json']
 
+    # need to clear urlresolver caches before/after tests, because we override ROOT_URLCONF
+    # in some tests here
+    def setUp(self):
+        from django.core.urlresolvers import clear_url_caches
+        clear_url_caches()
+
+    def tearDown(self):
+        from django.core.urlresolvers import clear_url_caches
+        clear_url_caches()
+
     def test_urls(self):
         default_site = Site.objects.get(is_default_site=True)
         homepage = Page.objects.get(url_path='/home/')
@@ -113,6 +122,14 @@ class TestRouting(TestCase):
         self.assertEqual(christmas_page.full_url, 'http://localhost/events/christmas/')
         self.assertEqual(christmas_page.url, '/events/christmas/')
         self.assertEqual(christmas_page.relative_url(default_site), '/events/christmas/')
+
+    def test_page_with_no_url(self):
+        root = Page.objects.get(url_path='/')
+        default_site = Site.objects.get(is_default_site=True)
+
+        self.assertEqual(root.full_url, None)
+        self.assertEqual(root.url, None)
+        self.assertEqual(root.relative_url(default_site), None)
 
     def test_urls_with_multiple_sites(self):
         events_page = Page.objects.get(url_path='/home/events/')
@@ -133,6 +150,21 @@ class TestRouting(TestCase):
         self.assertEqual(christmas_page.url, 'http://events.example.com/christmas/')
         self.assertEqual(christmas_page.relative_url(default_site), 'http://events.example.com/christmas/')
         self.assertEqual(christmas_page.relative_url(events_site), '/christmas/')
+
+    @override_settings(ROOT_URLCONF='wagtail.tests.non_root_urls')
+    def test_urls_with_non_root_urlconf(self):
+        default_site = Site.objects.get(is_default_site=True)
+        homepage = Page.objects.get(url_path='/home/')
+        christmas_page = Page.objects.get(url_path='/home/events/christmas/')
+
+        # Basic installation only has one site configured, so page.url will return local URLs
+        self.assertEqual(homepage.full_url, 'http://localhost/site/')
+        self.assertEqual(homepage.url, '/site/')
+        self.assertEqual(homepage.relative_url(default_site), '/site/')
+
+        self.assertEqual(christmas_page.full_url, 'http://localhost/site/events/christmas/')
+        self.assertEqual(christmas_page.url, '/site/events/christmas/')
+        self.assertEqual(christmas_page.relative_url(default_site), '/site/events/christmas/')
 
     def test_request_routing(self):
         homepage = Page.objects.get(url_path='/home/')
@@ -179,8 +211,30 @@ class TestServeView(TestCase):
         from django.core.cache import cache
         cache.delete('wagtail_site_root_paths')
 
+        # also need to clear urlresolver caches before/after tests, because we override
+        # ROOT_URLCONF in some tests here
+        from django.core.urlresolvers import clear_url_caches
+        clear_url_caches()
+
+    def tearDown(self):
+        from django.core.urlresolvers import clear_url_caches
+        clear_url_caches()
+
+
     def test_serve(self):
         response = self.client.get('/events/christmas/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, 'tests/event_page.html')
+        christmas_page = EventPage.objects.get(url_path='/home/events/christmas/')
+        self.assertEqual(response.context['self'], christmas_page)
+
+        self.assertContains(response, '<h1>Christmas</h1>')
+        self.assertContains(response, '<h2>Event</h2>')
+
+    @override_settings(ROOT_URLCONF='wagtail.tests.non_root_urls')
+    def test_serve_with_non_root_urls(self):
+        response = self.client.get('/site/events/christmas/')
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, 'tests/event_page.html')
@@ -233,24 +287,6 @@ class TestServeView(TestCase):
         # should only render the content of includes/event_listing.html, not the whole page
         self.assertNotContains(response, '<h1>Events</h1>')
         self.assertContains(response, '<a href="/events/christmas/">Christmas</a>')
-
-
-    def test_old_style_routing(self):
-        """
-        Test that route() methods that return an HttpResponse are correctly handled
-        """
-        with warnings.catch_warnings(record=True) as w:
-            response = self.client.get('/old-style-route/')
-
-            # Check that a RemovedInWagtail06Warning has been triggered
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[-1].category, RemovedInWagtail06Warning))
-            self.assertTrue("Page.route should return an instance of wagtailcore.url_routing.RouteResult" in str(w[-1].message))
-
-        expected_page = PageWithOldStyleRouteMethod.objects.get(url_path='/home/old-style-route/')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['self'], expected_page)
-        self.assertEqual(response.templates[0].name, 'tests/simple_page.html')
 
     def test_before_serve_hook(self):
         response = self.client.get('/events/', HTTP_USER_AGENT='GoogleBot')
@@ -371,6 +407,11 @@ class TestCopyPage(TestCase):
 
         # Check that the speakers weren't removed from old page
         self.assertEqual(christmas_event.speakers.count(), 1, "Child objects were removed from the original page")
+
+        # Check that advert placements were also copied (there's a gotcha here, since the advert_placements
+        # relation is defined on Page, not EventPage)
+        self.assertEqual(new_christmas_event.advert_placements.count(), 1, "Child objects defined on the superclass weren't copied")
+        self.assertEqual(christmas_event.advert_placements.count(), 1, "Child objects defined on the superclass were removed from the original page")
 
     def test_copy_page_copies_child_objects_with_nonspecific_class(self):
         # Get chrismas page as Page instead of EventPage

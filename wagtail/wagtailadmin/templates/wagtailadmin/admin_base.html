@@ -1,5 +1,5 @@
 {% extends "wagtailadmin/skeleton.html" %}
-{% load compress %}
+{% load compress wagtailadmin_tags %}
 
 {% block css %}
     {% compress css %}
@@ -24,18 +24,8 @@
         <script src="{{ STATIC_URL }}wagtailadmin/js/vendor/bootstrap-modal.js"></script>
         <script src="{{ STATIC_URL }}wagtailadmin/js/vendor/bootstrap-tab.js"></script>
         <script src="{{ STATIC_URL }}wagtailadmin/js/vendor/jquery.dlmenu.js"></script>
-        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/Jcrop/jquery.Jcrop.min.js"></script>
         <script src="{{ STATIC_URL }}wagtailadmin/js/core.js"></script>
-        <script>
-            window.explorer_menu_url = "{% url 'wagtailadmin_explorer_nav' %}";
-        </script>
-        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/load-image.min.js"></script>
-        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/canvas-to-blob.min.js"></script>
-        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.iframe-transport.js"></script>
-        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.fileupload.js"></script>
-        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.fileupload-process.js"></script>
-        <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.fileupload-image.js"></script>
-        <script src="{{ STATIC_URL }}wagtailadmin/js/vendor/tag-it.js"></script>
+        {% main_nav_js %}
     {% endcompress %}
 
     {% block extra_js %}{% endblock %}

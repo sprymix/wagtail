@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
+from wagtail.wagtailsearch.backends import get_search_backends
 
 from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm, \
@@ -256,6 +257,10 @@ def chooser_select(request, image_id):
 
     if form.is_valid():
         form.save()
+
+        # Reindex the image to make sure all tags are indexed
+        for backend in get_search_backends():
+            backend.add(image)
 
         # several possibilities starting from here, based on the GET params
         #

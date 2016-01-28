@@ -59,10 +59,14 @@ def construct_main_menu(request, menu_items):
     if not OLD_STYLE_URLCONF_CHECK_PASSED:
         check_old_style_urlconf()
 
-    if request.user.has_perm('wagtailimages.add_image'):
-        menu_items.append(
-            MenuItem(_('Images'), urlresolvers.reverse('wagtailimages_index'), classnames='icon icon-image', order=300)
-        )
+
+class ImagesMenuItem(MenuItem):
+    def is_shown(self, request):
+        return request.user.has_perm('wagtailimages.add_image')
+
+@hooks.register('register_admin_menu_item')
+def register_images_menu_item():
+    return ImagesMenuItem(_('Images'), urlresolvers.reverse('wagtailimages_index'), classnames='icon icon-image', order=300)
 
 
 @hooks.register('insert_editor_js')
@@ -71,6 +75,13 @@ def editor_js():
         'wagtailimages/js/hallo-plugins/hallo-wagtailimage.js',
         'wagtailimages/js/image-chooser.js',
         'wagtailimages/js/add-multiple.js',
+        'wagtailimages/js/vendor/Jcrop/jquery.Jcrop.min.js',
+        'wagtailimages/js/vendor/load-image.min.js',
+        'wagtailimages/js/vendor/canvas-to-blob.min.js',
+        'wagtailimages/js/vendor/jquery.iframe-transport.js',
+        'wagtailimages/js/vendor/jquery.fileupload.js',
+        'wagtailimages/js/vendor/jquery.fileupload-process.js',
+        'wagtailimages/js/vendor/jquery.fileupload-image.js'
     ]
     js_includes = format_html_join('\n', '<script src="{0}{1}"></script>',
         ((settings.STATIC_URL, filename) for filename in js_files)

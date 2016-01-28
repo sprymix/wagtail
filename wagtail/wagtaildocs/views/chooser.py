@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
+from wagtail.wagtailsearch.backends import get_search_backends
 
 from wagtail.wagtaildocs.models import Document
 from wagtail.wagtaildocs.forms import DocumentForm, DocumentFormMulti
@@ -146,6 +147,11 @@ def chooser_select(request, doc_id):
 
     if form.is_valid():
         form.save()
+
+        # Reindex the document to make sure all tags are indexed
+        for backend in get_search_backends():
+            backend.add(document)
+
         document_json = json.dumps({
             'id': document.id,
             'title': document.title,
