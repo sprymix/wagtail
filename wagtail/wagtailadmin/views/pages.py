@@ -593,7 +593,7 @@ def move_choose_destination(request, page_to_move_id, viewed_page_id=None):
 
 @permission_required('wagtailadmin.access_admin')
 def move_confirm(request, page_to_move_id, destination_id):
-    page_to_move = get_object_or_404(Page, id=page_to_move_id)
+    page_to_move = get_object_or_404(Page, id=page_to_move_id).specific
     destination = get_object_or_404(Page, id=destination_id)
     if not page_to_move.permissions_for_user(request.user).can_move_to(destination):
         raise PermissionDenied
@@ -676,15 +676,9 @@ def copy(request, page_id):
             update_attrs={
                 'title': form.cleaned_data['new_title'],
                 'slug': form.cleaned_data['new_slug'],
-            }
+            },
+            keep_live=(can_publish and form.cleaned_data.get('publish_copies')),
         )
-
-        # Check if we should keep copied subpages published
-        publish_copies = can_publish and form.cleaned_data.get('publish_copies')
-
-        # Unpublish copied pages if we need to
-        if not publish_copies:
-            new_page.get_descendants(inclusive=True).unpublish()
 
         # Assign user of this request as the owner of all the new pages
         new_page.get_descendants(inclusive=True).update(owner=request.user)
@@ -822,7 +816,7 @@ def preview_for_moderation(request, revision_id):
 @require_POST
 def lock(request, page_id):
     # Get the page
-    page = get_object_or_404(Page, id=page_id)
+    page = get_object_or_404(Page, id=page_id).specific
 
     # Check permissions
     if not page.permissions_for_user(request.user).can_lock():
@@ -832,6 +826,8 @@ def lock(request, page_id):
     if not page.locked:
         page.locked = True
         page.save()
+
+        messages.success(request, _("Page '{0}' is now locked.").format(page.title))
 
     # Redirect
     redirect_to = request.POST.get('next', None)
@@ -845,7 +841,7 @@ def lock(request, page_id):
 @require_POST
 def unlock(request, page_id):
     # Get the page
-    page = get_object_or_404(Page, id=page_id)
+    page = get_object_or_404(Page, id=page_id).specific
 
     # Check permissions
     if not page.permissions_for_user(request.user).can_lock():
@@ -855,6 +851,8 @@ def unlock(request, page_id):
     if page.locked:
         page.locked = False
         page.save()
+
+        messages.success(request, _("Page '{0}' is now unlocked.").format(page.title))
 
     # Redirect
     redirect_to = request.POST.get('next', None)

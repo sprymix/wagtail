@@ -37,21 +37,51 @@ class Indexed(object):
 
     @classmethod
     def get_search_fields(cls):
-        return cls.search_fields
+        search_fields = {}
+
+        for field in cls.search_fields:
+            search_fields[(type(field), field.field_name)] = field
+
+        return list(search_fields.values())
 
     @classmethod
     def get_searchable_search_fields(cls):
-        return filter(lambda field: isinstance(field, SearchField), cls.get_search_fields())
+        return [
+            field for field in cls.get_search_fields()
+            if isinstance(field, SearchField)
+        ]
 
     @classmethod
     def get_filterable_search_fields(cls):
-        return filter(lambda field: isinstance(field, FilterField), cls.get_search_fields())
+        return [
+            field for field in cls.get_search_fields()
+            if isinstance(field, FilterField)
+        ]
 
     @classmethod
     def get_indexed_objects(cls):
         return cls.objects.all()
 
+    def get_indexed_instance(self):
+        """
+        If the indexed model uses multi table inheritance, override this method
+        to return the instance in its most specific class so it reindexes properly.
+        """
+        return self
+
     search_fields = ()
+
+
+def get_indexed_models():
+    return [
+        model for model in models.get_models()
+        if issubclass(model, Indexed) and not model._meta.abstract and
+            not getattr(model, 'exclude_from_search_index', False)
+    ]
+
+
+def class_is_indexed(cls):
+    return issubclass(cls, Indexed) and issubclass(cls, models.Model) and not cls._meta.abstract
 
 
 class BaseField(object):

@@ -83,7 +83,8 @@ def editor_js():
         'wagtailimages/js/vendor/jquery.iframe-transport.js',
         'wagtailimages/js/vendor/jquery.fileupload.js',
         'wagtailimages/js/vendor/jquery.fileupload-process.js',
-        'wagtailimages/js/vendor/jquery.fileupload-image.js'
+        'wagtailimages/js/vendor/jquery.fileupload-image.js',
+        'wagtailimages/js/vendor/jquery.fileupload-validate.js',
     ]
     js_includes = format_html_join('\n', '<script src="{0}{1}"></script>',
         ((settings.STATIC_URL, filename) for filename in js_files)

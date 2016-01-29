@@ -1,7 +1,7 @@
 $(function(){
     // Redirect users that don't support filereader
     if(!$('html').hasClass('filereader')){
-        document.location.href = window.simple_upload_url;
+        document.location.href = window.fileupload_opts.simple_upload_url;
         return false;
     }
 
@@ -39,10 +39,16 @@ $(function(){
             dataType: 'html',
             sequentialUploads: true,
             dropZone: dropZone,
+            acceptFileTypes: options.accepted_file_types,
+            maxFileSize: options.max_file_size,
             previewMinWidth:150,
             previewMaxWidth:150,
             previewMinHeight:150,
             previewMaxHeight:150,
+            messages: {
+                acceptFileTypes: options.errormessages.accepted_file_types,
+                maxFileSize: options.errormessages.max_file_size
+            },
 
             add: function (e, data) {
                 // special processing for one file only uploads
@@ -88,12 +94,16 @@ $(function(){
                         data.context.each(function (index) {
                             var error = data.files[index].error;
                             if (error) {
-                                $(this).find('.error').text(error);
+                                $(this).find('.error_messages').text(error);
                             }
                         });
                     }
                 });
+            },
 
+            processfail: function(e, data){
+                var itemElement = $(data.context);
+                itemElement.removeClass('upload-uploading').addClass('upload-failure');
             },
 
             progress: function (e, data) {

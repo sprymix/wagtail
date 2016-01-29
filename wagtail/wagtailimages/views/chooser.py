@@ -18,10 +18,16 @@ from wagtail.wagtailsearch.backends import get_search_backends
 
 from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm, \
-                                        ImageCropperForm, \
-                                        get_image_form_for_multi
+                                        ImageCropperForm
 from wagtail.wagtailimages.formats import get_image_format
-from wagtail.wagtailimages.utils.validators import validate_image_format
+from wagtail.wagtailimages.fields import (
+    MAX_UPLOAD_SIZE,
+    IMAGE_FIELD_HELP_TEXT,
+    INVALID_IMAGE_ERROR,
+    ALLOWED_EXTENSIONS,
+    SUPPORTED_FORMATS_TEXT,
+    FILE_TOO_LARGE_ERROR,
+)
 
 
 def get_image_json(image):
@@ -103,7 +109,7 @@ def chooser(request):
     Image = get_image_model()
 
     if request.user.has_perm('wagtailimages.add_image'):
-        ImageForm = get_image_form()
+        ImageForm = get_image_form(hide_file=True)
         uploadform = ImageForm()
     else:
         uploadform = None
@@ -176,6 +182,11 @@ def chooser(request):
         'uploadid': uuid.uuid4(),
         'post_processing_spec': request.GET.get('pps'),
         'additional_params': get_cropper_params(request),
+        'max_filesize': MAX_UPLOAD_SIZE,
+        'help_text': IMAGE_FIELD_HELP_TEXT,
+        'allowed_extensions': ALLOWED_EXTENSIONS,
+        'error_max_file_size': FILE_TOO_LARGE_ERROR,
+        'error_accepted_file_types': INVALID_IMAGE_ERROR,
     })
 
 
@@ -197,22 +208,13 @@ def json_response(document):
 @permission_required('wagtailimages.add_image')
 def chooser_upload(request):
     Image = get_image_model()
-    ImageForm = get_image_form_for_multi()
+    ImageForm = get_image_form(hide_file=True)
 
     if not request.is_ajax():
         return HttpResponseBadRequest("Cannot POST to this view without AJAX")
 
     if not request.FILES:
         return HttpResponseBadRequest("Must upload a file")
-
-    # Check that the uploaded file is valid
-    try:
-        validate_image_format(request.FILES['files[]'])
-    except ValidationError as e:
-        return json_response({
-            'success': False,
-            'error_message': '\n'.join(e.messages),
-        })
 
     # Save it
     image = Image(uploaded_by_user=request.user, title=request.FILES['files[]'].name, file=request.FILES['files[]'])
@@ -242,7 +244,7 @@ def chooser_upload(request):
 @permission_required('wagtailimages.add_image')
 def chooser_select(request, image_id):
     Image = get_image_model()
-    ImageForm = get_image_form_for_multi()
+    ImageForm = get_image_form(hide_file=True)
 
     image = get_object_or_404(Image, id=image_id)
 

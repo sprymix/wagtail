@@ -28,21 +28,25 @@ Firstly, add ``"wagtail.contrib.wagtailfrontendcache"`` to your INSTALLED_APPS:
         "wagtail.contrib.wagtailfrontendcache"
      ]
 
+.. versionchanged:: 0.8
 
-The ``wagtailfrontendcache`` module provides a set of signal handlers which will automatically purge the cache whenever a page is published or deleted. You should register these somewhere at the top of your ``urls.py`` file:
+    Signal handlers are now automatically registered in Django 1.7 and upwards
+
+The ``wagtailfrontendcache`` module provides a set of signal handlers which will automatically purge the cache whenever a page is published or deleted.
+
+If you are using Django version 1.7 or newer, these signal handlers are automatically registered when the ``wagtail.contrib.wagtailfrontendcache`` app is loaded. Otherwise, they must be registered as your application starts up. This can be done by placing the following code in your ``urls.py``:
 
 .. code-block:: python
 
     # urls.py
     from wagtail.contrib.wagtailfrontendcache.signal_handlers import register_signal_handlers
-
     register_signal_handlers()
 
 
 Varnish/Squid
 ^^^^^^^^^^^^^
 
-Add an item into the ``WAGTAILFRONTENDCACHE`` and set the ``BACKEND`` parameter to ``wagtail.contrib.wagtailfrontendcache.backends.HTTPBackend``. This backend requires an extra parameter ``LOCATION`` which points to where the cache is running (this must be a direct connection to the server and cannot go through another proxy).
+Add a new item into the ``WAGTAILFRONTENDCACHE`` setting and set the ``BACKEND`` parameter to ``wagtail.contrib.wagtailfrontendcache.backends.HTTPBackend``. This backend requires an extra parameter ``LOCATION`` which points to where the cache is running (this must be a direct connection to the server and cannot go through another proxy).
 
 .. code-block:: python
 
