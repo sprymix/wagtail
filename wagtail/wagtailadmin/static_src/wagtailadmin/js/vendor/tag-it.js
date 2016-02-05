@@ -325,8 +325,9 @@
             var state = 'normal';
             var tokens = [];
             var token = '';
+            var quotes = '"“”„‟';
             for (var i = 0; i < string.length; i += 1) {
-                if (string[i] == '"') {
+                if (quotes.indexOf(string[i]) != -1) {
                     if (state == 'dquote') {
                         if (token) {
                             tokens.push(token);
@@ -603,4 +604,3 @@
 
     });
 })(jQuery);
-
