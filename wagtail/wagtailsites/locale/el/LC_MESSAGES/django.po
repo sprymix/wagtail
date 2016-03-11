@@ -3,108 +3,84 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Wasilis Mandratzis-Walz, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-11-04 17:13+0000\n"
-"PO-Revision-Date: 2014-10-03 15:24+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2015-04-21 09:39+0100\n"
+"PO-Revision-Date: 2015-04-12 14:28+0000\n"
+"Last-Translator: Wasilis Mandratzis-Walz\n"
 "Language-Team: Greek (http://www.transifex.com/projects/p/wagtail/language/"
 "el/)\n"
-"Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: el\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: views.py:31
-msgid "Site '{0}' created."
-msgstr ""
-
-#: views.py:34
-msgid "The site could not be created due to errors."
-msgstr ""
-
-#: views.py:51
-msgid "Site '{0}' updated."
-msgstr ""
-
-#: views.py:54
-msgid "The site could not be saved due to errors."
-msgstr ""
-
-#: views.py:70
-msgid "Site '{0}' deleted."
-msgstr ""
-
-#: wagtail_hooks.py:24 templates/wagtailsites/index.html:3
-#: templates/wagtailsites/index.html:5
-msgid "Sites"
-msgstr ""
-
-#: templates/wagtailsites/confirm_delete.html:3
-#: templates/wagtailsites/confirm_delete.html:7
-#: templates/wagtailsites/edit.html:36
-msgid "Delete site"
-msgstr ""
-
-#: templates/wagtailsites/confirm_delete.html:11
-msgid "Are you sure you want to delete this site?"
-msgstr ""
-
-#: templates/wagtailsites/confirm_delete.html:14
-msgid "Yes, delete"
-msgstr ""
-
-#: templates/wagtailsites/create.html:4 templates/wagtailsites/create.html:9
-msgid "Add site"
-msgstr ""
-
-#: templates/wagtailsites/create.html:20
-msgid "Choose a different root page"
-msgstr ""
-
-#: templates/wagtailsites/create.html:21
 msgid "Choose a root page"
-msgstr ""
+msgstr "Επιλέξτε μια κεντρική σελίδα"
 
-#: templates/wagtailsites/create.html:31 templates/wagtailsites/edit.html:34
+msgid "Choose a different root page"
+msgstr "Επιλέξτε μια διαφορετική κεντρική σελίδα"
+
+msgid "Delete site"
+msgstr "Διαγραφή σελίδας"
+
+msgid "Are you sure you want to delete this site?"
+msgstr "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την σελίδα;"
+
+msgid "Yes, delete"
+msgstr "Ναι, να διαγραφεί"
+
+msgid "Add site"
+msgstr "Προσθήκη σελίδας"
+
 msgid "Save"
-msgstr ""
+msgstr "Αποθήκευση"
 
-#: templates/wagtailsites/edit.html:4 templates/wagtailsites/edit.html.py:9
 msgid "Editing"
-msgstr ""
+msgstr "Επεξεργασία"
 
-#: templates/wagtailsites/edit.html:21
-msgid "Change page"
-msgstr ""
+msgid "Sites"
+msgstr "Σελιδες"
 
-#: templates/wagtailsites/edit.html:22
-msgid "Choose page"
-msgstr ""
-
-#: templates/wagtailsites/index.html:7
 msgid "Add a site"
-msgstr ""
+msgstr "Προσθήκη σελιδας"
 
-#: templates/wagtailsites/index.html:19
 msgid "Site"
-msgstr ""
+msgstr "Σελιδα"
 
-#: templates/wagtailsites/index.html:26
 msgid "Port"
-msgstr ""
+msgstr "Θυρα"
 
-#: templates/wagtailsites/index.html:27
 msgid "Root page"
-msgstr ""
+msgstr "Κεντρική σελίδα"
 
-#: templates/wagtailsites/index.html:28
 msgid "Default?"
-msgstr ""
+msgstr "Προεπιλογή;"
 
-#: templates/wagtailsites/index.html:42
 msgid "Default"
-msgstr ""
+msgstr "Προεπιλογή"
+
+#, python-brace-format
+msgid "Site '{0}' created."
+msgstr "Η σελίδα '{0}' δημιουργήθηκε."
+
+msgid "Edit"
+msgstr "Επεξεργασία"
+
+msgid "The site could not be created due to errors."
+msgstr "Η σελίδα δεν μπορεί να δημιουργηθεί λόγω σφαλμάτων."
+
+#, python-brace-format
+msgid "Site '{0}' updated."
+msgstr "Έγινε η αποθήκευση της σελίδας '{0}'."
+
+msgid "The site could not be saved due to errors."
+msgstr "Δεν ήταν δυνατή η αποθήκευση της σελίδας λόγω σφαλμάτων."
+
+#, python-brace-format
+msgid "Site '{0}' deleted."
+msgstr "Η σελίδα '{0}' διαγράφηκε."

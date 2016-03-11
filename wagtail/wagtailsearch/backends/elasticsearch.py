@@ -4,13 +4,11 @@ import json
 
 from six.moves.urllib.parse import urlparse
 
-from django.db import models
-
-from elasticsearch import Elasticsearch, NotFoundError, RequestError
+from elasticsearch import Elasticsearch, NotFoundError
 from elasticsearch.helpers import bulk
 
 from wagtail.wagtailsearch.backends.base import BaseSearch, BaseSearchQuery, BaseSearchResults
-from wagtail.wagtailsearch.index import Indexed, SearchField, FilterField, class_is_indexed
+from wagtail.wagtailsearch.index import SearchField, FilterField, class_is_indexed
 
 
 class ElasticSearchMapping(object):
@@ -314,21 +312,11 @@ class ElasticSearchResults(BaseSearchResults):
         # Get query
         query = self.query.to_es()
 
-        # Elasticsearch 1.x
-        count = self.backend.es.count(
+        # Get count
+        hit_count = self.backend.es.count(
             index=self.backend.es_index,
             body=dict(query=query),
-        )
-
-        # ElasticSearch 0.90.x fallback
-        if not count['_shards']['successful'] and "No query registered for [query]]" in count['_shards']['failures'][0]['reason']:
-            count = self.backend.es.count(
-                index=self.backend.es_index,
-                body=query,
-            )
-
-        # Get count
-        hit_count = count['count']
+        )['count']
 
         # Add limits
         hit_count -= self.start
@@ -355,11 +343,19 @@ class ElasticSearch(BaseSearch):
             for url in self.es_urls:
                 parsed_url = urlparse(url)
 
+                use_ssl = parsed_url.scheme == 'https'
+                port = parsed_url.port or (443 if use_ssl else 80)
+
+                http_auth = None
+                if parsed_url.username is not None and parsed_url.password is not None:
+                    http_auth = (parsed_url.username, parsed_url.password)
+
                 self.es_hosts.append({
                     'host': parsed_url.hostname,
-                    'port': parsed_url.port or 9200,
+                    'port': port,
                     'url_prefix': parsed_url.path,
-                    'use_ssl': parsed_url.scheme == 'https',
+                    'use_ssl': use_ssl,
+                    'http_auth': http_auth,
                 })
 
         # Get ElasticSearch interface

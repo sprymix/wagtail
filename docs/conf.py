@@ -52,6 +52,9 @@ extensions = [
     'sphinx.ext.autodoc',
 ]
 
+if not on_rtd:
+    extensions.append('sphinxcontrib.spelling')
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -66,7 +69,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Wagtail'
-copyright = u'2014, Torchbox'
+copyright = u'2015, Torchbox'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -116,6 +119,12 @@ pygments_style = 'sphinx'
 #keep_warnings = False
 
 
+# splhinxcontrib.spelling settings
+
+spelling_lang = 'en_GB'
+spelling_word_list_filename='spelling_wordlist.txt'
+
+
 # -- Options for HTML output ----------------------------------------------
 
 
@@ -135,7 +144,7 @@ pygments_style = 'sphinx'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'logo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32

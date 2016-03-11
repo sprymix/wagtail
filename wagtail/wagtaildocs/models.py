@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import os.path
 
 from taggit.managers import TaggableManager
@@ -8,7 +10,7 @@ from django.dispatch.dispatcher import receiver
 from django.dispatch import Signal
 from django.core.urlresolvers import reverse
 from django.conf import settings
-from django.utils.translation import ugettext_lazy  as _
+from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
 
 from wagtail.wagtailadmin.taggable import TagSearchable
@@ -19,9 +21,9 @@ from wagtail.wagtailsearch import index
 @python_2_unicode_compatible
 class Document(models.Model, TagSearchable):
     title = models.CharField(max_length=255, verbose_name=_('Title'))
-    file = models.FileField(upload_to='documents' , verbose_name=_('File'))
-    created_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, editable=False)
+    file = models.FileField(upload_to='documents', verbose_name=_('File'))
+    created_at = models.DateTimeField(verbose_name=_('Created at'), auto_now_add=True)
+    uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('Uploaded by user'), null=True, blank=True, editable=False)
 
     tags = TaggableManager(help_text=None, blank=True, verbose_name=_('Tags'))
 
@@ -66,10 +68,13 @@ class Document(models.Model, TagSearchable):
         else:
             return False
 
+    class Meta:
+        verbose_name = _('Document')
+
 
 # Receive the pre_delete signal and delete the file associated with the model instance.
 @receiver(pre_delete, sender=Document)
-def image_delete(sender, instance, **kwargs):
+def document_delete(sender, instance, **kwargs):
     # Pass false so FileField doesn't save the model.
     instance.file.delete(False)
 

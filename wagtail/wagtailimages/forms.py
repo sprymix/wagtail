@@ -1,8 +1,10 @@
+import warnings
+
 from django import forms
 from django.forms.models import modelform_factory
 from django.utils.translation import ugettext as _
 
-from wagtail.wagtailimages.models import get_image_model
+from wagtail.utils.deprecation import RemovedInWagtail12Warning
 from wagtail.wagtailimages.formats import get_image_formats
 from wagtail.wagtailimages.fields import WagtailImageField
 
@@ -17,8 +19,20 @@ def formfield_for_dbfield(db_field, **kwargs):
     return db_field.formfield(**kwargs)
 
 
-def get_image_form(hide_file=False):
-    widgets={
+def get_image_form(model, hide_file=False):
+    if hasattr(model, 'admin_form_fields'):
+        fields = model.admin_form_fields
+    else:
+        fields = '__all__'
+
+        warnings.warn(
+            "Custom image models without an 'admin_form_fields' attribute are now deprecated. "
+            "Add admin_form_fields = (tuple of field names) to {classname}".format(
+                classname=model.__name__
+            ), RemovedInWagtail12Warning, stacklevel=2)
+
+
+    widgets = {
         'focal_point_x': forms.HiddenInput(attrs={'class': 'focal_point_x'}),
         'focal_point_y': forms.HiddenInput(attrs={'class': 'focal_point_y'}),
         'focal_point_width': forms.HiddenInput(attrs={'class': 'focal_point_width'}),
@@ -34,10 +48,10 @@ def get_image_form(hide_file=False):
         widgets['file'] = forms.FileInput()
 
     return modelform_factory(
-        get_image_model(),
+        model,
+        fields=fields,
         formfield_callback=formfield_for_dbfield,
-        widgets=widgets
-    )
+        widgets=widgets)
 
 
 class ImageInsertionForm(forms.Form):

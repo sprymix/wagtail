@@ -1,10 +1,14 @@
-import os.path
-import re
-import hashlib
+from __future__ import unicode_literals
 
-from six import BytesIO
+import os.path
+import hashlib
+from contextlib import contextmanager
+import warnings
+
+from six import BytesIO, text_type
 
 from taggit.managers import TaggableManager
+from willow.image import Image as WillowImage
 
 from django.core.files import File
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
@@ -14,39 +18,57 @@ from django.dispatch.dispatcher import receiver
 from django.utils.safestring import mark_safe
 from django.utils.html import escape, format_html_join
 from django.conf import settings
-from django.utils.translation import ugettext_lazy  as _
+from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
 from django.core.urlresolvers import reverse
 
 from unidecode import unidecode
 
+from wagtail.wagtailcore import hooks
 from wagtail.wagtailadmin.taggable import TagSearchable
-from wagtail.wagtailimages.backends import get_image_backend
 from wagtail.wagtailsearch import index
-from wagtail.wagtailimages.feature_detection import FeatureDetector, opencv_available
 from wagtail.wagtailimages.rect import Rect
+from wagtail.wagtailimages.exceptions import InvalidFilterSpecError
 from wagtail.wagtailadmin.utils import get_object_usage
+from wagtail.utils.deprecation import RemovedInWagtail12Warning
 
 
-def _generate_output_filename(input_filename, filter_spec, focal_point_key='focus-none',
+# A mapping of image formats to extensions
+FORMAT_EXTENSIONS = {
+    'jpeg': '.jpg',
+    'png': '.png',
+    'gif': '.gif',
+}
+
+
+class SourceImageIOError(IOError):
+    """
+    Custom exception to distinguish IOErrors that were thrown while opening the source image
+    """
+    pass
+
+
+def _generate_output_filename(input_filename, output_format,
+                              spec_hash,
+                              focal_point_key='',
                               max_len=80):
     input_filename_parts = os.path.basename(input_filename).split('.')
     filename_without_extension = '.'.join(input_filename_parts[:-1])
-    filename_extension = input_filename_parts[-1]
+    filename_extension = FORMAT_EXTENSIONS[output_format]
 
-    if focal_point_key == 'focus-none':
-        focal_point_key = ''
+    if focal_point_key:
+        focal_point_key = 'focus-' + focal_point_key
 
     # we want to condense arbitrarily long specs into a finite string
     #
-    spec_hash = hashlib.sha1(filter_spec).hexdigest()
     extra_name_length = (len(spec_hash) + len(filename_extension)
                             + len(focal_point_key)
-                            + 3)
+                            + 3) # + 3 for the '.' used
 
     if extra_name_length >= max_len:
-        raise RuntimeError('image file path is too long: {}'.format(input_filename))
+        raise RuntimeError('image file path is too long: {}'.format(
+                                                                input_filename))
 
     # trim filename base so that we're well under 100 chars
     filename_without_extension = filename_without_extension[:max_len - extra_name_length]
@@ -94,12 +116,12 @@ def get_upload_to(instance, filename):
 
 @python_2_unicode_compatible
 class AbstractImage(models.Model, TagSearchable):
-    title = models.CharField(max_length=255, verbose_name=_('Title') )
+    title = models.CharField(max_length=255, verbose_name=_('Title'))
     file = models.ImageField(verbose_name=_('File'), upload_to=get_upload_to, width_field='width', height_field='height')
-    width = models.IntegerField(editable=False)
-    height = models.IntegerField(editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, editable=False)
+    width = models.IntegerField(verbose_name=_('Width'), editable=False)
+    height = models.IntegerField(verbose_name=_('Height'), editable=False)
+    created_at = models.DateTimeField(verbose_name=_('Created at'), auto_now_add=True)
+    uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('Uploaded by user'), null=True, blank=True, editable=False)
     show_in_catalogue = models.BooleanField(default=True)
 
     tags = TaggableManager(blank=True, verbose_name=_('Tags'),
@@ -125,6 +147,28 @@ class AbstractImage(models.Model, TagSearchable):
 
     def __str__(self):
         return self.title
+
+    @contextmanager
+    def get_willow_image(self):
+        # Open file if it is closed
+        close_file = False
+        try:
+            if self.file.closed:
+                self.file.open('rb')
+                close_file = True
+        except IOError as e:
+            # re-throw this as a SourceImageIOError so that calling code can distinguish
+            # these from IOErrors elsewhere in the process
+            raise SourceImageIOError(text_type(e))
+
+        # Seek to beginning
+        self.file.seek(0)
+
+        try:
+            yield WillowImage.open(self.file)
+        finally:
+            if close_file:
+                self.file.close()
 
     def get_rect(self):
         return Rect(0, 0, self.width, self.height)
@@ -156,45 +200,28 @@ class AbstractImage(models.Model, TagSearchable):
             self.focal_point_width = None
             self.focal_point_height = None
 
-    def get_suggested_focal_point(self, backend_name='default'):
-        backend = get_image_backend(backend_name)
-        image_file = self.file.file
+    def get_suggested_focal_point(self):
+        with self.get_willow_image() as willow:
+            faces = willow.detect_faces()
 
-        # Make sure image is open and seeked to the beginning
-        image_file.open('rb')
-        image_file.seek(0)
-
-        # Load the image
-        image = backend.open_image(self.file.file)
-        image_data = backend.image_data_as_rgb(image)
-
-        # Make sure we have image data
-        # If the image is animated, image_data_as_rgb will return None
-        if image_data is None:
-            return
-
-        # Use feature detection to find a focal point
-        feature_detector = FeatureDetector(image.size, image_data[0], image_data[1])
-
-        faces = feature_detector.detect_faces()
-        if faces:
-            # Create a bounding box around all faces
-            left = min(face.left for face in faces)
-            top = min(face.top for face in faces)
-            right = max(face.right for face in faces)
-            bottom = max(face.bottom for face in faces)
-            focal_point = Rect(left, top, right, bottom)
-        else:
-            features = feature_detector.detect_features()
-            if features:
-                # Create a bounding box around all features
-                left = min(feature.x for feature in features)
-                top = min(feature.y for feature in features)
-                right = max(feature.x for feature in features)
-                bottom = max(feature.y for feature in features)
+            if faces:
+                # Create a bounding box around all faces
+                left = min(face[0] for face in faces)
+                top = min(face[1] for face in faces)
+                right = max(face[2] for face in faces)
+                bottom = max(face[3] for face in faces)
                 focal_point = Rect(left, top, right, bottom)
             else:
-                return None
+                features = willow.detect_features()
+                if features:
+                    # Create a bounding box around all features
+                    left = min(feature[0] for feature in features)
+                    top = min(feature[1] for feature in features)
+                    right = max(feature[0] for feature in features)
+                    bottom = max(feature[1] for feature in features)
+                    focal_point = Rect(left, top, right, bottom)
+                else:
+                    return None
 
         # Add 20% to width and height and give it a minimum size
         x, y = focal_point.centroid
@@ -208,108 +235,48 @@ class AbstractImage(models.Model, TagSearchable):
 
         return Rect.from_point(x, y, width, height)
 
-    def get_rendition(self, filter):
-        if not hasattr(filter, 'process_image'):
+    def _get_rendition(self, renditions, filter, focal_point_key):
+        if not hasattr(filter, 'run'):
             # assume we've been passed a filter spec string, rather than a Filter object
             # TODO: keep an in-memory cache of filters, to avoid a db lookup
             filter, created = Filter.objects.get_or_create(spec=filter)
 
+        spec_hash = filter.get_cache_key(self)
+
         try:
-            if self.has_focal_point():
-                rendition = self.renditions.get(
-                    filter=filter,
-                    focal_point_key=self.get_focal_point().get_key(),
-                )
-            else:
-                rendition = self.renditions.get(
-                    filter=filter,
-                    focal_point_key='',
-                )
+            rendition = renditions.get(
+                filter=filter,
+                focal_point_key=focal_point_key,
+            )
         except ObjectDoesNotExist:
-            file_field = self.file
-
-            # If we have a backend attribute then pass it to process
-            # image - else pass 'default'
-            backend_name = getattr(self, 'backend', 'default')
-
-            # generate new filename derived from old one, inserting the filter spec and focal point key before the extension
-            if self.has_focal_point():
-                focal_point_key = "focus-" + self.get_focal_point().get_key()
-            else:
-                focal_point_key = "focus-none"
-
-            output_filename = _generate_output_filename(
-                                    file_field.file.name, filter.spec,
-                                    focal_point_key)
-
             try:
-                # CDN drivers are buggy and fail to raise proper exceptions
-                # on absence of files.
-                if not file_field.storage.exists(file_field.file.name):
-                    raise IOError('file not found')
-
-                generated_image = filter.process_image(file_field.file,
-                                            backend_name=backend_name,
-                                            focal_point=self.get_focal_point())
-
-                generated_image_file = File(generated_image,
-                                            name=output_filename)
+                # Generate the rendition image
+                generated_image, output_format = filter.run(self, BytesIO())
             except IOError:
-                return _rendition_for_missing_image(self.renditions.model, self,
+                return _rendition_for_missing_image(renditions.model, self,
                                                     filter=filter)
 
-            if self.has_focal_point():
-                rendition, created = self.renditions.get_or_create(
-                    filter=filter,
-                    focal_point_key=self.get_focal_point().get_key(),
-                    defaults={'file': generated_image_file}
-                )
-            else:
-                rendition, created = self.renditions.get_or_create(
-                    filter=filter,
-                    defaults={'file': generated_image_file}
-                )
+            # Generate filename
+            input_filename = os.path.basename(self.file.name)
+            input_filename_without_extension, input_extension = os.path.splitext(input_filename)
+            output_filename = _generate_output_filename(
+                                input_filename_without_extension, output_format,
+                                spec_hash, focal_point_key)
+
+            rendition, created = renditions.get_or_create(
+                filter=filter,
+                focal_point_key=focal_point_key,
+                defaults={'file': File(generated_image, name=output_filename)}
+            )
 
         return rendition
+
+    def get_rendition(self, filter):
+        return self._get_rendition(self.renditions, filter,
+                                   self.get_focal_point_key())
 
     def get_user_rendition(self, filter):
-        if not hasattr(filter, 'process_image'):
-            # assume we've been passed a filter spec string, rather than a
-            # Filter object TODO: keep an in-memory cache of filters, to avoid a
-            # db lookup
-            filter, created = Filter.objects.get_or_create(spec=filter)
-
-        try:
-            rendition = self.user_renditions.get(filter=filter)
-        except ObjectDoesNotExist:
-            file_field = self.file
-
-            # If we have a backend attribute then pass it to process
-            # image - else pass 'default'
-            backend_name = getattr(self, 'backend', 'default')
-            try:
-                # CDN drivers are buggy and fail to raise proper exceptions
-                # on absence of files.
-                if not file_field.storage.exists(file_field.file.name):
-                    raise IOError('file not found')
-
-                generated_image = filter.process_image(
-                                        file_field.file,
-                                        backend_name=backend_name)
-
-                output_filename = _generate_output_filename(
-                                        file_field.file.name, filter.spec)
-
-                generated_image_file = File(generated_image,
-                                            name=output_filename)
-            except IOError:
-                return _rendition_for_missing_image(self.user_renditions.model,
-                                                    self, filter=filter)
-
-            rendition, created = self.user_renditions.get_or_create(
-                filter=filter, defaults={'file': generated_image_file})
-
-        return rendition
+        return self._get_rendition(self.user_renditions, filter)
 
     def is_portrait(self):
         return (self.width < self.height)
@@ -338,21 +305,33 @@ class AbstractImage(models.Model, TagSearchable):
         else:
             return False
 
+    def get_focal_point_key():
+        # generate new filename derived from old one, inserting the filter spec and focal point key before the extension
+        if self.has_focal_point():
+            return self.get_focal_point().get_key()
+        else:
+            return ''
+
     class Meta:
         abstract = True
 
 
 class Image(AbstractImage):
-    pass
+    admin_form_fields = (
+        'title',
+        'file',
+        'tags',
+        'focal_point_x',
+        'focal_point_y',
+        'focal_point_width',
+        'focal_point_height',
+    )
 
 
 # Do smartcropping calculations when user saves an image without a focal point
 @receiver(pre_save, sender=Image)
 def image_feature_detection(sender, instance, **kwargs):
     if getattr(settings, 'WAGTAILIMAGES_FEATURE_DETECTION_ENABLED', False):
-        if not opencv_available:
-            raise ImproperlyConfigured("pyOpenCV could not be found.")
-
         # Make sure the image doesn't already have a focal point
         if not instance.has_focal_point():
             # Set the focal point
@@ -368,7 +347,7 @@ def image_delete(sender, instance, **kwargs):
 
 def get_image_model():
     from django.conf import settings
-    from django.db.models import get_model
+    from django.apps import apps
 
     try:
         app_label, model_name = settings.WAGTAILIMAGES_IMAGE_MODEL.split('.')
@@ -377,7 +356,7 @@ def get_image_model():
     except ValueError:
         raise ImproperlyConfigured("WAGTAILIMAGES_IMAGE_MODEL must be of the form 'app_label.model_name'")
 
-    image_model = get_model(app_label, model_name)
+    image_model = apps.get_model(app_label, model_name)
     if image_model is None:
         raise ImproperlyConfigured("WAGTAILIMAGES_IMAGE_MODEL refers to model '%s' that has not been installed" % settings.WAGTAILIMAGES_IMAGE_MODEL)
     return image_model
@@ -391,143 +370,94 @@ class Filter(models.Model):
     """
     spec = models.CharField(max_length=255, db_index=True, unique=True)
 
-    OPERATION_NAMES = {
-        'max': 'resize_to_max',
-        'min': 'resize_to_min',
-        'width': 'resize_to_width',
-        'height': 'resize_to_height',
-        'fill': 'resize_to_fill',
-        'original': 'no_operation',
-        'crop': 'crop_to_rectangle',
-        'forcewidth': 'force_resize_to_width',
-        'forceheight': 'force_resize_to_height',
-        'forcefit': 'force_resize_to_fit',
-    }
-
-    class InvalidFilterSpecError(ValueError):
-        pass
-
-    def __init__(self, *args, **kwargs):
-        super(Filter, self).__init__(*args, **kwargs)
-        self.method = None  # will be populated when needed, by parsing the spec string
-
-    def _parse_spec_string(self, spec=None):
-        # parse the spec string and save the results to
-        # self.method_name and self.method_arg. There are various possible
-        # formats to match against:
-        # 'original'
-        # 'width-200'
-        # 'max-320x200'
-        # 'fill-200x200-c50'
-        # 'crop-10,10:50,50'
-        #
-        # any format may be combined with another one by '|'
-        # e.g. 'crop-50,50:150,150|max-50x50'
-
-        if spec is None:
-            spec = self.spec
-
-        result = []
-        for spec_part in str(spec).split('|'):
-            if spec_part == 'original':
-                result.append((Filter.OPERATION_NAMES['original'], None))
-                continue
-
-            match = re.match(r'(width|height)-(\d+)$', spec_part)
-            if match:
-                result.append((Filter.OPERATION_NAMES[match.group(1)],
-                               int(match.group(2))))
-                continue
-
-            match = re.match(r'(fill)-(\d+)x(\d+)-c(\d+)$', self.spec)
-            if match:
-                width = int(match.group(2))
-                height = int(match.group(3))
-                crop_closeness = int(match.group(4))
-                result.append((Filter.OPERATION_NAMES[match.group(1)],
-                               (width, height, crop_closeness)))
-                continue
-
-            match = re.match(r'(max|min|fill)-(\d+)x(\d+)$', spec_part)
-            if match:
-                width = int(match.group(2))
-                height = int(match.group(3))
-                result.append((Filter.OPERATION_NAMES[match.group(1)],
-                               (width, height)))
-                continue
-
-            match = re.match(r'(crop)-(\d+),(\d+):(\d+),(\d+)$', spec_part)
-            if match:
-                left = int(match.group(2))
-                top = int(match.group(3))
-                right = int(match.group(4))
-                bottom = int(match.group(5))
-                result.append((Filter.OPERATION_NAMES[match.group(1)],
-                               (left, top, right, bottom)))
-                continue
-
-            match = re.match(r'(forcewidth|forceheight)-(\d+)$', spec_part)
-            if match:
-                result.append((Filter.OPERATION_NAMES[match.group(1)],
-                               int(match.group(2))))
-                continue
-
-            match = re.match(r'(forcefit)-(\d+)x(\d+)$', spec_part)
-            if match:
-                width = int(match.group(2))
-                height = int(match.group(3))
-                result.append((Filter.OPERATION_NAMES[match.group(1)],
-                               (width, height)))
-                continue
-
-            # Spec is not one of our recognised patterns
-            raise Filter.InvalidFilterSpecError("Invalid image filter spec: %r"
-                                                % spec_part)
-
-        return result
-
     @cached_property
-    def _method(self):
-        return self._parse_spec_string()
+    def operations(self):
+        # Search for operations
+        self._search_for_operations()
 
-    def is_valid(self):
-        try:
-            self._parse_spec_string()
-            return True
-        except Filter.InvalidFilterSpecError:
-            return False
+        # Build list of operation objects
+        operations = []
+        for op_spec in self.spec.split('|'):
+            op_spec_parts = op_spec.split('-')
 
-    def process_image(self, input_file, output_file=None, focal_point=None, backend_name='default'):
-        """
-        Run this filter on the given image file then write the result into output_file and return it
-        If output_file is not given, a new BytesIO will be used instead
-        """
-        # Get backend
-        backend = get_image_backend(backend_name)
+            if op_spec_parts[0] not in self._registered_operations:
+                raise InvalidFilterSpecError("Unrecognised operation: %s" % op_spec_parts[0])
 
-        spec_pipeline = self._parse_spec_string()
+            op_class = self._registered_operations[op_spec_parts[0]]
+            operations.append(op_class(*op_spec_parts))
 
-        # Open image
-        input_file.open('rb')
-        image = backend.open_image(input_file)
-        file_format = image.format
+        return operations
 
-        # execute each of the transformations in the pipeline in sequence
-        for method_name, method_arg in spec_pipeline:
-            method = getattr(backend, method_name)
-            image = method(image, method_arg)
+    def run(self, image, output):
+        with image.get_willow_image() as willow:
+            for operation in self.operations:
+                operation.run(willow, image)
 
-        # Make sure we have an output file
-        if output_file is None:
-            output_file = BytesIO()
+            output_format = willow.original_format
 
-        # Write output
-        backend.save_image(image, output_file, file_format)
+            if willow.original_format == 'jpeg':
+                # Allow changing of JPEG compression quality
+                if hasattr(settings, 'WAGTAILIMAGES_JPEG_QUALITY'):
+                    quality = settings.WAGTAILIMAGES_JPEG_QUALITY
+                elif hasattr(settings, 'IMAGE_COMPRESSION_QUALITY'):
+                    quality = settings.IMAGE_COMPRESSION_QUALITY
 
-        # Close the input file
-        input_file.close()
+                    warnings.warn(
+                        "The IMAGE_COMPRESSION_QUALITY setting has been renamed to "
+                        "WAGTAILIMAGES_JPEG_QUALITY. Please update your settings.",
+                        RemovedInWagtail12Warning)
+                else:
+                    quality = 85
 
-        return output_file
+                willow.save_as_jpeg(output, quality=quality)
+            if willow.original_format == 'gif':
+                # Convert image to PNG if it's not animated
+                if not willow.has_animation():
+                    output_format = 'png'
+                    willow.save_as_png(output)
+                else:
+                    willow.save_as_gif(output)
+            if willow.original_format == 'bmp':
+                # Convert to PNG
+                output_format = 'png'
+                willow.save_as_png(output)
+            else:
+                willow.save(willow.original_format, output)
+
+        return output, output_format
+
+    def get_cache_key(self, image):
+        return hashlib.sha1(self.spec).hexdigest()
+
+
+    def get_vary_key(self, image):
+        vary_parts = []
+
+        for operation in self.operations:
+            for field in getattr(operation, 'vary_fields', []):
+                value = getattr(image, field, '')
+                vary_parts.append(str(value))
+
+        vary_string = '-'.join(vary_parts)
+
+        # Return blank string if there are no vary fields
+        if not vary_string:
+            return ''
+
+        return hashlib.sha1(vary_string.encode('utf-8')).hexdigest()[:8]
+
+    _registered_operations = None
+
+    @classmethod
+    def _search_for_operations(cls):
+        if cls._registered_operations is not None:
+            return
+
+        operations = []
+        for fn in hooks.get_hooks('register_image_operations'):
+            operations.extend(fn())
+
+        cls._registered_operations = dict(operations)
 
 
 class AbstractRendition(models.Model):
@@ -580,42 +510,38 @@ class UserRendition(AbstractRendition):
     def get_rendition(self, filter):
         # we need to construct a new filter combining what we've been passed and
         # the filter used to get THIS rendition
-        if not hasattr(filter, 'process_image'):
+        if not hasattr(filter, 'run'):
             filter = '|'.join([self.filter.spec, filter])
         else:
             filter = '|'.join([self.filter.spec, filter.spec])
 
         filter, created = Filter.objects.get_or_create(spec=filter)
 
+        spec_hash = filter.get_cache_key(self)
+
         try:
-            rendition = self.image.renditions.get(filter=filter)
+            rendition = self.renditions.get(
+                filter=filter,
+            )
         except ObjectDoesNotExist:
-            file_field = self.image.file
-
-            # If we have a backend attribute then pass it to process
-            # image - else pass 'default'
-            backend_name = getattr(self, 'backend', 'default')
-
             try:
-                # CDN drivers are buggy and fail to raise proper exceptions
-                # on absence of files.
-                if not file_field.storage.exists(file_field.file.name):
-                    raise IOError('file not found')
-
-                generated_image = filter.process_image(file_field.file,
-                                                   backend_name=backend_name)
-
-                output_filename = _generate_output_filename(
-                                        file_field.file.name, filter.spec)
-
-                generated_image_file = File(generated_image,
-                                            name=output_filename)
+                # Generate the rendition image
+                generated_image, output_format = filter.run(self, BytesIO())
             except IOError:
-                return _rendition_for_missing_image(type(self), self.image,
+                return _rendition_for_missing_image(self.renditions.model, self,
                                                     filter=filter)
 
-            rendition, created = self.image.renditions.get_or_create(
-                filter=filter, defaults={'file': generated_image_file})
+            # Generate filename
+            input_filename = os.path.basename(self.file.name)
+            input_filename_without_extension, input_extension = os.path.splitext(input_filename)
+            output_filename = _generate_output_filename(
+                                input_filename_without_extension, output_format,
+                                spec_hash)
+
+            rendition, created = self.renditions.get_or_create(
+                filter=filter,
+                defaults={'file': File(generated_image, name=output_filename)}
+            )
 
         return rendition
 

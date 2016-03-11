@@ -1,22 +1,22 @@
 from __future__ import unicode_literals
 
-from six import text_type, with_metaclass
-
-try:
-    # renamed util -> utils in Django 1.7; try the new name first
-    from django.forms.utils import flatatt
-except ImportError:
-    from django.forms.util import flatatt
+from six import text_type
 
 from django.forms import MediaDefiningClass, Media
+from django.forms.utils import flatatt
 from django.utils.text import slugify
-from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+# Must be imported from Django so we get the new implementation of with_metaclass
+from django.utils.six import with_metaclass
+
+from wagtail.utils.compat import render_to_string
 from wagtail.wagtailcore import hooks
 
 
 class MenuItem(with_metaclass(MediaDefiningClass)):
+    template = 'wagtailadmin/shared/menu_item.html'
+
     def __init__(self, label, url, name=None, classnames='', attrs=None, order=1000):
         self.label = label
         self.url = url
@@ -36,10 +36,18 @@ class MenuItem(with_metaclass(MediaDefiningClass)):
         """
         return True
 
+    def is_active(self, request):
+        return request.path.startswith(self.url)
+
     def render_html(self, request):
-        return format_html(
-            """<li class="menu-{0}"><a href="{1}" class="{2}"{3}>{4}</a></li>""",
-            self.name, self.url, self.classnames, self.attr_string, self.label)
+        return render_to_string(self.template, {
+            'name': self.name,
+            'url': self.url,
+            'classnames': self.classnames,
+            'attr_string': self.attr_string,
+            'label': self.label,
+            'active': self.is_active(request)
+        }, request=request)
 
 
 class PageActionButton(object):
@@ -80,6 +88,9 @@ class Menu(object):
     def menu_items_for_request(self, request):
         return [item for item in self.registered_menu_items if item.is_shown(request)]
 
+    def active_menu_items(self, request):
+        return [item for item in self.menu_items_for_request(request) if item.is_active(request)]
+
     @property
     def media(self):
         media = Media()
@@ -101,12 +112,14 @@ class Menu(object):
                 rendered_menu_items.append(item.render_html(request))
             except TypeError:
                 # fallback for older render_html methods that don't accept a request arg
-                rendered_menu_items.append(item.render_html())
+                rendered_menu_items.append(item.render_html(request))
 
         return mark_safe(''.join(rendered_menu_items))
 
 
 class SubmenuMenuItem(MenuItem):
+    template = 'wagtailadmin/shared/menu_submenu_item.html'
+
     """A MenuItem which wraps an inner Menu object"""
     def __init__(self, label, menu, **kwargs):
         self.menu = menu
@@ -120,17 +133,20 @@ class SubmenuMenuItem(MenuItem):
         # show the submenu if one or more of its children is shown
         return bool(self.menu.menu_items_for_request(request))
 
+    def is_active(self, request):
+        return bool(self.menu.active_menu_items(request))
+
     def render_html(self, request):
-        return format_html(
-            """<li class="menu-{0}">
-                <a href="#" class="submenu-trigger {1}"{2}>{3}</a>
-                <div class="nav-submenu">
-                    <h2 class="{1}">{3}</h2>
-                    <ul>{4}</ul>
-                </div>
-            </li>""",
-            self.name, self.classnames, self.attr_string, self.label, self.menu.render_html(request)
-        )
+        return render_to_string(self.template, {
+            'name': self.name,
+            'url': self.url,
+            'classnames': self.classnames,
+            'attr_string': self.attr_string,
+            'menu_html': self.menu.render_html(request),
+            'label': self.label,
+            'request': request,
+            'active': self.is_active(request)
+        }, request=request)
 
 
 admin_menu = Menu(register_hook_name='register_admin_menu_item', construct_hook_name='construct_main_menu')

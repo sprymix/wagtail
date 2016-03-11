@@ -1,8 +1,13 @@
+import unittest
+
 from django.test import TestCase
 from django.core.cache import cache
+from django.utils.safestring import SafeString
 
 from wagtail.wagtailcore.models import Page, Site
-from wagtail.tests.models import SimplePage
+from wagtail.wagtailcore.templatetags.wagtailcore_tags import richtext
+from wagtail.wagtailcore.utils import resolve_model_string
+from wagtail.tests.testapp.models import SimplePage
 
 
 class TestPageUrlTags(TestCase):
@@ -32,7 +37,7 @@ class TestSiteRootPathsCache(TestCase):
         homepage = Page.objects.get(url_path='/home/')
 
         # Warm up the cache by getting the url
-        _ = homepage.url
+        _ = homepage.url  # noqa
 
         # Check that the cache has been set correctly
         self.assertEqual(cache.get('wagtail_site_root_paths'), [(1, '/home/', 'http://localhost')])
@@ -45,7 +50,7 @@ class TestSiteRootPathsCache(TestCase):
         homepage = Page.objects.get(url_path='/home/')
 
         # Warm up the cache by getting the url
-        _ = homepage.url
+        _ = homepage.url  # noqa
 
         # Check that the cache has been set
         self.assertTrue(cache.get('wagtail_site_root_paths'))
@@ -64,7 +69,7 @@ class TestSiteRootPathsCache(TestCase):
         homepage = Page.objects.get(url_path='/home/')
 
         # Warm up the cache by getting the url
-        _ = homepage.url
+        _ = homepage.url  # noqa
 
         # Check that the cache has been set
         self.assertTrue(cache.get('wagtail_site_root_paths'))
@@ -102,7 +107,7 @@ class TestSiteRootPathsCache(TestCase):
         default_site.save()
 
         # Warm up the cache by getting the url
-        _ = homepage.url
+        _ = homepage.url  # noqa
 
         # Move new homepage to root
         new_homepage.move(root_page, pos='last-child')
@@ -130,7 +135,7 @@ class TestSiteRootPathsCache(TestCase):
         homepage = Page.objects.get(url_path='/home/')
 
         # Warm up the cache by getting the url
-        _ = homepage.url
+        _ = homepage.url  # noqa
 
         # Change homepage title and slug
         homepage.title = "New home"
@@ -142,3 +147,53 @@ class TestSiteRootPathsCache(TestCase):
 
         # Check url
         self.assertEqual(homepage.url, '/')
+
+
+class TestResolveModelString(TestCase):
+    def test_resolve_from_string(self):
+        model = resolve_model_string('wagtailcore.Page')
+
+        self.assertEqual(model, Page)
+
+    def test_resolve_from_string_with_default_app(self):
+        model = resolve_model_string('Page', default_app='wagtailcore')
+
+        self.assertEqual(model, Page)
+
+    def test_resolve_from_string_with_different_default_app(self):
+        model = resolve_model_string('wagtailcore.Page', default_app='wagtailadmin')
+
+        self.assertEqual(model, Page)
+
+    def test_resolve_from_class(self):
+        model = resolve_model_string(Page)
+
+        self.assertEqual(model, Page)
+
+    def test_resolve_from_string_invalid(self):
+        self.assertRaises(ValueError, resolve_model_string, 'wagtail.wagtailcore.Page')
+
+    def test_resolve_from_string_with_incorrect_default_app(self):
+        self.assertRaises(LookupError, resolve_model_string, 'Page', default_app='wagtailadmin')
+
+    def test_resolve_from_string_with_no_default_app(self):
+        self.assertRaises(ValueError, resolve_model_string, 'Page')
+
+    @unittest.expectedFailure # Raising LookupError instead
+    def test_resolve_from_class_that_isnt_a_model(self):
+        self.assertRaises(ValueError, resolve_model_string, object)
+
+    @unittest.expectedFailure # Raising LookupError instead
+    def test_resolve_from_bad_type(self):
+        self.assertRaises(ValueError, resolve_model_string, resolve_model_string)
+
+
+class TestRichtextTag(TestCase):
+    def test_call_with_text(self):
+        result = richtext("Hello world!")
+        self.assertEqual(result, '<div class="rich-text">Hello world!</div>')
+        self.assertIsInstance(result, SafeString)
+
+    def test_call_with_none(self):
+        result = richtext(None)
+        self.assertEqual(result, '<div class="rich-text"></div>')

@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import permission_required
@@ -16,8 +17,19 @@ from wagtail.wagtailsearch.backends import get_search_backends
 from wagtail.wagtaildocs.models import Document
 from wagtail.wagtaildocs.forms import DocumentForm, DocumentFormMulti
 
+def get_document_json(document):
+    """
+    helper function: given a document, return the json to pass back to the
+    chooser panel
+    """
 
-@permission_required('wagtailadmin.access_admin')
+    return json.dumps({
+        'id': document.id,
+        'title': document.title,
+        'edit_link': reverse('wagtaildocs_edit_document', args=(document.id,)),
+    })
+
+
 def chooser(request):
     if request.user.has_perm('wagtaildocs.add_document'):
         uploadform = DocumentForm()
@@ -83,14 +95,14 @@ def chooser(request):
     })
 
 
-@permission_required('wagtailadmin.access_admin')
 def document_chosen(request, document_id):
     document = get_object_or_404(Document, id=document_id)
 
     document_json = json.dumps({
         'id': document.id,
         'title': document.title,
-        'url': document.file.url
+        'edit_link': reverse('wagtaildocs_edit_document', args=(document.id,)),
+        'url': document.file.url,
     })
 
     return render_modal_workflow(

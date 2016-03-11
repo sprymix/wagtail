@@ -47,16 +47,23 @@ else:
 
 
 class WagtailImageField(ImageField):
-    default_error_messages = {
-        'invalid_image': INVALID_IMAGE_ERROR,
-        'invalid_image_known_format': INVALID_IMAGE_KNOWN_FORMAT_ERROR,
-        'file_too_large': FILE_TOO_LARGE_KNOWN_SIZE_ERROR,
-    }
-
     def __init__(self, *args, **kwargs):
         super(WagtailImageField, self).__init__(*args, **kwargs)
 
+        # Get max upload size from settings
+        self.max_upload_size = MAX_UPLOAD_SIZE
+        max_upload_size_text = filesizeformat(self.max_upload_size)
+
+        # Help text
         self.help_text = IMAGE_FIELD_HELP_TEXT
+
+        # Error messages
+        self.error_messages['invalid_image'] = INVALID_IMAGE_ERROR
+        self.error_messages['invalid_image_known_format'] = \
+            INVALID_IMAGE_KNOWN_FORMAT_ERROR
+        self.error_messages['file_too_large'] = FILE_TOO_LARGE_KNOWN_SIZE_ERROR
+        self.error_messages['file_too_large_unknown_size'] = \
+            FILE_TOO_LARGE_ERROR
 
     def check_image_file_format(self, f):
         # Check file extension
@@ -102,11 +109,11 @@ class WagtailImageField(ImageField):
 
     def check_image_file_size(self, f):
         # Upload size checking can be disabled by setting max upload size to None
-        if MAX_UPLOAD_SIZE is None:
+        if self.max_upload_size is None:
             return
 
         # Check the filesize
-        if f.size > MAX_UPLOAD_SIZE:
+        if f.size > self.max_upload_size:
             raise ValidationError(self.error_messages['file_too_large'] % (
                 filesizeformat(f.size),
             ), code='file_too_large')

@@ -1,8 +1,5 @@
-import warnings
-
-from six import string_types
-
 from django.db import models
+from django.apps import apps
 
 
 class Indexed(object):
@@ -74,7 +71,7 @@ class Indexed(object):
 
 def get_indexed_models():
     return [
-        model for model in models.get_models()
+        model for model in apps.get_models()
         if issubclass(model, Indexed) and not model._meta.abstract and
             not getattr(model, 'exclude_from_search_index', False)
     ]
@@ -92,7 +89,7 @@ class BaseField(object):
         self.kwargs = kwargs
 
     def get_field(self, cls):
-        return cls._meta.get_field_by_name(self.field_name)[0]
+        return cls._meta.get_field(self.field_name)
 
     def get_attname(self, cls):
         try:
@@ -117,7 +114,10 @@ class BaseField(object):
     def get_value(self, obj):
         try:
             field = self.get_field(obj.__class__)
-            return field._get_val_from_obj(obj)
+            value = field._get_val_from_obj(obj)
+            if hasattr(field, 'get_searchable_content'):
+                value = field.get_searchable_content(value)
+            return value
         except models.fields.FieldDoesNotExist:
             value = getattr(obj, self.field_name, None)
             if hasattr(value, '__call__'):
@@ -137,4 +137,3 @@ class SearchField(BaseField):
 
 class FilterField(BaseField):
     suffix = '_filter'
-

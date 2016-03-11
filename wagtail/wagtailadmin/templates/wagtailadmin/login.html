@@ -1,12 +1,11 @@
 {% extends "wagtailadmin/admin_base.html" %}
-{% load compress %}
-{% load i18n %}
+{% load compress static i18n %}
 {% block titletag %}{% trans "Sign in" %}{% endblock %}
 {% block bodyclass %}login{% endblock %}
 
 {% block extra_css %}
     {% compress css %}
-        <link rel="stylesheet" href="{{ STATIC_URL }}wagtailadmin/scss/layouts/login.scss" type="text/x-scss" />
+        <link rel="stylesheet" href="{% static 'wagtailadmin/css/layouts/login.css' %}" type="text/css" />
     {% endcompress %}
 {% endblock %}
 
@@ -22,10 +21,13 @@
 
         <form action="{% url 'wagtailadmin_login' %}" method="post" autocomplete="off">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next }}" />
-            <h1>{% blocktrans %}Sign in to {{ site_name }}{% endblocktrans %}</h1>
 
+            {% url 'wagtailadmin_home' as home_url %}
+            <input type="hidden" name="next" value="{{ next|default:home_url }}" />
 
+            <h1>{% block branding_login %}
+                {% blocktrans %}Sign in to {{ site_name }}{% endblocktrans %}
+            {% endblock %}</h1>
             <ul class="fields">
                 <li class="full">
                     <div class="field iconfield">
@@ -43,7 +45,7 @@
                         </div>
                     </div>
                     {% if show_password_reset %}
-                        <p class="help"><a href="{% url 'django.contrib.auth.views.password_reset' %}">{% trans "Forgotten it?" %}</a></p>
+                        <p class="help"><a href="{% url 'wagtailadmin_password_reset' %}">{% trans "Forgotten it?" %}</a></p>
                     {% endif %}
                 </li>
                 {% comment %}

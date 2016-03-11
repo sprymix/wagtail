@@ -1,15 +1,14 @@
 {% extends "wagtailadmin/base.html" %}
-{% load wagtailimages_tags compress %}
-{% load i18n %}
+{% load wagtailimages_tags compress static i18n %}
 {% block titletag %}{% blocktrans with title=image.title %}Editing image {{ title }}{% endblocktrans %}{% endblock %}
 {% block bodyclass %}menu-images{% endblock %}
 {% block extra_css %}
     {% include "wagtailadmin/shared/tag_field_css.html" %}
 
     <!-- Focal point chooser -->
-    <link rel="stylesheet" href="{{ STATIC_URL }}wagtailimages/scss/vendor/jquery.Jcrop.min.css" type="text/css">
+    <link rel="stylesheet" href="{% static 'wagtailimages/css/vendor/jquery.Jcrop.min.css' %}" type="text/css">
     {% compress css %}
-        <link rel="stylesheet" href="{{ STATIC_URL }}wagtailimages/scss/focal-point-chooser.scss" type="text/x-scss">
+        <link rel="stylesheet" href="{% static 'wagtailimages/css/focal-point-chooser.css' %}" type="text/css">
     {% endcompress %}
 {% endblock %}
 
@@ -17,9 +16,9 @@
     {% include "wagtailadmin/shared/tag_field_js.html" %}
 
     <!-- Focal point chooser -->
-    <script src="{{ STATIC_URL }}wagtailadmin/js/vendor/jquery.ba-throttle-debounce.min.js"></script>
-    <script src="{{ STATIC_URL }}wagtailimages/js/vendor/jquery.Jcrop.min.js"></script>
-    <script src="{{ STATIC_URL }}wagtailimages/js/focal-point-chooser.js"></script>
+    <script src="{% static 'wagtailadmin/js/vendor/jquery.ba-throttle-debounce.min.js' %}"></script>
+    <script src="{% static 'wagtailimages/js/vendor/jquery.Jcrop.min.js' %}"></script>
+    <script src="{% static 'wagtailimages/js/focal-point-chooser.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -28,14 +27,14 @@
 
     <div class="row row-flush nice-padding">
 
-        <div class="col7">
+        <div class="col5">
             <form action="{% url 'wagtailimages_edit_image' image.id %}" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <ul class="fields">
                     {% for field in form %}
 
                         {% if field.name == 'file' %}
-                            {% include "wagtailimages/images/_file_field.html" %}
+                            {% include "wagtailimages/images/_file_field_as_li.html" %}
                         {% elif field.is_hidden %}
                             {{ field }}
                         {% else %}
@@ -47,22 +46,39 @@
                 </ul>
             </form>
         </div>
-        <div class="col5">
+        <div class="col5 divider-after">
             <h2 class="label">{% trans "Focal point (optional)" %}</h2>
             <p>{% trans "To define this image's most important region, drag a box over the image below." %} {% if image.focal_point %}({% trans "Current focal point shown" %}){% endif %}</p>
+
+            {% image image max-800x600 as rendition %}
+
             <div class="focal-point-chooser"
+                style="max-width: {{ rendition.width }}px; max-height: {{ rendition.height }}px;"
                 data-focal-point-x="{{ image.focal_point_x }}"
                 data-focal-point-y="{{ image.focal_point_y }}"
                 data-focal-point-width="{{ image.focal_point_width }}"
                 data-focal-point-height="{{ image.focal_point_height }}">
 
-                {% image image max-800x600 data-original-width=image.width data-original-height=image.height %}
+                <img {{ rendition.attrs }} data-original-width="{{ image.width }}" data-original-height="{{ image.height }}" class="show-transparency">
+
                 <div class="current-focal-point-indicator{% if not image.focal_point %} hidden{% endif %}"></div>
             </div>
-
+            
+        </div>
+        <div class="col2 ">
             {% if url_generator_enabled %}
                 <a href="{% url 'wagtailimages_url_generator' image.id %}" class="button bicolor icon icon-link">{% trans "URL Generator" %}</a>
+                <hr />
             {% endif %}
+
+            {% image image original as original_image %}
+
+            <dl>
+                <dt>{% trans "Max dimensions" %}</dt>
+                <dd>{{ original_image.width }}x{{ original_image.height }}</dd>
+                <dt>{% trans "Filesize" %}</dt>
+                <dd>{% if filesize %}{{ filesize|filesizeformat }}{% else %}{% trans "File not found" %}{% endif %}</dd>
+            </dl>
         </div>
     </div>
 {% endblock %}

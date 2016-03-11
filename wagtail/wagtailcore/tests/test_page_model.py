@@ -1,5 +1,5 @@
-import warnings
 import datetime
+import json
 
 import pytz
 
@@ -7,9 +7,11 @@ from django.test import TestCase, Client
 from django.test.utils import override_settings
 from django.http import HttpRequest, Http404
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 
 from wagtail.wagtailcore.models import Page, Site
-from wagtail.tests.models import EventPage, EventIndex, SimplePage, PageWithOldStyleRouteMethod, BusinessIndex, BusinessSubIndex, BusinessChild, StandardIndex
+from wagtail.tests.testapp.models import EventPage, EventIndex, SimplePage, BusinessIndex, BusinessSubIndex, BusinessChild, StandardIndex
 
 
 class TestSiteRouting(TestCase):
@@ -181,12 +183,16 @@ class TestRouting(TestCase):
 
     def test_request_serving(self):
         christmas_page = EventPage.objects.get(url_path='/home/events/christmas/')
+
         request = HttpRequest()
+        request.user = AnonymousUser()
+        request.site = Site.objects.first()
+
         response = christmas_page.serve(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context_data['self'], christmas_page)
-        used_template = response.resolve_template(response.template_name)
-        self.assertEqual(used_template.name, 'tests/event_page.html')
+        # confirm that the event_page.html template was used
+        self.assertContains(response, '<h2>Event</h2>')
 
     def test_route_to_unknown_page_returns_404(self):
         homepage = Page.objects.get(url_path='/home/')
@@ -425,10 +431,22 @@ class TestCopyPage(TestCase):
         new_christmas_event = christmas_event.copy(update_attrs={'title': "New christmas event", 'slug': 'new-christmas-event'})
 
         # Check that the revisions were copied
-        self.assertEqual(new_christmas_event.revisions.count(), 1, "Revisions weren't copied")
+        # Copying creates a new revision so we're expecting the new page to have two revisions
+        self.assertEqual(new_christmas_event.revisions.count(), 2)
 
         # Check that the revisions weren't removed from old page
         self.assertEqual(christmas_event.revisions.count(), 1, "Revisions were removed from the original page")
+
+        # Check that the attributes were updated in the latest revision
+        latest_revision = new_christmas_event.get_latest_revision_as_page()
+        self.assertEqual(latest_revision.title, "New christmas event")
+        self.assertEqual(latest_revision.slug, 'new-christmas-event')
+
+        # Check that the ids within the revision were updated correctly
+        new_revision = new_christmas_event.revisions.first()
+        new_revision_content = json.loads(new_revision.content_json)
+        self.assertEqual(new_revision_content['pk'], new_christmas_event.id)
+        self.assertEqual(new_revision_content['speakers'][0]['page'], new_christmas_event.id)
 
     def test_copy_page_copies_revisions_and_doesnt_submit_for_moderation(self):
         christmas_event = EventPage.objects.get(url_path='/home/events/christmas/')
@@ -438,10 +456,10 @@ class TestCopyPage(TestCase):
         new_christmas_event = christmas_event.copy(update_attrs={'title': "New christmas event", 'slug': 'new-christmas-event'})
 
         # Check that the old revision is still submitted for moderation
-        self.assertTrue(christmas_event.revisions.first().submitted_for_moderation)
+        self.assertTrue(christmas_event.revisions.order_by('created_at').first().submitted_for_moderation)
 
         # Check that the new revision is not submitted for moderation
-        self.assertFalse(new_christmas_event.revisions.first().submitted_for_moderation)
+        self.assertFalse(new_christmas_event.revisions.order_by('created_at').first().submitted_for_moderation)
 
     def test_copy_page_copies_revisions_and_doesnt_change_created_at(self):
         christmas_event = EventPage.objects.get(url_path='/home/events/christmas/')
@@ -449,15 +467,15 @@ class TestCopyPage(TestCase):
 
         # Set the created_at of the revision to a time in the past
         revision = christmas_event.get_latest_revision()
-        revision.created_at = datetime.datetime(2014, 1, 1)
+        revision.created_at = datetime.datetime(2014, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
         revision.save()
 
         # Copy it
         new_christmas_event = christmas_event.copy(update_attrs={'title': "New christmas event", 'slug': 'new-christmas-event'})
 
         # Check that the created_at time is the same
-        christmas_event_created_at = christmas_event.get_latest_revision().created_at
-        new_christmas_event_created_at = new_christmas_event.get_latest_revision().created_at
+        christmas_event_created_at = christmas_event.revisions.order_by('created_at').first().created_at
+        new_christmas_event_created_at = new_christmas_event.revisions.order_by('created_at').first().created_at
         self.assertEqual(christmas_event_created_at, new_christmas_event_created_at)
 
     def test_copy_page_copies_revisions_and_doesnt_schedule(self):
@@ -468,10 +486,10 @@ class TestCopyPage(TestCase):
         new_christmas_event = christmas_event.copy(update_attrs={'title': "New christmas event", 'slug': 'new-christmas-event'})
 
         # Check that the old revision is still scheduled
-        self.assertEqual(christmas_event.revisions.first().approved_go_live_at, datetime.datetime(2014, 9, 16, 9, 12, 00, tzinfo=pytz.utc))
+        self.assertEqual(christmas_event.revisions.order_by('created_at').first().approved_go_live_at, datetime.datetime(2014, 9, 16, 9, 12, 00, tzinfo=pytz.utc))
 
         # Check that the new revision is not scheduled
-        self.assertEqual(new_christmas_event.revisions.first().approved_go_live_at, None)
+        self.assertEqual(new_christmas_event.revisions.order_by('created_at').first().approved_go_live_at, None)
 
     def test_copy_page_doesnt_copy_revisions_if_told_not_to_do_so(self):
         christmas_event = EventPage.objects.get(url_path='/home/events/christmas/')
@@ -481,7 +499,8 @@ class TestCopyPage(TestCase):
         new_christmas_event = christmas_event.copy(update_attrs={'title': "New christmas event", 'slug': 'new-christmas-event'}, copy_revisions=False)
 
         # Check that the revisions weren't copied
-        self.assertEqual(new_christmas_event.revisions.count(), 0, "Revisions were copied")
+        # Copying creates a new revision so we're expecting the new page to have one revision
+        self.assertEqual(new_christmas_event.revisions.count(), 1)
 
         # Check that the revisions weren't removed from old page
         self.assertEqual(christmas_event.revisions.count(), 1, "Revisions were removed from the original page")
@@ -544,7 +563,8 @@ class TestCopyPage(TestCase):
         new_christmas_event = new_events_index.get_children().filter(slug='christmas').first()
 
         # Check that the revisions were copied
-        self.assertEqual(new_christmas_event.specific.revisions.count(), 1, "Revisions weren't copied")
+        # Copying creates a new revision so we're expecting the new page to have two revisions
+        self.assertEqual(new_christmas_event.specific.revisions.count(), 2)
 
         # Check that the revisions weren't removed from old page
         self.assertEqual(old_christmas_event.specific.revisions.count(), 1, "Revisions were removed from the original page")
@@ -561,10 +581,28 @@ class TestCopyPage(TestCase):
         new_christmas_event = new_events_index.get_children().filter(slug='christmas').first()
 
         # Check that the revisions weren't copied
-        self.assertEqual(new_christmas_event.specific.revisions.count(), 0, "Revisions were copied")
+        # Copying creates a new revision so we're expecting the new page to have one revision
+        self.assertEqual(new_christmas_event.specific.revisions.count(), 1)
 
         # Check that the revisions weren't removed from old page
         self.assertEqual(old_christmas_event.specific.revisions.count(), 1, "Revisions were removed from the original page")
+
+    def test_copy_page_updates_user(self):
+        event_moderator = get_user_model().objects.get(username='eventmoderator')
+        christmas_event = EventPage.objects.get(url_path='/home/events/christmas/')
+        christmas_event.save_revision()
+
+        # Copy it
+        new_christmas_event = christmas_event.copy(
+            update_attrs={'title': "New christmas event", 'slug': 'new-christmas-event'},
+            user=event_moderator,
+        )
+
+        # Check that the owner has been updated
+        self.assertEqual(new_christmas_event.owner, event_moderator)
+
+        # Check that the user on the last revision is correct
+        self.assertEqual(new_christmas_event.get_latest_revision().user, event_moderator)
 
 
 class TestSubpageTypeBusinessRules(TestCase):
@@ -639,3 +677,30 @@ class TestIssue756(TestCase):
 
         # Check that latest_revision_created_at is still set
         self.assertIsNotNone(Page.objects.get(id=1).latest_revision_created_at)
+
+
+class TestIssue1216(TestCase):
+    """
+    Test that url paths greater than 255 characters are supported
+    """
+    fixtures = ['test.json']
+
+    def test_url_path_can_exceed_255_characters(self):
+        event_index = Page.objects.get(url_path='/home/events/')
+        christmas_event = EventPage.objects.get(url_path='/home/events/christmas/')
+
+        # Change the christmas_event slug first - this way, we test that the process for
+        # updating child url paths also handles >255 character paths correctly
+        new_christmas_slug = "christmas-%s-christmas" % ("0123456789" * 20)
+        christmas_event.slug = new_christmas_slug
+        christmas_event.save_revision().publish()
+
+        # Change the event index slug and publish it
+        new_event_index_slug = "events-%s-events" % ("0123456789" * 20)
+        event_index.slug = new_event_index_slug
+        event_index.save_revision().publish()
+
+        # Check that the url path updated correctly
+        new_christmas_event = EventPage.objects.get(id=christmas_event.id)
+        expected_url_path = "/home/%s/%s/" % (new_event_index_slug, new_christmas_slug)
+        self.assertEqual(new_christmas_event.url_path, expected_url_path)

@@ -1,7 +1,8 @@
-import logging
-import warnings
+from __future__ import unicode_literals
 
-import six
+import logging
+import json
+
 from six import StringIO
 from six.moves.urllib.parse import urlparse
 
@@ -25,11 +26,10 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError, ImproperlyConfigured, ObjectDoesNotExist
 from django.utils.functional import cached_property
 from django.utils.encoding import python_2_unicode_compatible
+from django.core import checks
 
-try:
-    from django.core import checks
-except ImportError:
-    pass
+# Must be imported from Django so we get the new implementation of with_metaclass
+from django.utils import six
 
 from treebeard.mp_tree import MP_Node
 
@@ -52,13 +52,14 @@ class SiteManager(models.Manager):
 
 @python_2_unicode_compatible
 class Site(models.Model):
-    hostname = models.CharField(max_length=255, db_index=True)
-    port = models.IntegerField(default=80, help_text=_("Set this to something other than 80 if you need a specific port number to appear in URLs (e.g. development on port 8000). Does not affect request handling (so port forwarding still works)."))
-    root_page = models.ForeignKey('Page', related_name='sites_rooted_here')
-    is_default_site = models.BooleanField(default=False, help_text=_("If true, this site will handle requests for all other hostnames that do not have a site entry of their own"))
+    hostname = models.CharField(verbose_name=_('Hostname'), max_length=255, db_index=True)
+    port = models.IntegerField(verbose_name=_('Port'), default=80, help_text=_("Set this to something other than 80 if you need a specific port number to appear in URLs (e.g. development on port 8000). Does not affect request handling (so port forwarding still works)."))
+    root_page = models.ForeignKey('Page', verbose_name=_('Root page'), related_name='sites_rooted_here')
+    is_default_site = models.BooleanField(verbose_name=_('Is default site'), default=False, help_text=_("If true, this site will handle requests for all other hostnames that do not have a site entry of their own"))
 
     class Meta:
         unique_together = ('hostname', 'port')
+        verbose_name = _('Site')
 
     def natural_key(self):
         return (self.hostname, self.port)
@@ -71,11 +72,13 @@ class Site(models.Model):
         """
         Find the site object responsible for responding to this HTTP
         request object. Try:
-         - unique hostname first
-         - then hostname and port
-         - if there is no matching hostname at all, or no matching
-           hostname:port combination, fall back to the unique default site,
-           or raise an exception
+
+        * unique hostname first
+        * then hostname and port
+        * if there is no matching hostname at all, or no matching
+          hostname:port combination, fall back to the unique default site,
+          or raise an exception
+
         NB this means that high-numbered ports on an extant hostname may
         still be routed to a different hostname which is set as the default
         """
@@ -137,7 +140,6 @@ class Site(models.Model):
             cache.set('wagtail_site_root_paths', result, 3600)
 
         return result
-
 
 # Clear the wagtail_site_root_paths from the cache whenever Site records are updated
 @receiver(post_save, sender=Site)
@@ -265,27 +267,28 @@ class PageBase(models.base.ModelBase):
 
 @python_2_unicode_compatible
 class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed)):
-    title = models.CharField(max_length=255, help_text=_("The page title as you'd like it to be seen by the public"))
-    slug = models.SlugField(help_text=_("The name of the page as it will appear in URLs e.g http://domain.com/blog/[my-slug]/"))
+    title = models.CharField(verbose_name=_('Title'), max_length=255, help_text=_("The page title as you'd like it to be seen by the public"))
+    slug = models.SlugField(verbose_name=_('Slug'), max_length=255, help_text=_("The name of the page as it will appear in URLs e.g http://domain.com/blog/[my-slug]/"))
     # TODO: enforce uniqueness on slug field per parent (will have to be done at the Django
     # level rather than db, since there is no explicit parent relation in the db)
-    content_type = models.ForeignKey('contenttypes.ContentType', related_name='pages')
-    live = models.BooleanField(default=True, editable=False)
-    has_unpublished_changes = models.BooleanField(default=False, editable=False)
-    url_path = models.CharField(max_length=255, blank=True, editable=False)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, editable=False, on_delete=models.SET_NULL, related_name='owned_pages')
+    content_type = models.ForeignKey('contenttypes.ContentType', verbose_name=_('Content type'), related_name='pages')
+    live = models.BooleanField(verbose_name=_('Live'), default=True, editable=False)
+    has_unpublished_changes = models.BooleanField(verbose_name=_('Has unpublished changes'), default=False, editable=False)
+    url_path = models.TextField(verbose_name=_('URL path'), blank=True, editable=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('Owner'), null=True, blank=True, editable=False, on_delete=models.SET_NULL, related_name='owned_pages')
 
     seo_title = models.CharField(verbose_name=_("Page title"), max_length=255, blank=True, help_text=_("Optional. 'Search Engine Friendly' title. This will appear at the top of the browser window."))
-    show_in_menus = models.BooleanField(default=False, help_text=_("Whether a link to this page will appear in automatically generated menus"))
-    search_description = models.TextField(blank=True)
+    show_in_menus = models.BooleanField(verbose_name=_('Show in menus'), default=False, help_text=_("Whether a link to this page will appear in automatically generated menus"))
+    search_description = models.TextField(verbose_name=_('Search description'), blank=True)
 
-    go_live_at = models.DateTimeField(verbose_name=_("Go live date/time"), help_text=_("Please add a date-time in the form YYYY-MM-DD hh:mm:ss."), blank=True, null=True)
-    expire_at = models.DateTimeField(verbose_name=_("Expiry date/time"), help_text=_("Please add a date-time in the form YYYY-MM-DD hh:mm:ss."), blank=True, null=True)
-    expired = models.BooleanField(default=False, editable=False)
+    go_live_at = models.DateTimeField(verbose_name=_("Go live date/time"), help_text=_("Please add a date-time in the form YYYY-MM-DD hh:mm."), blank=True, null=True)
+    expire_at = models.DateTimeField(verbose_name=_("Expiry date/time"), help_text=_("Please add a date-time in the form YYYY-MM-DD hh:mm."), blank=True, null=True)
+    expired = models.BooleanField(verbose_name=_('Expired'), default=False, editable=False)
 
-    locked = models.BooleanField(default=False, editable=False)
+    locked = models.BooleanField(verbose_name=_('Locked'), default=False, editable=False)
 
-    latest_revision_created_at = models.DateTimeField(null=True, editable=False)
+    first_published_at = models.DateTimeField(verbose_name=_('First published at'), null=True, editable=False)
+    latest_revision_created_at = models.DateTimeField(verbose_name=_('Latest revision created at'), null=True, editable=False)
 
     search_fields = (
         index.SearchField('title', partial_match=True, boost=2),
@@ -369,6 +372,17 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
 
         return result
 
+    def delete(self, *args, **kwargs):
+        # Ensure that deletion always happens on an instance of Page, not a specific subclass. This
+        # works around a bug in treebeard <= 3.0 where calling SpecificPage.delete() fails to delete
+        # child pages that are not instances of SpecificPage
+        if type(self) is Page:
+            # this is a Page instance, so carry on as we were
+            return super(Page, self).delete(*args, **kwargs)
+        else:
+            # retrieve an actual Page instance and delete that instead of self
+            return Page.objects.get(id=self.id).delete(*args, **kwargs)
+
     @classmethod
     def check(cls, **kwargs):
         errors = super(Page, cls).check(**kwargs)
@@ -377,15 +391,24 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         # This is the default Django behaviour which must be explicitly overridden
         # to prevent pages disappearing unexpectedly and the tree being corrupted
 
+        # get names of foreign keys pointing to parent classes (such as page_ptr)
+        field_exceptions = [field.name
+                            for model in [cls] + list(cls._meta.get_parent_list())
+                            for field in model._meta.parents.values() if field]
+
+        field_exceptions += ['content_type']
+
+
         for field in cls._meta.fields:
-            if isinstance(field, models.ForeignKey) and field.name not in ['page_ptr', 'content_type'] and not field.name.endswith('page_ptr'):
+            if isinstance(field, models.ForeignKey) and field.name not in field_exceptions \
+                    and not field.name.endswith('page_ptr'):
                 if field.rel.on_delete == models.CASCADE:
                     errors.append(
-                        checks.Error(
+                        checks.Warning(
                             "Field hasn't specified on_delete action",
                             hint="Set on_delete=models.SET_NULL and make sure the field is nullable.",
                             obj=field,
-                            id='wagtailcore.E001',
+                            id='wagtailcore.W001',
                         )
                     )
 
@@ -422,7 +445,15 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         # the ContentType.objects manager keeps a cache, so this should potentially
         # avoid a database lookup over doing self.content_type. I think.
         content_type = ContentType.objects.get_for_id(self.content_type_id)
-        if isinstance(self, content_type.model_class()):
+        model_class = content_type.model_class()
+        if model_class is None:
+            # Cannot locate a model class for this content type. This might happen
+            # if the codebase and database are out of sync (e.g. the model exists
+            # on a different git branch and we haven't rolled back migrations before
+            # switching branches); if so, the best we can do is return the page
+            # unchanged.
+            return self
+        elif isinstance(self, model_class):
             # self is already the an instance of the most specific class
             return self
         else:
@@ -459,7 +490,7 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
             else:
                 raise Http404
 
-    def save_revision(self, user=None, submitted_for_moderation=False, approved_go_live_at=None):
+    def save_revision(self, user=None, submitted_for_moderation=False, approved_go_live_at=None, changed=True):
         # Create revision
         revision = self.revisions.create(
             content_json=self.to_json(),
@@ -468,8 +499,17 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
             approved_go_live_at=approved_go_live_at,
         )
 
+        update_fields = []
+
         self.latest_revision_created_at = revision.created_at
-        self.save(update_fields=['latest_revision_created_at'])
+        update_fields.append('latest_revision_created_at')
+
+        if changed:
+            self.has_unpublished_changes = True
+            update_fields.append('has_unpublished_changes')
+
+        if update_fields:
+            self.save(update_fields=update_fields)
 
         # Log
         logger.info("Page edited: \"%s\" id=%d revision_id=%d", self.title, self.id, revision.id)
@@ -480,7 +520,7 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         return revision
 
     def get_latest_revision(self):
-        return self.revisions.order_by('-created_at').first()
+        return self.revisions.order_by('-created_at', '-id').first()
 
     def get_latest_revision_as_page(self):
         latest_revision = self.get_latest_revision()
@@ -685,16 +725,16 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
     def status_string(self):
         if not self.live:
             if self.expired:
-                return "expired"
+                return _("expired")
             elif self.approved_schedule:
-                return "scheduled"
+                return _("scheduled")
             else:
-                return "draft"
+                return _("draft")
         else:
             if self.has_unpublished_changes:
-                return "live + draft"
+                return _("live + draft")
             else:
-                return "live"
+                return _("live")
 
     @property
     def approved_schedule(self):
@@ -725,7 +765,7 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         # Log
         logger.info("Page moved: \"%s\" id=%d path=%s", self.title, self.id, new_url_path)
 
-    def copy(self, recursive=False, to=None, update_attrs=None, copy_revisions=True, keep_live=True):
+    def copy(self, recursive=False, to=None, update_attrs=None, copy_revisions=True, keep_live=True, user=None):
         # Make a copy
         page_copy = Page.objects.get(id=self.id).specific
         page_copy.pk = None
@@ -737,6 +777,9 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         if not keep_live:
             page_copy.live = False
             page_copy.has_unpublished_changes = True
+
+        if user:
+            page_copy.owner = user
 
         if update_attrs:
             for field, value in update_attrs.items():
@@ -766,7 +809,39 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
                 revision.submitted_for_moderation = False
                 revision.approved_go_live_at = None
                 revision.page = page_copy
+
+                # Update ID fields in content
+                revision_content = json.loads(revision.content_json)
+                revision_content['pk'] = page_copy.pk
+
+                for child_relation in get_all_child_relations(specific_self):
+                    try:
+                        child_objects = revision_content[child_relation.get_accessor_name()]
+                    except KeyError:
+                        # KeyErrors are possible if the revision was created
+                        # before this child relation was added to the database
+                        continue
+
+                    for child_object in child_objects:
+                        child_object[child_relation.field.name] = page_copy.pk
+
+                revision.content_json = json.dumps(revision_content)
+
+                # Save
                 revision.save()
+
+        # Create a new revision
+        # This code serves a few purposes:
+        # * It makes sure update_attrs gets applied to the latest revision so the changes are reflected in the editor
+        # * It bumps the last_revision_created_at value so the new page gets ordered as if it was just created
+        # * It sets the user of the new revision so it's possible to see who copied the page by looking at its history
+        latest_revision = page_copy.get_latest_revision_as_page()
+
+        if update_attrs:
+            for field, value in update_attrs.items():
+                setattr(latest_revision, field, value)
+
+        latest_revision.save_revision(user=user, changed=False)
 
         # Log
         logger.info("Page copied: \"%s\" id=%d from=%d", page_copy.title, page_copy.id, self.id)
@@ -774,7 +849,7 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         # Copy child pages
         if recursive:
             for child_page in self.get_children():
-                child_page.specific.copy(recursive=True, to=page_copy, copy_revisions=copy_revisions, keep_live=keep_live)
+                child_page.specific.copy(recursive=True, to=page_copy, copy_revisions=copy_revisions, keep_live=keep_live, user=user)
 
         return page_copy
 
@@ -819,13 +894,13 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         # Apply middleware to the request - see http://www.mellowmorning.com/2011/04/18/mock-django-request-for-testing/
         handler = BaseHandler()
         handler.load_middleware()
+        # call each middleware in turn and throw away any responses that they might return
         for middleware_method in handler._request_middleware:
-            if middleware_method(request):
-                raise Exception("Couldn't create request mock object - "
-                                "request middleware returned a response")
+            middleware_method(request)
+
         return request
 
-    DEFAULT_PREVIEW_MODES = [('', 'Default')]
+    DEFAULT_PREVIEW_MODES = [('', _('Default'))]
 
     @property
     def preview_modes(self):
@@ -916,6 +991,7 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         return PageViewRestriction.objects.filter(page__in=self.get_ancestors(inclusive=True))
 
     password_required_template = getattr(settings, 'PASSWORD_REQUIRED_TEMPLATE', 'wagtailcore/password_required.html')
+
     def serve_password_required_response(self, request, form, action_url):
         """
         Serve a response indicating that the user has been denied access to view this page,
@@ -1000,12 +1076,12 @@ class SubmittedRevisionsManager(models.Manager):
 
 @python_2_unicode_compatible
 class PageRevision(models.Model):
-    page = models.ForeignKey('Page', related_name='revisions')
-    submitted_for_moderation = models.BooleanField(default=False)
-    created_at = models.DateTimeField()
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
-    content_json = models.TextField()
-    approved_go_live_at = models.DateTimeField(null=True, blank=True)
+    page = models.ForeignKey('Page', verbose_name=_('Page'), related_name='revisions')
+    submitted_for_moderation = models.BooleanField(verbose_name=_('Submitted for moderation'), default=False)
+    created_at = models.DateTimeField(verbose_name=_('Created at'))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('User'), null=True, blank=True)
+    content_json = models.TextField(verbose_name=_('Content JSON'))
+    approved_go_live_at = models.DateTimeField(verbose_name=_('Approved go live at'), null=True, blank=True)
 
     objects = models.Manager()
     submitted_revisions = SubmittedRevisionsManager()
@@ -1029,6 +1105,7 @@ class PageRevision(models.Model):
 
         # Override the possibly-outdated tree parameter fields from this revision object
         # with up-to-date values
+        obj.pk = self.page.pk
         obj.path = self.page.path
         obj.depth = self.page.depth
         obj.numchild = self.page.numchild
@@ -1049,6 +1126,7 @@ class PageRevision(models.Model):
         obj.owner = self.page.owner
         obj.locked = self.page.locked
         obj.latest_revision_created_at = self.page.latest_revision_created_at
+        obj.first_published_at = self.page.first_published_at
 
         return obj
 
@@ -1068,7 +1146,7 @@ class PageRevision(models.Model):
             # special case: a revision without an ID is presumed to be newly-created and is thus
             # newer than any revision that might exist in the database
             return True
-        latest_revision = PageRevision.objects.filter(page_id=self.page_id).order_by('-created_at').first()
+        latest_revision = PageRevision.objects.filter(page_id=self.page_id).order_by('-created_at', '-id').first()
         return (latest_revision == self)
 
     def publish(self):
@@ -1088,7 +1166,12 @@ class PageRevision(models.Model):
             page.has_unpublished_changes = not self.is_latest_revision()
             # If page goes live clear the approved_go_live_at of all revisions
             page.revisions.update(approved_go_live_at=None)
-        page.expired = False # When a page is published it can't be expired
+        page.expired = False  # When a page is published it can't be expired
+
+        # Set first_published_at if the page is being published now
+        if page.live and page.first_published_at is None:
+            page.first_published_at = timezone.now()
+
         page.save()
         self.submitted_for_moderation = False
         page.revisions.update(submitted_for_moderation=False)
@@ -1103,22 +1186,26 @@ class PageRevision(models.Model):
     def __str__(self):
         return '"' + six.text_type(self.page) + '" at ' + six.text_type(self.created_at)
 
+    class Meta:
+        verbose_name = _('Page Revision')
+
 
 PAGE_PERMISSION_TYPE_CHOICES = [
-    ('add', 'Add/edit pages you own'),
-    ('edit', 'Add/edit any page'),
-    ('publish', 'Publish any page'),
-    ('lock', 'Lock/unlock any page'),
+    ('add', _('Add/edit pages you own')),
+    ('edit', _('Add/edit any page')),
+    ('publish', _('Publish any page')),
+    ('lock', _('Lock/unlock any page')),
 ]
 
 
 class GroupPagePermission(models.Model):
-    group = models.ForeignKey(Group, related_name='page_permissions')
-    page = models.ForeignKey('Page', related_name='group_permissions')
-    permission_type = models.CharField(max_length=20, choices=PAGE_PERMISSION_TYPE_CHOICES)
+    group = models.ForeignKey(Group, verbose_name=_('Group'), related_name='page_permissions')
+    page = models.ForeignKey('Page', verbose_name=_('Page'), related_name='group_permissions')
+    permission_type = models.CharField(verbose_name=_('Permission type'), max_length=20, choices=PAGE_PERMISSION_TYPE_CHOICES)
 
     class Meta:
         unique_together = ('group', 'page', 'permission_type')
+        verbose_name = _('Group Page Permission')
 
 
 class UserPagePermissionsProxy(object):
@@ -1335,5 +1422,8 @@ class PagePermissionTester(object):
 
 
 class PageViewRestriction(models.Model):
-    page = models.ForeignKey('Page', related_name='view_restrictions')
-    password = models.CharField(max_length=255)
+    page = models.ForeignKey('Page', verbose_name=_('Page'), related_name='view_restrictions')
+    password = models.CharField(verbose_name=_('Password'), max_length=255)
+
+    class Meta:
+        verbose_name = _('Page View Restriction')

@@ -12,16 +12,18 @@ MEDIA_URL = '/media/'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('DATABASE_ENGINE', 'django.db.backends.postgresql_psycopg2'),
-        'NAME': os.environ.get('DATABASE_NAME', 'wagtaildemo'),
-        'USER': os.environ.get('DATABASE_USER', 'postgres'),
+        'ENGINE': os.environ.get('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME': os.environ.get('DATABASE_NAME', 'wagtail'),
+        'USER': os.environ.get('DATABASE_USER', None),
         'PASSWORD': os.environ.get('DATABASE_PASS', None),
+        'HOST': os.environ.get('DATABASE_HOST', None),
     }
 }
 
+
 SECRET_KEY = 'not needed'
 
-ROOT_URLCONF='wagtail.tests.urls'
+ROOT_URLCONF = 'wagtail.tests.urls'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = STATIC_ROOT
@@ -33,15 +35,36 @@ STATICFILES_FINDERS = (
 
 USE_TZ = True
 
-TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
-    'django.core.context_processors.request',
-)
+if django.VERSION >= (1, 8):
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [],
+            'APP_DIRS': True,
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.debug',
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+                    'django.template.context_processors.request',
+                    'wagtail.tests.context_processors.do_not_use_static_url',
+                ],
+            },
+        },
+    ]
+else:
+    TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
+        'django.core.context_processors.request',
+        'wagtail.tests.context_processors.do_not_use_static_url',
+    )
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
@@ -50,7 +73,7 @@ MIDDLEWARE_CLASSES = (
     'wagtail.wagtailredirects.middleware.RedirectMiddleware',
 )
 
-INSTALLED_APPS = [
+INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.auth',
@@ -75,28 +98,19 @@ INSTALLED_APPS = [
     'wagtail.contrib.wagtailsitemaps',
     'wagtail.contrib.wagtailroutablepage',
     'wagtail.contrib.wagtailfrontendcache',
-    'wagtail.tests',
-]
+    'wagtail.contrib.wagtailapi',
+    'wagtail.tests.testapp',
+    'wagtail.tests.demosite',
+    'wagtail.tests.customuser',
+    'wagtail.tests.snippets',
+    'wagtail.tests.routablepage',
+    'wagtail.tests.search',
 
-# If we are using Django 1.6, add South to INSTALLED_APPS
-if django.VERSION < (1, 7):
-    INSTALLED_APPS.append('south')
-
-
-# If we are using Django 1.7 install wagtailredirects with its appconfig
-# Theres nothing special about wagtailredirects, we just need to have one
-# app which uses AppConfigs to test that hooks load properly
-
-if django.VERSION < (1, 7):
-    INSTALLED_APPS.append('wagtail.wagtailredirects')
-else:
-    INSTALLED_APPS.append('wagtail.wagtailredirects.apps.WagtailRedirectsAppConfig')
-
-# As we don't have south migrations for tests, South thinks
-# the Django 1.7 migrations are South migrations.
-SOUTH_MIGRATION_MODULES = {
-    'tests': 'ignore',
-}
+    # Install wagtailredirects with its appconfig
+    # Theres nothing special about wagtailredirects, we just need to have one
+    # app which uses AppConfigs to test that hooks load properly
+    'wagtail.wagtailredirects.apps.WagtailRedirectsAppConfig',
+)
 
 
 # Using DatabaseCache to make sure that the cache is cleared between tests.
@@ -115,9 +129,6 @@ PASSWORD_HASHERS = (
 
 COMPRESS_ENABLED = False  # disable compression so that we can run tests on the content of the compress tag
 
-LOGIN_REDIRECT_URL = 'wagtailadmin_home'
-LOGIN_URL = 'wagtailadmin_login'
-
 
 WAGTAILSEARCH_BACKENDS = {
     'default': {
@@ -125,18 +136,23 @@ WAGTAILSEARCH_BACKENDS = {
     }
 }
 
-AUTH_USER_MODEL = 'tests.CustomUser'
+AUTH_USER_MODEL = 'customuser.CustomUser'
 
 try:
     # Only add Elasticsearch backend if the elasticsearch-py library is installed
-    import elasticsearch
+    import elasticsearch  # noqa
 
     # Import succeeded, add an Elasticsearch backend
     WAGTAILSEARCH_BACKENDS['elasticsearch'] = {
         'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch.ElasticSearch',
         'TIMEOUT': 10,
         'max_retries': 1,
+        'AUTO_UPDATE': False,
     }
+
+    if 'ELASTICSEARCH_URL' in os.environ:
+        WAGTAILSEARCH_BACKENDS['elasticsearch']['URLS'] = [os.environ['ELASTICSEARCH_URL']]
+
 except ImportError:
     pass
 

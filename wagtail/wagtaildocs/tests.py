@@ -1,22 +1,28 @@
-from six import b
+from __future__ import unicode_literals
 
+from six import b
+import unittest
+import mock
+from bs4 import BeautifulSoup
+import os.path
+
+import django
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.urlresolvers import reverse
 from django.core.files.base import ContentFile
 from django.test.utils import override_settings
+from django.conf import settings
 
-from wagtail.tests.utils import unittest, WagtailTestUtils
+from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailcore.models import Page
 
-from wagtail.tests.models import EventPage, EventPageRelatedLink
+from wagtail.tests.testapp.models import EventPage, EventPageRelatedLink
 from wagtail.wagtaildocs.models import Document
 
 from wagtail.wagtaildocs import models
-
-
-# TODO: Test serve view
+from wagtail.wagtaildocs.rich_text import DocumentLinkHandler
 
 
 class TestDocumentPermissions(TestCase):
@@ -48,7 +54,7 @@ class TestDocumentPermissions(TestCase):
         self.assertFalse(self.document.is_editable_by_user(self.user))
 
 
-## ===== ADMIN VIEWS =====
+# ===== ADMIN VIEWS =====
 
 
 class TestDocumentIndexView(TestCase, WagtailTestUtils):
@@ -174,6 +180,21 @@ class TestDocumentEditView(TestCase, WagtailTestUtils):
 
         # Document title should be changed
         self.assertEqual(models.Document.objects.get(id=self.document.id).title, "Test document changed!")
+
+    def test_with_missing_source_file(self):
+        # Build a fake file
+        fake_file = ContentFile(b("An ephemeral document"))
+        fake_file.name = 'to-be-deleted.txt'
+
+        # Create a new document to delete the source for
+        document = models.Document.objects.create(title="Test missing source document", file=fake_file)
+        document.file.delete(False)
+
+        response = self.client.get(reverse('wagtaildocs_edit_document', args=(document.id,)), {})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtaildocs/documents/edit.html')
+
+        self.assertContains(response, 'File not found')
 
 
 class TestDocumentDeleteView(TestCase, WagtailTestUtils):
@@ -324,7 +345,7 @@ class TestDocumentFilenameProperties(TestCase):
 
 
 class TestUsageCount(TestCase, WagtailTestUtils):
-    fixtures = ['wagtail/tests/fixtures/test.json']
+    fixtures = ['test.json']
 
     def setUp(self):
         self.login()
@@ -375,7 +396,7 @@ class TestUsageCount(TestCase, WagtailTestUtils):
 
 
 class TestGetUsage(TestCase, WagtailTestUtils):
-    fixtures = ['wagtail/tests/fixtures/test.json']
+    fixtures = ['test.json']
 
     def setUp(self):
         self.login()
@@ -518,3 +539,152 @@ class TestIssue613(TestCase, WagtailTestUtils):
         # Check
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].id, document.id)
+
+
+class TestServeView(TestCase):
+    def setUp(self):
+        self.document = models.Document(title="Test document")
+        self.document.file.save('example.doc', ContentFile("A boring example document"))
+
+    def get(self):
+        return self.client.get(reverse('wagtaildocs_serve', args=(self.document.id, 'example.doc')))
+
+    def test_response_code(self):
+        self.assertEqual(self.get().status_code, 200)
+
+    @unittest.expectedFailure  # Filename has a random string appended to it
+    def test_content_disposition_header(self):
+        self.assertEqual(self.get()['Content-Disposition'], 'attachment; filename=example.doc')
+
+    def test_content_length_header(self):
+        self.assertEqual(self.get()['Content-Length'], '25')
+
+    def test_content_type_header(self):
+        self.assertEqual(self.get()['Content-Type'], 'application/msword')
+
+    def test_is_streaming_response(self):
+        self.assertTrue(self.get().streaming)
+
+    def test_content(self):
+        self.assertEqual(b"".join(self.get().streaming_content), b"A boring example document")
+
+    def test_document_served_fired(self):
+        mock_handler = mock.MagicMock()
+        models.document_served.connect(mock_handler)
+
+        self.get()
+
+        self.assertEqual(mock_handler.call_count, 1)
+        self.assertEqual(mock_handler.mock_calls[0][2]['sender'], models.Document)
+        self.assertEqual(mock_handler.mock_calls[0][2]['instance'], self.document)
+
+    def test_with_nonexistent_document(self):
+        response = self.client.get(reverse('wagtaildocs_serve', args=(1000, 'blahblahblah', )))
+        self.assertEqual(response.status_code, 404)
+
+    @unittest.expectedFailure
+    def test_with_incorrect_filename(self):
+        response = self.client.get(reverse('wagtaildocs_serve', args=(self.document.id, 'incorrectfilename')))
+        self.assertEqual(response.status_code, 404)
+
+    def clear_sendfile_cache(self):
+        from wagtail.utils.sendfile import _get_sendfile
+        _get_sendfile.clear()
+
+
+class TestServeViewWithSendfile(TestCase):
+    def setUp(self):
+        # Import using a try-catch block to prevent crashes if the
+        # django-sendfile module is not installed
+        try:
+            import sendfile  # noqa
+        except ImportError:
+            raise unittest.SkipTest("django-sendfile not installed")
+
+        self.document = models.Document(title="Test document")
+        self.document.file.save('example.doc', ContentFile("A boring example document"))
+
+    def get(self):
+        return self.client.get(reverse('wagtaildocs_serve', args=(self.document.id, 'example.doc')))
+
+    def clear_sendfile_cache(self):
+        from wagtail.utils.sendfile import _get_sendfile
+        _get_sendfile.clear()
+
+    @override_settings(SENDFILE_BACKEND='sendfile.backends.xsendfile')
+    def test_sendfile_xsendfile_backend(self):
+        self.clear_sendfile_cache()
+        response = self.get()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['X-Sendfile'], os.path.join(settings.MEDIA_ROOT, self.document.file.name))
+
+    @unittest.skipIf(django.VERSION >= (1, 8), "Fails on Django 1.8")  # Under Django 1.8. It adds "http://" to beginning of Location when it shouldn't
+    @override_settings(SENDFILE_BACKEND='sendfile.backends.mod_wsgi', SENDFILE_ROOT=settings.MEDIA_ROOT, SENDFILE_URL=settings.MEDIA_URL[:-1])
+    def test_sendfile_mod_wsgi_backend(self):
+        self.clear_sendfile_cache()
+        response = self.get()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Location'], os.path.join(settings.MEDIA_URL, self.document.file.name))
+
+    @override_settings(SENDFILE_BACKEND='sendfile.backends.nginx', SENDFILE_ROOT=settings.MEDIA_ROOT, SENDFILE_URL=settings.MEDIA_URL[:-1])
+    def test_sendfile_nginx_backend(self):
+        self.clear_sendfile_cache()
+        response = self.get()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['X-Accel-Redirect'], os.path.join(settings.MEDIA_URL, self.document.file.name))
+
+
+class TestServeWithUnicodeFilename(TestCase):
+    def setUp(self):
+        self.document = models.Document(title="Test document")
+
+        # Setting this filename in the content-disposition header fails on Django <1.8, Python 2
+        # due to https://code.djangoproject.com/ticket/20889
+        self.filename = 'docs\u0627\u0644\u0643\u0627\u062a\u062f\u0631\u0627\u064a\u064a\u0629_\u0648\u0627\u0644\u0633\u0648\u0642'
+        try:
+            self.document.file.save(self.filename, ContentFile("A boring example document"))
+        except UnicodeEncodeError:
+            raise unittest.SkipTest("Filesystem doesn't support unicode filenames")
+
+    def test_response_code(self):
+        response = self.client.get(reverse('wagtaildocs_serve', args=(self.document.id, self.filename)))
+        self.assertEqual(response.status_code, 200)
+
+
+class TestDocumentRichTextLinkHandler(TestCase):
+    fixtures = ['test.json']
+
+    def test_get_db_attributes(self):
+        soup = BeautifulSoup(
+            '<a data-id="test-id">foo</a>'
+        )
+        tag = soup.a
+        result = DocumentLinkHandler.get_db_attributes(tag)
+        self.assertEqual(result,
+                         {'id': 'test-id'})
+
+    def test_expand_db_attributes_document_does_not_exist(self):
+        result = DocumentLinkHandler.expand_db_attributes(
+            {'id': 0},
+            False
+        )
+        self.assertEqual(result, '<a>')
+
+    def test_expand_db_attributes_for_editor(self):
+        result = DocumentLinkHandler.expand_db_attributes(
+            {'id': 1},
+            True
+        )
+        self.assertEqual(result,
+                         '<a data-linktype="document" data-id="1" href="/documents/1/">')
+
+    def test_expand_db_attributes_not_for_editor(self):
+        result = DocumentLinkHandler.expand_db_attributes(
+            {'id': 1},
+            False
+        )
+        self.assertEqual(result,
+                         '<a href="/documents/1/">')

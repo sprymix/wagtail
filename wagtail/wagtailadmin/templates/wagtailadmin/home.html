@@ -1,6 +1,5 @@
 {% extends "wagtailadmin/base.html" %}
-{% load gravatar compress %}
-{% load i18n %}
+{% load gravatar static compress i18n %}
 {% block titletag %}{% trans "Dashboard" %}{% endblock %}
 {% block bodyclass %}homepage{% endblock %}
 
@@ -8,7 +7,7 @@
     {{ block.super }}
 
     {% compress css %}
-        <link rel="stylesheet" href="{{ STATIC_URL }}wagtailadmin/scss/layouts/home.scss" type="text/x-scss" />
+        <link rel="stylesheet" href="{% static 'wagtailadmin/css/layouts/home.css' %}" type="text/css" />
     {% endcompress %}
 {% endblock %}
 
@@ -21,7 +20,7 @@
                 </div>
             {% endif %}
             <div class="col9">
-                <h1>{% blocktrans %}Welcome to the {{ site_name }} Wagtail CMS{% endblocktrans %}</h1> 
+                <h1>{% block branding_welcome %}{% blocktrans %}Welcome to the {{ site_name }} Wagtail CMS{% endblocktrans %}{% endblock %}</h1>
                 <h2>{{ user.get_full_name|default:user.get_username }}</h2>
             </div>
         </div>
@@ -34,5 +33,4 @@
     {% else %}
         <p>{% trans "This is your dashboard on which helpful information about content you've created will be displayed." %}</p>
     {% endif %}
-
 {% endblock %}

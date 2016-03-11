@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-import sys, os
+import sys
+
+from setuptools.command.sdist import sdist
 
 from wagtail.wagtailcore import __version__
-
+from wagtail.utils.setup import assets, add_subcommand, check_bdist_egg
 
 try:
     from setuptools import setup, find_packages
@@ -20,35 +22,21 @@ except ImportError:
     pass
 
 
-# Disable parallel builds, because Pillow 2.5.3 does some crazy monkeypatching of
-# the build process on multicore systems, which breaks installation of libsass
-os.environ['MAX_CONCURRENCY'] = '1'
-
-PY3 = sys.version_info[0] == 3
-
-
 install_requires = [
-    "Django>=1.6.2,<1.8",
-    "South==1.0.0",
+    "Django>=1.7.1,<1.9",
     "django-compressor>=1.4",
-    "django-libsass>=0.2",
-    "django-modelcluster>=0.4",
-    "django-taggit==0.12.2",
-    "django-treebeard==2.0",
-    "Pillow>=2.3.0",
+    "django-modelcluster>=0.6",
+    "django-taggit>=0.13.0",
+    "django-treebeard==3.0",
+    "Pillow>=2.6.1",
     "beautifulsoup4>=4.3.2",
     "html5lib==0.999",
     "Unidecode>=0.04.14",
     "six==1.7.3",
     'requests==2.3.0',
-    "pytz>=2014.7"
+    "pytz>=2014.7",
+    "Willow==0.2.1",
 ]
-
-
-if not PY3:
-    install_requires += [
-        "unicodecsv>=0.9.4"
-    ]
 
 
 setup(
@@ -70,10 +58,8 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Framework :: Django',
@@ -85,4 +71,9 @@ setup(
             wagtail=wagtail.bin.wagtail:main
     """,
     zip_safe=False,
+    cmdclass={
+        'sdist': add_subcommand(sdist, [('assets', None)]),
+        'bdist_egg': check_bdist_egg,
+        'assets': assets,
+    },
 )

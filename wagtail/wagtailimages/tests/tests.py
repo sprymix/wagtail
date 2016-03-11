@@ -1,15 +1,23 @@
-import datetime
+import warnings
 
 from mock import MagicMock
 
 from django.test import TestCase
-from django import template
+from django import template, forms
 from django.utils import six
 from django.core.urlresolvers import reverse
 
+from taggit.forms import TagField, TagWidget
+
+from wagtail.utils.deprecation import RemovedInWagtail12Warning
+from wagtail.tests.testapp.models import CustomImageWithAdminFormFields, CustomImageWithoutAdminFormFields
+from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailimages.utils import generate_signature, verify_signature
 from wagtail.wagtailimages.rect import Rect
 from wagtail.wagtailimages.formats import Format, get_image_format, register_image_format
+from wagtail.wagtailimages.models import Image as WagtailImage
+from wagtail.wagtailimages.forms import get_image_form
+from wagtail.wagtailimages.fields import WagtailImageField
 
 from .utils import Image, get_test_image_file
 
@@ -61,6 +69,25 @@ class TestImageTag(TestCase):
         self.assertTrue('height="300"' in result)
         self.assertTrue('class="photo"' in result)
         self.assertTrue('title="my wonderful title"' in result)
+
+
+class TestMissingImage(TestCase):
+    """
+    Missing image files in media/original_images should be handled gracefully, to cope with
+    pulling live databases to a development instance without copying the corresponding image files.
+    In this case, it's acceptable to render broken images, but not to fail rendering the page outright.
+    """
+    fixtures = ['test.json']
+
+    def test_image_tag_with_missing_image(self):
+        # the page /events/christmas/ has a missing image as the feed image
+        response = self.client.get('/events/christmas/')
+        self.assertContains(response, '<img src="/media/not-found" width="0" height="0" alt="A missing image" class="feed-image">', html=True)
+
+    def test_rich_text_with_missing_image(self):
+        # the page /events/final-event/ has a missing image in the rich text body
+        response = self.client.get('/events/final-event/')
+        self.assertContains(response, '<img class="richtext-image full-width" src="/media/not-found" width="0" height="0" alt="where did my image go?">', html=True)
 
 
 class TestFormat(TestCase):
@@ -141,7 +168,7 @@ class TestFrontendServeView(TestCase):
 
         # Check response
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'image/jpeg')
+        self.assertEqual(response['Content-Type'], 'image/png')
 
     def test_get_invalid_signature(self):
         """
@@ -219,6 +246,115 @@ class TestRect(TestCase):
         rect = Rect.from_point(100, 200, 50, 20)
         self.assertEqual(rect, Rect(75, 190, 125, 210))
 
-    def test_get_key(self):
-        rect = Rect(100, 150, 200, 250)
-        self.assertEqual(rect.get_key(), '150-200-100x100')
+
+class TestGetImageForm(TestCase, WagtailTestUtils):
+    def test_fields(self):
+        form = get_image_form(Image)
+
+        self.assertEqual(list(form.base_fields.keys()), [
+            'title',
+            'file',
+            'tags',
+            'focal_point_x',
+            'focal_point_y',
+            'focal_point_width',
+            'focal_point_height',
+        ])
+
+    def test_admin_form_fields_attribute(self):
+        form = get_image_form(CustomImageWithAdminFormFields)
+
+        self.assertEqual(list(form.base_fields.keys()), [
+            'title',
+            'file',
+            'tags',
+            'focal_point_x',
+            'focal_point_y',
+            'focal_point_width',
+            'focal_point_height',
+            'caption',
+        ])
+
+    def test_custom_image_model_without_admin_form_fields_raises_warning(self):
+        self.reset_warning_registry()
+        with warnings.catch_warnings(record=True) as w:
+            form = get_image_form(CustomImageWithoutAdminFormFields)
+
+            # Check that a RemovedInWagtail12Warning has been triggered
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, RemovedInWagtail12Warning))
+            self.assertTrue("Add admin_form_fields = (tuple of field names) to CustomImageWithoutAdminFormFields" in str(w[-1].message))
+
+        # All fields, including the not editable one should be on the form
+        self.assertEqual(list(form.base_fields.keys()), [
+            'title',
+            'file',
+            'focal_point_x',
+            'focal_point_y',
+            'focal_point_width',
+            'focal_point_height',
+            'caption',
+            'not_editable_field',
+            'tags',
+        ])
+
+    def test_file_field(self):
+        form = get_image_form(WagtailImage)
+
+        self.assertIsInstance(form.base_fields['file'], WagtailImageField)
+        self.assertIsInstance(form.base_fields['file'].widget, forms.FileInput)
+
+    def test_tags_field(self):
+        form = get_image_form(WagtailImage)
+
+        self.assertIsInstance(form.base_fields['tags'], TagField)
+        self.assertIsInstance(form.base_fields['tags'].widget, TagWidget)
+
+    def test_focal_point_fields(self):
+        form = get_image_form(WagtailImage)
+
+        self.assertIsInstance(form.base_fields['focal_point_x'], forms.IntegerField)
+        self.assertIsInstance(form.base_fields['focal_point_y'], forms.IntegerField)
+        self.assertIsInstance(form.base_fields['focal_point_width'], forms.IntegerField)
+        self.assertIsInstance(form.base_fields['focal_point_height'], forms.IntegerField)
+
+        self.assertIsInstance(form.base_fields['focal_point_x'].widget, forms.HiddenInput)
+        self.assertIsInstance(form.base_fields['focal_point_y'].widget, forms.HiddenInput)
+        self.assertIsInstance(form.base_fields['focal_point_width'].widget, forms.HiddenInput)
+        self.assertIsInstance(form.base_fields['focal_point_height'].widget, forms.HiddenInput)
+
+
+class TestRenditionFilenames(TestCase):
+    # Can't create image in setUp as we need a unique filename for each test.
+    # This stops Django appending some rubbish to the filename which makes
+    # the assertions difficult.
+
+    def test_normal_filter(self):
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(filename='test_rf1.png'),
+        )
+        rendition = image.get_rendition('width-100')
+
+        self.assertEqual(rendition.file.name, 'images/test_rf1.width-100.png')
+
+    def test_fill_filter(self):
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(filename='test_rf2.png'),
+        )
+        rendition = image.get_rendition('fill-100x100')
+
+        self.assertEqual(rendition.file.name, 'images/test_rf2.2e16d0ba.fill-100x100.png')
+
+    def test_fill_filter_with_focal_point(self):
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(filename='test_rf3.png'),
+        )
+        image.set_focal_point(Rect(100, 100, 200, 200))
+        image.save()
+
+        rendition = image.get_rendition('fill-100x100')
+
+        self.assertEqual(rendition.file.name, 'images/test_rf3.15ee4958.fill-100x100.png')
