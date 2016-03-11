@@ -2,7 +2,7 @@ from django import template
 from django.utils.safestring import mark_safe
 
 from wagtail.wagtailcore.models import Page
-from wagtail.wagtailcore.rich_text import expand_db_html
+from wagtail.wagtailcore.rich_text import expand_db_html, RichText
 from wagtail.wagtailcore import __version__
 
 register = template.Library()
@@ -35,7 +35,15 @@ def wagtail_version():
 
 @register.filter
 def richtext(value):
-    return mark_safe('<div class="rich-text">' + expand_db_html(value) + '</div>')
+    if isinstance(value, RichText):
+        # passing a RichText value through the |richtext filter should have no effect
+        return value
+    elif value is None:
+        html = ''
+    else:
+        html = expand_db_html(value)
+
+    return mark_safe('<div class="rich-text">' + html + '</div>')
 
 
 @register.simple_tag(takes_context=True)

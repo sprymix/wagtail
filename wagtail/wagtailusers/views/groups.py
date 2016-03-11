@@ -2,14 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import permission_required, user_passes_test
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib import messages
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.views.decorators.vary import vary_on_headers
-from django.forms.models import inlineformset_factory
 
+from wagtail.wagtailadmin import messages
 from wagtail.wagtailadmin.forms import SearchForm
-from wagtail.wagtailusers.forms import GroupForm, BaseGroupPagePermissionFormSet
-from wagtail.wagtailcore.models import GroupPagePermission
+from wagtail.wagtailusers.forms import GroupForm, GroupPagePermissionFormSet
 
 
 def user_has_group_model_perm(user):
@@ -78,12 +77,6 @@ def index(request):
 
 @permission_required('auth.add_group')
 def create(request):
-    GroupPagePermissionFormSet = inlineformset_factory(
-        Group,
-        GroupPagePermission,
-        formset=BaseGroupPagePermissionFormSet,
-        extra=0
-    )
     if request.POST:
         form = GroupForm(request.POST)
         formset = GroupPagePermissionFormSet(request.POST)
@@ -91,7 +84,9 @@ def create(request):
             group = form.save()
             formset.instance = group
             formset.save()
-            messages.success(request, _("Group '{0}' created.").format(group))
+            messages.success(request, _("Group '{0}' created.").format(group), buttons=[
+                messages.button(reverse('wagtailusers_groups_edit', args=(group.id,)), _('Edit'))
+            ])
             return redirect('wagtailusers_groups_index')
         else:
             messages.error(request, _("The group could not be created due to errors."))
@@ -108,19 +103,15 @@ def create(request):
 @permission_required('auth.change_group')
 def edit(request, group_id):
     group = get_object_or_404(Group, id=group_id)
-    GroupPagePermissionFormSet = inlineformset_factory(
-        Group,
-        GroupPagePermission,
-        formset=BaseGroupPagePermissionFormSet,
-        extra=0
-    )
     if request.POST:
         form = GroupForm(request.POST, instance=group)
         formset = GroupPagePermissionFormSet(request.POST, instance=group)
         if form.is_valid() and formset.is_valid():
             group = form.save()
             formset.save()
-            messages.success(request, _("Group '{0}' updated.").format(group))
+            messages.success(request, _("Group '{0}' updated.").format(group), buttons=[
+                messages.button(reverse('wagtailusers_groups_edit', args=(group.id,)), _('Edit'))
+            ])
             return redirect('wagtailusers_groups_index')
         else:
             messages.error(request, _("The group could not be saved due to errors."))

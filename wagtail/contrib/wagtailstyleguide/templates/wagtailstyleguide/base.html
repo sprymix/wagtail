@@ -3,7 +3,7 @@
 
 {% block extra_css %}
     {% compress css %}
-        <link rel="stylesheet" href="{{ STATIC_URL }}wagtailstyleguide/scss/styleguide.scss" type="text/x-scss" />
+        <link rel="stylesheet" href="{% static 'wagtailstyleguide/css/styleguide.css' %}" type="text/css" />
     {% endcompress %}
 {% endblock %}
 
@@ -229,38 +229,76 @@
 
         <section id="buttons">
             <h2>Buttons</h2>
+            <p class="help-block help-warning">Do not use <code>{% filter force_escape|lower %}<input type="button">{% endfilter %}</code> use <code>{% filter force_escape|lower %}<button type="button">{% endfilter %}</code> instead. This addresses inconsistencies between rendering of buttons x-browser.</p>
 
-            <a href="#" class="button">button</a>
-
-            <a href="#" class="button button-secondary">button-secondary</a>
-
-            <a href="#" class="button yes">yes</a>
-
-            <a href="#" class="button no">no / serious</a>
-
-            <a href="#" class="button bicolor icon icon-plus">bicolor with icon</a>
-
-            <a href="#" class="button button-small">button-small</a>
-
-            <a href="#" class="button bicolor button-small icon icon-plus">bicolo button-small</a>
-
-            <a href="#" class="button button-secondary no">mixed 1</a>
-
-            <a href="#" class="button no bicolor icon icon-cog">mixed 2</a>
-
-            <div class="button no bicolor icon icon-cog">button on a div</div>
 
             <p>Buttons must have interaction possible (i.e be an input or button element) to get a suitable hover cursor</p>
 
-            <button>button</button>
+            <h3>Regular buttons</h3>
 
-            <button class="button-small">small button</button>
+            <a href="#" class="button">button link</a>
+            <button>button element</button>
 
-            <button class="bicolor icon icon-plus">bicolor with icon</button>
+            <h3>Secondary buttons</h3>
 
-            <input type="submit" class="bicolor icon icon-plus" value="bicolor only supported on button elements" />
+            <a href="#" class="button button-secondary">button link</a>
+            <button class="button-secondary">button element</button>
 
-            <button class="icon icon-view">button</button>
+            <h3>Small buttons</h3>
+
+            <a href="#" class="button button-small">button link</a>
+            <button class="button-small">button element</button>
+
+            <h4>(secondary)</h4>
+            <a href="#" class="button button-small button-secondary">button link</a>
+            <button class="button-small button-secondary">button element</button>
+
+            <h3>Disabled buttons</h3>
+
+            <a href="#" class="button disabled">button link</a>
+            <button class="button-small disabled">button element</button>
+
+            <h3>Bi-color icon buttons with text</h3>
+            <p>Note that <code>input</code> elements are not supported by any icon buttons.</p>
+
+            <a href="#" class="button bicolor icon icon-plus">button link</a>
+            <button class="bicolor icon icon-plus">button element</button>
+
+            <h4>(small)</h4>
+
+            <a href="#" class="button button-small bicolor icon icon-plus">button link</a>
+            <button class="button-small bicolor icon icon-plus">button element</button>
+
+            <h3>Icon buttons without text</h3>
+
+            <a href="#" class="button text-replace icon icon-cog">button link</a>
+            <button class="text-replace icon icon-cog">button element</button>
+
+            <h4>(small)</h4>
+
+            <a href="#" class="button button-small text-replace icon icon-cog">button link</a>
+            <button class="button-small text-replace icon icon-cog">button element</button>
+
+            <h3>Colour signifiers</h3>
+
+            <h4>Positive</h4>
+
+            <a href="#" class="button yes">yes</a>
+            <a href="#" class="button button-small yes">yes</a> 
+
+            <h4>Negative</h4>
+
+            <a href="#" class="button no">No</a>
+            <a href="#" class="button button-small no">No</a> 
+
+            
+            <h3>Mixtures</h3>
+
+            <button class="icon text-replace yes icon-tick">A proper button</button>
+            <a href="#" class="button icon text-replace white icon-cog">A link button</a>
+            <span class="button icon text-replace no icon-bin">A non-link button</span>
+            <a href="#" class="button bicolor disabled icon icon-tick">button link</a>
+            
         </section>
 
         <section id="dropdowns">
@@ -347,8 +385,6 @@
                     {% for field in example_form %}
                         {% if field.name == 'file' %}
                             {% include "wagtailimages/images/_file_field.html" %}
-                        {% elif field.name == 'date' %}
-                            {% include "wagtailadmin/shared/field_as_li.html" with input_classes="iconfield icon-date" %}
                         {% else %}
                             {% include "wagtailadmin/shared/field_as_li.html" %}
                         {% endif %}
@@ -357,13 +393,7 @@
                 </ul>
             </form>
 
-            <h3>TODO: Date picker</h3>
-            <h3>TODO: Time picker</h3>
-            <h3>TODO: Datetime picker</h3>
             <h3>TODO: Rich text input</h3>            
-            <h3>TODO: Page chooser</h3>
-            <h3>TODO: Image chooser</h3>
-            <h3>TODO: Document chooser</h3>
             <h3>TODO: Snippet chooser</h3>
         </section>
 
@@ -426,8 +456,10 @@
             <h2>Misc formatters</h2>
             <h3>Avatar icons</h3>
 
-            <p><span class="avatar small icon icon-user"><img src="{% gravatar_url "david@torchbox.com" 25 %}" /></span> Gravatar set</p>
-            <p><span class="avatar small icon icon-user"><img src="{% gravatar_url "aeon@torchbox.com" 25 %}" /></span> Gravatar not set</p>
+            <p><span class="avatar icon icon-user"><img src="{% gravatar_url "david@torchbox.com" %}" /></span> Gravatar set (normal)</p>
+            <p><span class="avatar icon icon-user"><img src="{% gravatar_url "aeon@torchbox.com" %}" /></span> Gravatar not set (normal)</p>
+            <p><span class="avatar small icon icon-user"><img src="{% gravatar_url "david@torchbox.com" %}" /></span> Gravatar set (small)</p>
+            <p><span class="avatar small icon icon-user"><img src="{% gravatar_url "aeon@torchbox.com" %}" /></span> Gravatar not set (small)</p>
 
             <h3>Status tags</h3>
             <div class="status-tag primary">Primary tag</div>
@@ -513,6 +545,11 @@
                 <li class="icon icon-time">time</li>
                 <li class="icon icon-form">form</li>
                 <li class="icon icon-site">site</li>
+                <li class="icon icon-placeholder">placeholder</li>
+                <li class="icon icon-pilcrow">pilcrow</li>
+                <li class="icon icon-title">title</li>
+                <li class="icon icon-code">code</li>
+                <li class="icon icon-openquote">openquote</li>
             </ul>
 
         </section>
@@ -530,42 +567,43 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    $(function(){
-        // Debugging for stylesheet problems
-        var styleSheets = document.styleSheets, totalStyleSheets = styleSheets.length;
-        for (var j = 0; j < totalStyleSheets; j++) {
-            var styleSheet = styleSheets[j], rules = styleSheet.cssRules, totalSelectorsInStylesheet = 0, style = "";
+    {% include "wagtailadmin/pages/_editor_js.html" %}
+    <script>
+        $(function(){
+            // Debugging for stylesheet problems
+            var styleSheets = document.styleSheets, totalStyleSheets = styleSheets.length;
+            for (var j = 0; j < totalStyleSheets; j++) {
+                var styleSheet = styleSheets[j], rules = styleSheet.cssRules, totalSelectorsInStylesheet = 0, style = "";
 
-            var totalRulesInStylesheet = rules ? rules.length : 0;
+                var totalRulesInStylesheet = rules ? rules.length : 0;
 
-            for (var i = 0; i < totalRulesInStylesheet; i++) {
-                if (rules[i].selectorText) {
-                    try {
-                        totalSelectorsInStylesheet += rules[i].selectorText.split(',').length;
-                    }
-                    catch (err) {
-                        console.log(err);
+                for (var i = 0; i < totalRulesInStylesheet; i++) {
+                    if (rules[i].selectorText) {
+                        try {
+                            totalSelectorsInStylesheet += rules[i].selectorText.split(',').length;
+                        }
+                        catch (err) {
+                            console.log(err);
+                        }
                     }
                 }
+
+                if(totalSelectorsInStylesheet > 4095){
+                    style = 'color:red';
+                }
+                $('#ie9-debug').append("<h3>" + styleSheet.href + "</h3>" + "<p>Total rules: <strong>" + totalRulesInStylesheet + "</strong>. " + "Total selectors: <strong style='" + style + "'>" + totalSelectorsInStylesheet + "</strong></p>");
             }
 
-            if(totalSelectorsInStylesheet > 4095){
-                style = 'color:red';
-            }
-            $('#ie9-debug').append("<h3>" + styleSheet.href + "</h3>" + "<p>Total rules: <strong>" + totalRulesInStylesheet + "</strong>. " + "Total selectors: <strong style='" + style + "'>" + totalSelectorsInStylesheet + "</strong></p>");
-        }
-
-        (function runprogress(){
-            var to = setTimeout(function(){
-                runprogress();
-                clearTimeout(to);
-                var to2 = setTimeout(function(){
-                    $('#progress-example .bar').css('width', '20%'); 
-                }, 2000);                
-            }, 3000);
-            $('#progress-example .bar').css('width', '80%');
-        })();
-    })
-</script>
+            (function runprogress(){
+                var to = setTimeout(function(){
+                    runprogress();
+                    clearTimeout(to);
+                    var to2 = setTimeout(function(){
+                        $('#progress-example .bar').css('width', '20%'); 
+                    }, 2000);                
+                }, 3000);
+                $('#progress-example .bar').css('width', '80%');
+            })();
+        })
+    </script>
 {% endblock %}

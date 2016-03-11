@@ -3,40 +3,30 @@ import json
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import permission_required
 from django.views.decorators.http import require_POST
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.views.decorators.vary import vary_on_headers
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.template import RequestContext
-from django.template.loader import render_to_string
-from django.utils.translation import ugettext as _
 from django.utils.encoding import force_text
 
 from wagtail.wagtailsearch.backends import get_search_backends
 
 from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.forms import get_image_form
-from wagtail.wagtailimages.fields import (
-    MAX_UPLOAD_SIZE,
-    IMAGE_FIELD_HELP_TEXT,
-    INVALID_IMAGE_ERROR,
-    ALLOWED_EXTENSIONS,
-    SUPPORTED_FORMATS_TEXT,
-    FILE_TOO_LARGE_ERROR,
-)
+from wagtail.wagtailimages.fields import ALLOWED_EXTENSIONS
+from wagtail.utils.compat import render_to_string
 
 
 def json_response(document):
     return HttpResponse(json.dumps(document), content_type='application/json')
 
 
-def get_image_edit_form():
-    Image = get_image_model()
-    ImageForm = get_image_form()
+def get_image_edit_form(ImageModel):
+    ImageForm = get_image_form(ImageModel)
 
     # Make a new form with the file and focal point fields excluded
     class ImageEditForm(ImageForm):
         class Meta(ImageForm.Meta):
-            model = Image
+            model = ImageModel
             exclude = (
                 'file',
                 'focal_point_x',
@@ -52,7 +42,7 @@ def get_image_edit_form():
 @vary_on_headers('X-Requested-With')
 def add(request):
     Image = get_image_model()
-    ImageForm = get_image_form()
+    ImageForm = get_image_form(Image)
 
     if request.method == 'POST':
         if not request.is_ajax():
@@ -65,9 +55,9 @@ def add(request):
         form = ImageForm({
             'title': request.FILES['files[]'].name,
         }, {
-            'file': request.FILES['files[]'], 
+            'file': request.FILES['files[]'],
         })
-        
+
         if form.is_valid():
             # Save it
             image = form.save(commit=False)
@@ -80,8 +70,8 @@ def add(request):
                 'image_id': int(image.id),
                 'form': render_to_string('wagtailimages/multiple/edit_form.html', {
                     'image': image,
-                    'form': get_image_edit_form()(instance=image, prefix='image-%d' % image.id),
-                }, context_instance=RequestContext(request)),
+                    'form': get_image_edit_form(Image)(instance=image, prefix='image-%d' % image.id),
+                }, request=request),
             })
         else:
             # Validation error
@@ -91,21 +81,22 @@ def add(request):
                 # https://github.com/django/django/blob/stable/1.6.x/django/forms/util.py#L45
                 'error_message': '\n'.join(['\n'.join([force_text(i) for i in v]) for k, v in form.errors.items()]),
             })
+    else:
+        form = ImageForm()
 
     return render(request, 'wagtailimages/multiple/add.html', {
-        'max_filesize': MAX_UPLOAD_SIZE,
-        'help_text': IMAGE_FIELD_HELP_TEXT,
+        'max_filesize': form.fields['file'].max_upload_size,
+        'help_text': form.fields['file'].help_text,
         'allowed_extensions': ALLOWED_EXTENSIONS,
-        'error_max_file_size': FILE_TOO_LARGE_ERROR,
-        'error_accepted_file_types': INVALID_IMAGE_ERROR,
+        'error_max_file_size': form.fields['file'].error_messages['file_too_large_unknown_size'],
+        'error_accepted_file_types': form.fields['file'].error_messages['invalid_image'],
     })
 
 
 @require_POST
-@permission_required('wagtailadmin.access_admin')  # more specific permission tests are applied within the view
 def edit(request, image_id, callback=None):
     Image = get_image_model()
-    ImageForm = get_image_edit_form()
+    ImageForm = get_image_edit_form(Image)
 
     image = get_object_or_404(Image, id=image_id)
 
@@ -115,7 +106,7 @@ def edit(request, image_id, callback=None):
     if not image.is_editable_by_user(request.user):
         raise PermissionDenied
 
-    form = ImageForm(request.POST, request.FILES, instance=image, prefix='image-'+image_id)
+    form = ImageForm(request.POST, request.FILES, instance=image, prefix='image-' + image_id)
 
     if form.is_valid():
         form.save()
@@ -135,12 +126,11 @@ def edit(request, image_id, callback=None):
             'form': render_to_string('wagtailimages/multiple/edit_form.html', {
                 'image': image,
                 'form': form,
-            }, context_instance=RequestContext(request)),
+            }, request=request),
         })
 
 
 @require_POST
-@permission_required('wagtailadmin.access_admin')  # more specific permission tests are applied within the view
 def delete(request, image_id):
     image = get_object_or_404(get_image_model(), id=image_id)
 

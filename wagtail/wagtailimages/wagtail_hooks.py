@@ -9,8 +9,11 @@ from django.contrib.contenttypes.models import ContentType
 
 from wagtail.wagtailcore import hooks
 from wagtail.wagtailadmin.menu import MenuItem
+from wagtail.wagtailadmin.site_summary import SummaryItem
 
-from wagtail.wagtailimages import admin_urls
+from wagtail.wagtailimages import admin_urls, image_operations
+from wagtail.wagtailimages.models import get_image_model
+from wagtail.wagtailimages.rich_text import ImageEmbedHandler
 
 
 @hooks.register('register_admin_urls')
@@ -40,7 +43,7 @@ def check_old_style_urlconf():
     # wagtail.wagtailimages.admin_urls is loaded to, resulting in the wagtailimages_serve path
     # being equal to wagtailimages_index followed by three arbitrary args
     try:
-        wagtailimages_serve_path = urlresolvers.reverse('wagtailimages_serve', args = ['123', '456', '789'])
+        wagtailimages_serve_path = urlresolvers.reverse('wagtailimages_serve', args=['123', '456', '789'])
     except urlresolvers.NoReverseMatch:
         # wagtailimages_serve is not defined at all, so there's no collision
         OLD_STYLE_URLCONF_CHECK_PASSED = True
@@ -68,7 +71,7 @@ class ImagesMenuItem(MenuItem):
 
 @hooks.register('register_admin_menu_item')
 def register_images_menu_item():
-    return ImagesMenuItem(_('Images'), urlresolvers.reverse('wagtailimages_index'), classnames='icon icon-image', order=300)
+    return ImagesMenuItem(_('Images'), urlresolvers.reverse('wagtailimages_index'), name='images', classnames='icon icon-image', order=300)
 
 
 @hooks.register('insert_editor_js')
@@ -77,7 +80,7 @@ def editor_js():
         'wagtailimages/js/hallo-plugins/hallo-wagtailimage.js',
         'wagtailimages/js/image-chooser.js',
         'wagtailimages/js/add-multiple.js',
-        'wagtailimages/js/vendor/Jcrop/jquery.Jcrop.min.js',
+        'wagtailimages/js/vendor/jquery.Jcrop.min.js',
         'wagtailimages/js/vendor/load-image.min.js',
         'wagtailimages/js/vendor/canvas-to-blob.min.js',
         'wagtailimages/js/vendor/jquery.iframe-transport.js',
@@ -103,5 +106,41 @@ def editor_js():
 @hooks.register('register_permissions')
 def register_permissions():
     image_content_type = ContentType.objects.get(app_label='wagtailimages', model='image')
-    image_permissions = Permission.objects.filter(content_type = image_content_type)
+    image_permissions = Permission.objects.filter(content_type=image_content_type)
     return image_permissions
+
+
+@hooks.register('register_image_operations')
+def register_image_operations():
+    return [
+        ('original', image_operations.DoNothingOperation),
+        ('fill', image_operations.FillOperation),
+        ('min', image_operations.MinMaxOperation),
+        ('max', image_operations.MinMaxOperation),
+        ('width', image_operations.WidthHeightOperation),
+        ('height', image_operations.WidthHeightOperation),
+        ('crop', image_operations.CropRectangleOperation),
+        ('forcewidth', image_operations.ForceWidthHeightOperation),
+        ('forceheight', image_operations.ForceWidthHeightOperation),
+        ('forcefit', image_operations.ForceFitOperation),
+    ]
+
+
+@hooks.register('register_rich_text_embed_handler')
+def register_image_embed_handler():
+    return ('image', ImageEmbedHandler)
+
+
+class ImagesSummaryItem(SummaryItem):
+    order = 200
+    template = 'wagtailimages/homepage/site_summary_images.html'
+
+    def get_context(self):
+        return {
+            'total_images':
+                get_image_model().objects.filter(show_in_catalogue=True).count()
+        }
+
+@hooks.register('construct_homepage_summary_items')
+def add_images_summary_item(request, items):
+    items.append(ImagesSummaryItem(request))

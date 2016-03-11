@@ -1,19 +1,10 @@
 from six import text_type
 
-from django.db import models
 from django.db.models.query import QuerySet
-from django.core.exceptions import ImproperlyConfigured
-
-# Django 1.7 lookups
-try:
-    from django.db.models.lookups import Lookup
-except ImportError:
-    Lookup = None
-
+from django.db.models.lookups import Lookup
 from django.db.models.sql.where import SubqueryConstraint, WhereNode
 
 from wagtail.wagtailsearch.index import class_is_indexed
-from wagtail.wagtailsearch.utils import normalise_query_string
 
 
 class FilterError(Exception):
@@ -73,15 +64,7 @@ class BaseSearchQuery(object):
 
     def _get_filters_from_where_node(self, where_node):
         # Check if this is a leaf node
-        if isinstance(where_node, tuple): # Django 1.6 and below
-            field_attname = where_node[0].col
-            lookup = where_node[1]
-            value = where_node[3]
-
-            # Process the filter
-            return self._process_filter(field_attname, lookup, value)
-
-        elif Lookup is not None and isinstance(where_node, Lookup): # Django 1.7 and above
+        if isinstance(where_node, Lookup):
             field_attname = where_node.lhs.target.attname
             lookup = where_node.lookup_name
             value = where_node.rhs
@@ -176,8 +159,8 @@ class BaseSearchResults(object):
             if self._results_cache is not None:
                 return self._results_cache[key]
 
-            new.start = key
-            new.stop = key + 1
+            new.start = self.start + key
+            new.stop = self.start + key + 1
             return list(new)[0]
 
     def __iter__(self):
@@ -232,10 +215,6 @@ class BaseSearch(object):
         # Model must be a class that is in the index
         if not class_is_indexed(model):
             return []
-
-        # Normalise query string
-        if query_string is not None:
-            query_string = normalise_query_string(query_string)
 
         # Check that theres still a query string after the clean up
         if query_string == "":

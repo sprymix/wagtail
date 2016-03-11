@@ -1,3 +1,6 @@
+import unittest
+from willow.image import Image as WillowImage
+
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
@@ -7,12 +10,10 @@ from django.contrib.auth.models import Group, Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.utils import IntegrityError
 
-from wagtail.tests.utils import WagtailTestUtils, unittest
+from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailcore.models import Page
-from wagtail.tests.models import EventPage, EventPageCarouselItem
-from wagtail.wagtailimages.models import Rendition
-from wagtail.wagtailimages.backends import get_image_backend
-from wagtail.wagtailimages.backends.pillow import PillowBackend
+from wagtail.tests.testapp.models import EventPage, EventPageCarouselItem
+from wagtail.wagtailimages.models import Rendition, SourceImageIOError
 from wagtail.wagtailimages.rect import Rect
 
 from .utils import Image, get_test_image_file
@@ -120,11 +121,6 @@ class TestRenditions(TestCase):
             file=get_test_image_file(),
         )
 
-    def test_default_backend(self):
-        # default backend should be pillow
-        backend = get_image_backend()
-        self.assertTrue(isinstance(backend, PillowBackend))
-
     def test_minification(self):
         rendition = self.image.get_rendition('width-400')
 
@@ -139,59 +135,6 @@ class TestRenditions(TestCase):
         self.assertEqual(rendition.width, 100)
         self.assertEqual(rendition.height, 75)
 
-
-    def test_resize_to_min(self):
-        rendition = self.image.get_rendition('min-120x120')
-
-        # Check size
-        self.assertEqual(rendition.width, 160)
-        self.assertEqual(rendition.height, 120)
-
-    def test_resize_to_original(self):
-        rendition = self.image.get_rendition('original')
-
-        # Check size
-        self.assertEqual(rendition.width, 640)
-        self.assertEqual(rendition.height, 480)
-
-    def test_cache(self):
-        # Get two renditions with the same filter
-        first_rendition = self.image.get_rendition('width-400')
-        second_rendition = self.image.get_rendition('width-400')
-
-        # Check that they are the same object
-        self.assertEqual(first_rendition, second_rendition)
-
-
-class TestRenditionsWand(TestCase):
-    def setUp(self):
-        try:
-            import wand
-        except ImportError:
-            # skip these tests if Wand is not installed
-            raise unittest.SkipTest(
-                "Skipping image backend tests for wand, as wand is not installed")
-
-        # Create an image for running tests on
-        self.image = Image.objects.create(
-            title="Test image",
-            file=get_test_image_file(),
-        )
-        self.image.backend = 'wagtail.wagtailimages.backends.wand.WandBackend'
-
-    def test_minification(self):
-        rendition = self.image.get_rendition('width-400')
-
-        # Check size
-        self.assertEqual(rendition.width, 400)
-        self.assertEqual(rendition.height, 300)
-
-    def test_resize_to_max(self):
-        rendition = self.image.get_rendition('max-100x100')
-
-        # Check size
-        self.assertEqual(rendition.width, 100)
-        self.assertEqual(rendition.height, 75)
 
     def test_resize_to_min(self):
         rendition = self.image.get_rendition('min-120x120')
@@ -217,7 +160,7 @@ class TestRenditionsWand(TestCase):
 
 
 class TestUsageCount(TestCase):
-    fixtures = ['wagtail/tests/fixtures/test.json']
+    fixtures = ['test.json']
 
     def setUp(self):
         self.image = Image.objects.create(
@@ -240,7 +183,7 @@ class TestUsageCount(TestCase):
 
 
 class TestGetUsage(TestCase):
-    fixtures = ['wagtail/tests/fixtures/test.json']
+    fixtures = ['test.json']
 
     def setUp(self):
         self.image = Image.objects.create(
@@ -263,6 +206,59 @@ class TestGetUsage(TestCase):
         event_page_carousel_item.image = self.image
         event_page_carousel_item.save()
         self.assertTrue(issubclass(Page, type(self.image.get_usage()[0])))
+
+
+class TestGetWillowImage(TestCase):
+    fixtures = ['test.json']
+
+    def setUp(self):
+        self.image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(),
+        )
+
+    def test_willow_image_object_returned(self):
+        with self.image.get_willow_image() as willow_image:
+            self.assertIsInstance(willow_image, WillowImage)
+
+    def test_with_missing_image(self):
+        # Image id=1 in test fixtures has a missing image file
+        bad_image = Image.objects.get(id=1)
+
+        # Attempting to get the Willow image for images without files
+        # should raise a SourceImageIOError
+        with self.assertRaises(SourceImageIOError):
+            with bad_image.get_willow_image():
+                self.fail() # Shouldn't get here
+
+    def test_closes_image(self):
+        # This tests that willow closes images after use
+        with self.image.get_willow_image():
+            self.assertFalse(self.image.file.closed)
+
+        self.assertTrue(self.image.file.closed)
+
+    def test_closes_image_on_exception(self):
+        # This tests that willow closes images when the with is exited with an exception
+        try:
+            with self.image.get_willow_image():
+                self.assertFalse(self.image.file.closed)
+                raise ValueError("Something went wrong!")
+        except ValueError:
+            pass
+
+        self.assertTrue(self.image.file.closed)
+
+    def test_doesnt_close_open_image(self):
+        # This tests that when the image file is already open, get_willow_image doesn't close it (#1256)
+        self.image.file.open('rb')
+
+        with self.image.get_willow_image():
+            pass
+
+        self.assertFalse(self.image.file.closed)
+
+        self.image.file.close()
 
 
 class TestIssue573(TestCase):
@@ -398,7 +394,7 @@ class TestIssue312(TestCase):
         # Now manually duplicate the renditon and check that the database blocks it
         self.assertRaises(
             IntegrityError,
-            Rendition.objects.create, 
+            Rendition.objects.create,
             image=rend1.image,
             filter=rend1.filter,
             width=rend1.width,

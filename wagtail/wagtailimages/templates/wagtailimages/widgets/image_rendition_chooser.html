@@ -1,0 +1,30 @@
+{% extends "wagtailadmin/widgets/chooser.html" %}
+{% load wagtailimages_tags %}
+
+{% block chooser_class %}image-chooser{% endblock %}
+
+{% block chooser_data %}
+    data-original-image-id="{{ image.image.id }}"
+    data-spec="{{ image.filter.spec }}"
+    {% if crop %}data-crop="{{ crop }}"{% endif %}
+    {% if ratios %}data-ratios="{{ ratios }}"{% endif %}
+    {% if default_ratio %}data-default_ratio="{{ default_ratio }}"{% endif %}
+    {% if disable_selection %}data-disable_selection="{{ disable_selection }}"{% endif %}
+    {% if force_selection %}data-force_selection="{{ force_selection }}"{% endif %}
+    {% if post_processing_spec %}data-pps="{{ post_processing_spec }}"{% endif %}
+{% endblock %}
+
+{% block chosen_state_view %}
+    <div class="preview-image">
+        {% if image %}
+            {% image image max-130x130 %}
+            <div title="{{ image.image.file.name }}">
+                {{ image.image.file.name|truncatechars:50 }}
+            </div>
+        {% else %}
+            <img>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block edit_chosen_item_url %}javascript://void(0);{% endblock %}

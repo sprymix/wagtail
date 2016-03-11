@@ -1,10 +1,21 @@
+from __future__ import unicode_literals
+
 import json
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils.http import urlquote
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.template.defaultfilters import filesizeformat
+
+# Get the chars that Django considers safe to leave unescaped in a URL
+# This list changed in Django 1.8:  https://github.com/django/django/commit/e167e96cfea670422ca75d0b35fe7c4195f25b63
+try:
+    from django.utils.http import RFC3986_SUBDELIMS
+    urlquote_safechars = RFC3986_SUBDELIMS + str('/~:@')
+except ImportError: # < Django 1,8
+    urlquote_safechars = '/'
 
 from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailimages.utils import generate_signature
@@ -87,6 +98,25 @@ class TestImageAddView(TestCase, WagtailTestUtils):
         # The form should have an error
         self.assertFormError(response, 'form', 'file', "This field is required.")
 
+    @override_settings(WAGTAILIMAGES_MAX_UPLOAD_SIZE=1)
+    def test_add_too_large_file(self):
+        file_content = get_test_image_file().file.getvalue()
+
+        response = self.post({
+            'title': "Test image",
+            'file': SimpleUploadedFile('test.png', file_content),
+        })
+
+        # Shouldn't redirect anywhere
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailimages/images/add.html')
+
+        # The form should have an error
+        self.assertFormError(response, 'form', 'file', "This file is too big ({file_size}). Maximum filesize {max_file_size}.".format(
+            file_size=filesizeformat(len(file_content)),
+            max_file_size=filesizeformat(1),
+        ))
+
 
 class TestImageEditView(TestCase, WagtailTestUtils):
     def setUp(self):
@@ -120,6 +150,13 @@ class TestImageEditView(TestCase, WagtailTestUtils):
         # Check that the image was edited
         image = Image.objects.get(id=self.image.id)
         self.assertEqual(image.title, "Edited")
+
+    def test_with_missing_image_file(self):
+        self.image.file.delete(False)
+
+        response = self.get()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailimages/images/edit.html')
 
 
 class TestImageDeleteView(TestCase, WagtailTestUtils):
@@ -269,6 +306,13 @@ class TestMultipleImageUploader(TestCase, WagtailTestUtils):
         # Check response
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wagtailimages/multiple/add.html')
+
+    @override_settings(WAGTAILIMAGES_MAX_UPLOAD_SIZE=1000)
+    def test_add_max_file_size_context_variables(self):
+        response = self.client.get(reverse('wagtailimages_add_multiple'))
+
+        self.assertEqual(response.context['max_filesize'], 1000)
+        self.assertEqual(response.context['error_max_file_size'], "This file is too big. Maximum filesize 1000\xa0bytes.")
 
     def test_add_post(self):
         """
@@ -441,7 +485,7 @@ class TestMultipleImageUploader(TestCase, WagtailTestUtils):
         self.assertEqual(response_json['image_id'], self.image.id)
         self.assertTrue(response_json['success'])
 
-    def test_edit_post_noajax(self):
+    def test_delete_post_noajax(self):
         """
         This tests that a POST request to the delete view without AJAX returns a 400 response
         """
@@ -520,7 +564,7 @@ class TestGenerateURLView(TestCase, WagtailTestUtils):
         self.assertEqual(set(content_json.keys()), set(['url', 'preview_url']))
 
         expected_url = 'http://localhost/images/%(signature)s/%(image_id)d/fill-800x600/' % {
-            'signature': urlquote(generate_signature(self.image.id, 'fill-800x600').decode()),
+            'signature': urlquote(generate_signature(self.image.id, 'fill-800x600').decode(), safe=urlquote_safechars),
             'image_id': self.image.id,
         }
         self.assertEqual(content_json['url'], expected_url)
@@ -604,7 +648,7 @@ class TestPreviewView(TestCase, WagtailTestUtils):
 
         # Check response
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'image/jpeg')
+        self.assertEqual(response['Content-Type'], 'image/png')
 
     def test_get_invalid_filter_spec(self):
         """
