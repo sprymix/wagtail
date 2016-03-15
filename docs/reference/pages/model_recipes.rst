@@ -7,7 +7,7 @@ Recipes
 Overriding the :meth:`~wagtail.wagtailcore.models.Page.serve` Method
 --------------------------------------------------------------------
 
-Wagtail defaults to serving :class:`~wagtail.wagtailcore.models.Page`-derived models by passing ``self`` to a Django HTML template matching the model's name, but suppose you wanted to serve something other than HTML? You can override the :meth:`~wagtail.wagtailcore.models.Page.serve` method provided by the :class:`~wagtail.wagtailcore.models.Page` class and handle the Django request and response more directly.
+Wagtail defaults to serving :class:`~wagtail.wagtailcore.models.Page`-derived models by passing a reference to the page object to a Django HTML template matching the model's name, but suppose you wanted to serve something other than HTML? You can override the :meth:`~wagtail.wagtailcore.models.Page.serve` method provided by the :class:`~wagtail.wagtailcore.models.Page` class and handle the Django request and response more directly.
 
 Consider this example from the Wagtail demo site's ``models.py``, which serves an ``EventPage`` object as an iCal file if the ``format`` variable is set in the request:
 
@@ -93,7 +93,6 @@ First, ``models.py``:
     from django.shortcuts import render
     from wagtail.wagtailcore.url_routing import RouteResult
     from django.http.response import Http404
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel, MultiFieldPanel
     from wagtail.wagtailcore.models import Page
     
     ...
@@ -113,17 +112,10 @@ First, ``models.py``:
 
         def serve(self, path_components=[]):
             return render(request, self.template, {
-                'self': self,
+                'page': self,
                 'echo': ' '.join(path_components),
             })
 
-    Echoer.content_panels = [
-        FieldPanel('title', classname="full title"),
-    ]
-
-    Echoer.promote_panels = [
-        MultiFieldPanel(Page.promote_panels, "Common page configuration"),
-    ]
 
 This model, ``Echoer``, doesn't define any properties, but does subclass ``Page`` so objects will be able to have a custom title and slug. The template just has to display our ``{{ echo }}`` property.
 
@@ -154,20 +146,20 @@ Using an example from the Wagtail demo site, here's what the tag model and the r
 .. code-block:: python
 
     from modelcluster.fields import ParentalKey
-    from modelcluster.tags import ClusterTaggableManager
-    from taggit.models import Tag, TaggedItemBase
-    ...
+    from modelcluster.contrib.taggit import ClusterTaggableManager
+    from taggit.models import TaggedItemBase
+
     class BlogPageTag(TaggedItemBase):
         content_object = ParentalKey('demo.BlogPage', related_name='tagged_items')
-    ...
+
     class BlogPage(Page):
         ...
         tags = ClusterTaggableManager(through=BlogPageTag, blank=True)
 
-    BlogPage.promote_panels = [
-        ...
-        FieldPanel('tags'),
-    ]
+        promote_panels = Page.promote_panels + [
+            ...
+            FieldPanel('tags'),
+        ]
 
 Wagtail's admin provides a nice interface for inputting tags into your content, with typeahead tag completion and friendly tag icons.
 
@@ -187,18 +179,18 @@ Now that we have the many-to-many tag relationship in place, we can fit in a way
                 blogs = blogs.filter(tags__name=tag)
 
             return render(request, self.template, {
-                'self': self,
+                'page': self,
                 'blogs': blogs,
             })
 
 Here, ``blogs.filter(tags__name=tag)`` invokes a reverse Django queryset filter on the ``BlogPageTag`` model to optionally limit the ``BlogPage`` objects sent to the template for rendering. Now, lets render both sides of the relation by showing the tags associated with an object and a way of showing all of the objects associated with each tag. This could be added to the ``blog_page.html`` template:
 
-.. code-block:: django
+.. code-block:: html+django
 
-    {% for tag in self.tags.all %}
-        <a href="{% pageurl self.blog_index %}?tag={{ tag }}">{{ tag }}</a>
+    {% for tag in page.tags.all %}
+        <a href="{% pageurl page.blog_index %}?tag={{ tag }}">{{ tag }}</a>
     {% endfor %}
 
-Iterating through ``self.tags.all`` will display each tag associated with ``self``, while the link(s) back to the index make use of the filter option added to the ``BlogIndexPage`` model. A Django query could also use the ``tagged_items`` related name field to get ``BlogPage`` objects associated with a tag.
+Iterating through ``page.tags.all`` will display each tag associated with ``page``, while the link(s) back to the index make use of the filter option added to the ``BlogIndexPage`` model. A Django query could also use the ``tagged_items`` related name field to get ``BlogPage`` objects associated with a tag.
 
 This is just one possible way of creating a taxonomy for Wagtail objects. With all of the components for a taxonomy available through Wagtail, you should be able to fulfill even the most exotic taxonomic schemes.

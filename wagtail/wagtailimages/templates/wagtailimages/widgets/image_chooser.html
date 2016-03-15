@@ -6,11 +6,11 @@
 {% block chosen_state_view %}
     <div class="preview-image">
         {% if image %}
-            {% image image max-130x130 %}
+            {% image image max-165x165 class="show-transparency" %}
         {% else %}
             <img>
         {% endif %}
     </div>
 {% endblock %}
 
-{% block edit_chosen_item_url %}{% if image %}{% url 'wagtailimages_edit_image' image.id %}{% endif %}{% endblock %}
+{% block edit_chosen_item_url %}{% if image %}{% url 'wagtailimages:edit' image.id %}{% endif %}{% endblock %}

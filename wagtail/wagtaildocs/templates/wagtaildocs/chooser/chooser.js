@@ -1,3 +1,4 @@
+{% load i18n %}
 function(modal) {
     function ajaxifyLinks (context) {
         $('a.document-choice', context).click(function() {
@@ -16,7 +17,10 @@ function(modal) {
     function search() {
         $.ajax({
             url: searchUrl,
-            data: {q: $('#id_q').val()},
+            data: {
+                q: $('#id_q').val(),
+                collection_id: $('#collection_chooser_collection_id').val()
+            },
             success: function(data, status) {
                 $('#search-results').html(data);
                 ajaxifyLinks($('#search-results'));
@@ -45,6 +49,32 @@ function(modal) {
 
     ajaxifyLinks(modal.body);
 
+    $('form.document-upload', modal.body).submit(function() {
+        var formdata = new FormData(this);
+
+        $.ajax({
+            url: this.action,
+            data: formdata,
+            processData: false,
+            contentType: false,
+            type: 'POST',
+            dataType: 'text',
+            success: function(response){
+                modal.loadResponseText(response);
+            },
+            error: function(response, textStatus, errorThrown) {
+                {% trans "Server Error" as error_label %}
+                {% trans "Report this error to your webmaster with the following information:" as error_message %}
+                message = '{{ error_message|escapejs }}<br />' + errorThrown + ' - ' + response.status;
+                $('#upload').append(
+                    '<div class="help-block help-critical">' +
+                    '<strong>{{ error_label|escapejs }}: </strong>' + message + '</div>');
+            }
+        });
+
+        return false;
+    });
+
     $('form.document-search', modal.body).submit(search);
 
     $('#id_q').on('input', function() {
@@ -53,51 +83,10 @@ function(modal) {
         $(this).data('timer', wait);
     });
 
+    $('#collection_chooser_collection_id').change(search);
+
     {% url 'wagtailadmin_tag_autocomplete' as autocomplete_url %}
     $('#id_tags', modal.body).tagit({
         autocomplete: {source: "{{ autocomplete_url|addslashes }}"}
     });
-
-    /* Create a function for adding document widgets (e.g. used together with
-       drag/drop). */
-    window.add_select_doc_widget = function() {
-        $('form.document-upload', modal.body).submit(function() {
-            var formdata = new FormData(this);
-
-            $.ajax({
-                url: this.action,
-                data: formdata,
-                processData: false,
-                contentType: false,
-                type: 'POST',
-                dataType: 'text',
-                success: function(response){
-                    modal.loadResponseText(response);
-                },
-                error: function(xhr, textStatus, errorThrown) {
-                    // Display the error in the upload form
-                    if (xhr.status == 413) {
-                        // make the error message for large files user-friendly
-                        errorThrown = 'The file is too large, please upload a smaller file.';
-                    }
-
-                    var li = $('form.document-upload li:has(.file_field)',
-                               modal.body),
-                        err = li.find('p.error-message')
-                    li.addClass('error');
-
-                    // if we already have an error-message element, write into it
-                    if (err.length) {
-                        err.html(errorThrown);
-                    } else {
-                        // add a <p class="error-message">...</p> to the image_field
-                        li.find('.field-content').append(
-                            '<p class="error-message">' + errorThrown + '</p>');
-                    }
-                }
-            });
-
-            return false;
-        });
-    };
 }

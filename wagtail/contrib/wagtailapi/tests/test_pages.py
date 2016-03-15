@@ -151,7 +151,9 @@ class TestPageListing(TestCase):
                 self.assertIsInstance(feed_image['meta'], dict)
                 self.assertEqual(set(feed_image['meta'].keys()), {'type', 'detail_url'})
                 self.assertEqual(feed_image['meta']['type'], 'wagtailimages.Image')
-                self.assertEqual(feed_image['meta']['detail_url'], 'http://localhost/api/v1/images/%d/' % feed_image['id'])
+                self.assertEqual(
+                    feed_image['meta']['detail_url'], 'http://localhost/api/v1/images/%d/' % feed_image['id']
+                )
 
     def test_extra_fields_tags(self):
         response = self.get_response(type='demosite.BlogEntryPage', fields='tags')
@@ -290,6 +292,52 @@ class TestPageListing(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(content, {'message': "parent page doesn't exist"})
+
+
+    # DESCENDANT OF FILTER
+
+    def test_descendant_of_filter(self):
+        response = self.get_response(descendant_of=6)
+        content = json.loads(response.content.decode('UTF-8'))
+
+        page_id_list = self.get_page_id_list(content)
+        self.assertEqual(page_id_list, [10, 15, 17, 21, 22, 23])
+
+    def test_descendant_of_with_type(self):
+        response = self.get_response(type='tests.EventPage', descendant_of=6)
+        content = json.loads(response.content.decode('UTF-8'))
+
+        page_id_list = self.get_page_id_list(content)
+        self.assertEqual(page_id_list, [])
+
+    def test_descendant_of_unknown_page_gives_error(self):
+        response = self.get_response(descendant_of=1000)
+        content = json.loads(response.content.decode('UTF-8'))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(content, {'message': "ancestor page doesn't exist"})
+
+    def test_descendant_of_not_integer_gives_error(self):
+        response = self.get_response(descendant_of='abc')
+        content = json.loads(response.content.decode('UTF-8'))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(content, {'message': "descendant_of must be a positive integer"})
+
+    def test_descendant_of_page_thats_not_in_same_site_gives_error(self):
+        # Root page is not in any site, so pretend it doesn't exist
+        response = self.get_response(descendant_of=1)
+        content = json.loads(response.content.decode('UTF-8'))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(content, {'message': "ancestor page doesn't exist"})
+
+    def test_descendant_of_when_filtering_by_child_of_gives_error(self):
+        response = self.get_response(descendant_of=6, child_of=5)
+        content = json.loads(response.content.decode('UTF-8'))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(content, {'message': "filtering by descendant_of with child_of is not supported"})
 
 
     # ORDERING
@@ -540,7 +588,7 @@ class TestPageDetail(TestCase):
         self.assertEqual(content['date'], '2013-12-02')
 
         # Check that the tags were serialised properly
-        self.assertEqual(content['tags'], ['wagtail', 'bird'])
+        self.assertEqual(content['tags'], ['bird', 'wagtail'])
 
         # Check that the feed image was serialised properly
         self.assertIsInstance(content['feed_image'], dict)
@@ -604,7 +652,6 @@ class TestPageDetailWithStreamField(TestCase):
     def make_stream_page(self, body):
         stream_page = StreamPage(
             title='stream page',
-            slug='stream-page',
             body=body
         )
         return self.homepage.add_child(instance=stream_page)

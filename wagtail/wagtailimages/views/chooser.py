@@ -4,31 +4,30 @@ import urllib
 
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib.auth.decorators import permission_required
-from django.core.exceptions import ValidationError
+
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import ugettext as _
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
+from wagtail.utils.pagination import paginate
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
+from wagtail.wagtailadmin.utils import PermissionPolicyChecker
+from wagtail.wagtailadmin.utils import permission_required
+from wagtail.wagtailcore.models import Collection
 from wagtail.wagtailsearch.backends import get_search_backends
 
 from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm, \
                                         ImageCropperForm
 from wagtail.wagtailimages.formats import get_image_format
-from wagtail.wagtailimages.fields import (
-    MAX_UPLOAD_SIZE,
-    IMAGE_FIELD_HELP_TEXT,
-    INVALID_IMAGE_ERROR,
-    ALLOWED_EXTENSIONS,
-    SUPPORTED_FORMATS_TEXT,
-    FILE_TOO_LARGE_ERROR,
-)
+from wagtail.wagtailimages.permissions import permission_policy
+
+
+permission_checker = PermissionPolicyChecker(permission_policy)
 
 
 def get_image_json(image):
@@ -36,11 +35,11 @@ def get_image_json(image):
     helper function: given an image, return the json to pass back to the
     image chooser panel
     """
-    preview_image = image.get_rendition('max-130x100')
+    preview_image = image.get_rendition('max-165x165')
 
     return json.dumps({
         'id': image.id,
-        'edit_link': reverse('wagtailimages_edit_image', args=(image.id,)),
+        'edit_link': reverse('wagtailimages:edit', args=(image.id,)),
         'title': image.title,
         'preview': {
             'url': preview_image.url,
@@ -110,8 +109,8 @@ def get_cropper_params(request):
 def chooser(request):
     Image = get_image_model()
 
-    if request.user.has_perm('wagtailimages.add_image'):
-        ImageForm = get_image_form(Image, hide_file=True)
+    if permission_policy.user_has_permission(request.user, 'add'):
+        ImageForm = get_image_form(Image)
         uploadform = ImageForm()
     else:
         uploadform = None
@@ -119,34 +118,34 @@ def chooser(request):
     will_select_format = request.GET.get('select_format')
     will_select_rendition = request.GET.get('select_rendition')
 
+    images = Image.objects.order_by('-created_at') \
+                          .filter(show_in_catalogue=True)
+
     q = None
-    if 'q' in request.GET or 'p' in request.GET:
+    if (
+        'q' in request.GET or 'p' in request.GET or 'tag' in request.GET or
+        'collection_id' in request.GET
+    ):
+        # this request is triggered from search, pagination or 'popular tags';
+        # we will just render the results.html fragment
+        collection_id = request.GET.get('collection_id')
+        if collection_id:
+            images = images.filter(collection=collection_id)
+
         searchform = SearchForm(request.GET)
         if searchform.is_valid():
             q = searchform.cleaned_data['q']
-
-            # page number
-            p = request.GET.get("p", 1)
-
-            images = Image.search(q, results_per_page=12, page=p,
-                                  filters={'show_in_catalogue': True})
-
+            images = images.search(q)
             is_searching = True
-
         else:
-            images = Image.objects.filter(show_in_catalogue=True) \
-                                  .order_by('-created_at')
-            p = request.GET.get("p", 1)
-            paginator = Paginator(images, 12)
-
-            try:
-                images = paginator.page(p)
-            except PageNotAnInteger:
-                images = paginator.page(1)
-            except EmptyPage:
-                images = paginator.page(paginator.num_pages)
-
             is_searching = False
+
+            tag_name = request.GET.get('tag')
+            if tag_name:
+                images = images.filter(tags__name=tag_name)
+
+        # Pagination
+        paginator, images = paginate(request, images, per_page=12)
 
         return render(request, "wagtailimages/chooser/results.html", {
             'images': images,
@@ -160,17 +159,11 @@ def chooser(request):
     else:
         searchform = SearchForm()
 
-        images = Image.objects.filter(show_in_catalogue=True) \
-                              .order_by('-created_at')
-        p = request.GET.get("p", 1)
-        paginator = Paginator(images, 12)
+        collections = Collection.objects.all()
+        if len(collections) < 2:
+            collections = None
 
-        try:
-            images = paginator.page(p)
-        except PageNotAnInteger:
-            images = paginator.page(1)
-        except EmptyPage:
-            images = paginator.page(paginator.num_pages)
+        paginator, images = paginate(request, images, per_page=12)
 
     return render_modal_workflow(request, 'wagtailimages/chooser/chooser.html', 'wagtailimages/chooser/chooser.js', {
         'images': images,
@@ -181,14 +174,10 @@ def chooser(request):
         'will_select_format': will_select_format,
         'will_select_rendition': will_select_rendition,
         'popular_tags': Image.popular_tags(),
+        'collections': collections,
         'uploadid': uuid.uuid4(),
         'post_processing_spec': request.GET.get('pps'),
         'additional_params': get_cropper_params(request),
-        'max_filesize': MAX_UPLOAD_SIZE,
-        'help_text': IMAGE_FIELD_HELP_TEXT,
-        'allowed_extensions': ALLOWED_EXTENSIONS,
-        'error_max_file_size': FILE_TOO_LARGE_ERROR,
-        'error_accepted_file_types': INVALID_IMAGE_ERROR,
     })
 
 
@@ -206,7 +195,7 @@ def json_response(document):
 
 
 @require_POST
-@permission_required('wagtailimages.add_image')
+@permission_checker.require('add')
 def chooser_upload(request):
     Image = get_image_model()
     ImageForm = get_image_form(Image, hide_file=True)
@@ -242,7 +231,7 @@ def chooser_upload(request):
 
 
 @require_POST
-@permission_required('wagtailimages.add_image')
+@permission_checker.require('add')
 def chooser_select(request, image_id):
     Image = get_image_model()
     ImageForm = get_image_form(hide_file=True)
@@ -269,7 +258,6 @@ def chooser_select(request, image_id):
         #
         will_select_format = request.GET.get('select_format')
         will_select_rendition = request.GET.get('select_rendition')
-
 
         if will_select_format:
             form = ImageInsertionForm(
@@ -323,7 +311,7 @@ def chooser_select_format(request, image_id):
                 'format': format.name,
                 'alt': form.cleaned_data['alt_text'],
                 'class': format.classnames,
-                'edit_link': reverse('wagtailimages_edit_image', args=(image.id,)),
+                'edit_link': reverse('wagtailimages:edit', args=(image.id,)),
                 'preview': {
                     'url': preview_image.url,
                     'width': preview_image.width,

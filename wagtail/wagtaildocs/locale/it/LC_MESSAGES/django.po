@@ -3,15 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Giacomo Ghizzani <giacomo.ghz@gmail.com>, 2015
+# Giacomo Ghizzani <giacomo.ghz@gmail.com>, 2015-2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-21 09:38+0100\n"
-"PO-Revision-Date: 2015-06-29 08:25+0000\n"
-"Last-Translator: Giacomo Ghizzani <giacomo.ghz@gmail.com>\n"
-"Language-Team: Italian (http://www.transifex.com/projects/p/wagtail/language/"
+"POT-Creation-Date: 2016-03-01 18:52+0000\n"
+"PO-Revision-Date: 2016-03-01 18:59+0000\n"
+"Last-Translator: mattwestcott <matthew@torchbox.com>\n"
+"Language-Team: Italian (http://www.transifex.com/torchbox/wagtail/language/"
 "it/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,23 +19,26 @@ msgstr ""
 "Language: it\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "Title"
-msgstr "Titolo"
+msgid "Edit"
+msgstr "Modifica"
 
-msgid "File"
-msgstr "File"
+msgid "title"
+msgstr "titolo"
 
-msgid "Created at"
-msgstr "Creato alle"
+msgid "file"
+msgstr "file"
 
-msgid "Uploaded by user"
-msgstr "Caricato dall'utente"
+msgid "created at"
+msgstr "creato alle"
 
-msgid "Tags"
-msgstr "Tags"
+msgid "uploaded by user"
+msgstr "caricato dall'utente"
 
-msgid "Document"
-msgstr "Documento"
+msgid "tags"
+msgstr "tags"
+
+msgid "document"
+msgstr "documento"
 
 msgid "Choose a document"
 msgstr "Scegli un documento"
@@ -46,8 +49,14 @@ msgstr "Cerca"
 msgid "Upload"
 msgstr "Carica"
 
-msgid "Save"
-msgstr "Salva"
+msgid "Uploading..."
+msgstr "Caricamento..."
+
+msgid "Server Error"
+msgstr "Errore del Server"
+
+msgid "Report this error to your webmaster with the following information:"
+msgstr "Presenta questo errore al tuo webmaster con le seguenti informazioni:"
 
 #, python-format
 msgid ""
@@ -104,6 +113,9 @@ msgstr "Modifica %(title)s"
 msgid "Editing"
 msgstr "Modifica"
 
+msgid "Save"
+msgstr "Salva"
+
 msgid "Filesize"
 msgstr "Dimensione file"
 
@@ -112,6 +124,12 @@ msgstr "File non trovato"
 
 msgid "Documents"
 msgstr "Documenti"
+
+msgid "Title"
+msgstr "Titolo"
+
+msgid "File"
+msgstr "File"
 
 msgid "Uploaded"
 msgstr "Caricato"
@@ -161,15 +179,15 @@ msgstr[1] ""
 "        <span>%(total)s</span> Documenti\n"
 "    "
 
+msgid "Delete"
+msgstr "Elimina"
+
 msgid "Search documents"
 msgstr "Cerca documenti"
 
 #, python-brace-format
 msgid "Document '{0}' added."
 msgstr "Documento '{0}' aggiunto."
-
-msgid "Edit"
-msgstr "Modifica"
 
 msgid "The document could not be saved due to errors."
 msgstr "Il documento non può essere salvato a causa di errori."
@@ -181,9 +199,6 @@ msgstr "Documento '{0}' aggiornato"
 msgid ""
 "The file could not be found. Please change the source or delete the document"
 msgstr "File non trovato. Prova a cambiare l'origine o elimina il documento."
-
-msgid "Delete"
-msgstr "Elimina"
 
 #, python-brace-format
 msgid "Document '{0}' deleted."

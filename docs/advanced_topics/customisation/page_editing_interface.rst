@@ -1,5 +1,5 @@
-Customising the page editing interface
-======================================
+Customising the editing interface
+=================================
 
 .. _customising_the_tabbed_interface:
 
@@ -8,7 +8,7 @@ Customising the tabbed interface
 
 .. versionadded:: 1.0
 
-As standard, Wagtail organises panels into three tabs: 'Content', 'Promote' and 'Settings'. Depending on the requirements of your site, you may wish to customise this for specific page types - for example, adding an additional tab for sidebar content. This can be done by specifying an ``edit_handler`` property on the page model. For example:
+As standard, Wagtail organises panels for pages into three tabs: 'Content', 'Promote' and 'Settings'. For snippets Wagtail puts all panels into one page. Depending on the requirements of your site, you may wish to customise this for specific page types or snippets - for example, adding an additional tab for sidebar content. This can be done by specifying an ``edit_handler`` attribute on the page or snippet model. For example:
 
 .. code-block:: python
 
@@ -23,7 +23,7 @@ As standard, Wagtail organises panels into three tabs: 'Content', 'Promote' and 
             FieldPanel('body', classname="full"),
         ]
         sidebar_content_panels = [
-            SnippetChooserPanel('advert', Advert),
+            SnippetChooserPanel('advert'),
             InlinePanel('related_links', label="Related links"),
         ]
 
@@ -34,6 +34,8 @@ As standard, Wagtail organises panels into three tabs: 'Content', 'Promote' and 
             ObjectList(Page.settings_panels, heading='Settings', classname="settings"),
         ])
 
+
+.. _rich-text:
 
 Rich Text (HTML)
 ~~~~~~~~~~~~~~~~
@@ -74,6 +76,8 @@ To inject JavaScript into the Wagtail page editor, see the :ref:`insert_editor_j
 
 For information on developing custom ``hallo.js`` plugins, see the project's page: https://github.com/bergie/hallo
 
+.. _rich_text_image_formats:
+
 Image Formats in the Rich Text Editor
 -------------------------------------
 
@@ -98,7 +102,10 @@ To begin, import the the ``Format`` class, ``register_image_format`` function, a
   The label used in the chooser form when inserting the image into the :class:`~wagtail.wagtailcore.fields.RichTextField`.
 
 ``classnames``
-  The string to assign to the ``class`` attribute of the generated ``<img>`` tag.
+  The string to assign to the ``class`` attribute of the generated ``<img>`` tag. 
+
+  .. note::
+    Any class names you provide must have CSS rules matching them written separately, as part of the front end CSS code. Specifying a ``classnames`` value of ``left`` will only ensure that class is output in the generated markup, it won't cause the image to align itself left.
 
 ``filter_spec``
   The string specification to create the image rendition. For more, see the :ref:`image_tag`.

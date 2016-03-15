@@ -11,7 +11,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.utils import IntegrityError
 
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailcore.models import Page
+from wagtail.wagtailcore.models import Page, Collection, GroupCollectionPermission
 from wagtail.tests.testapp.models import EventPage, EventPageCarouselItem
 from wagtail.wagtailimages.models import Rendition, SourceImageIOError
 from wagtail.wagtailimages.rect import Rect
@@ -79,6 +79,58 @@ class TestImage(TestCase):
         self.assertEqual(self.image.focal_point_width, None)
         self.assertEqual(self.image.focal_point_height, None)
 
+    def test_is_stored_locally(self):
+        self.assertTrue(self.image.is_stored_locally())
+
+    @override_settings(DEFAULT_FILE_STORAGE='wagtail.tests.dummy_external_storage.DummyExternalStorage')
+    def test_is_stored_locally_with_external_storage(self):
+        self.assertFalse(self.image.is_stored_locally())
+
+
+class TestImageQuerySet(TestCase):
+    def test_search_method(self):
+        # Create an image for running tests on
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(),
+        )
+
+        # Search for it
+        results = Image.objects.search("Test")
+        self.assertEqual(list(results), [image])
+
+    def test_operators(self):
+        aaa_image = Image.objects.create(
+            title="AAA Test image",
+            file=get_test_image_file(),
+        )
+        zzz_image = Image.objects.create(
+            title="ZZZ Test image",
+            file=get_test_image_file(),
+        )
+
+        results = Image.objects.search("aaa test", operator='and')
+        self.assertEqual(list(results), [aaa_image])
+
+        results = Image.objects.search("aaa test", operator='or')
+        sorted_results = sorted(results, key=lambda img: img.title)
+        self.assertEqual(sorted_results, [aaa_image, zzz_image])
+
+    def test_custom_ordering(self):
+        aaa_image = Image.objects.create(
+            title="AAA Test image",
+            file=get_test_image_file(),
+        )
+        zzz_image = Image.objects.create(
+            title="ZZZ Test image",
+            file=get_test_image_file(),
+        )
+
+        results = Image.objects.order_by('title').search("Test")
+        self.assertEqual(list(results), [aaa_image, zzz_image])
+        results = Image.objects.order_by('-title').search("Test")
+        self.assertEqual(list(results), [zzz_image, aaa_image])
+
 
 class TestImagePermissions(TestCase):
     def setUp(self):
@@ -88,10 +140,18 @@ class TestImagePermissions(TestCase):
         self.owner = User.objects.create_user(username='owner', email='owner@email.com', password='password')
         self.editor = User.objects.create_user(username='editor', email='editor@email.com', password='password')
         self.editor.groups.add(Group.objects.get(name='Editors'))
-        self.administrator = User.objects.create_superuser(username='administrator', email='administrator@email.com', password='password')
+        self.administrator = User.objects.create_superuser(
+            username='administrator', email='administrator@email.com', password='password'
+        )
 
         # Owner user must have the add_image permission
-        self.owner.user_permissions.add(Permission.objects.get(codename='add_image'))
+        image_adders_group = Group.objects.create(name="Image adders")
+        GroupCollectionPermission.objects.create(
+            group=image_adders_group,
+            collection=Collection.get_first_root_node(),
+            permission=Permission.objects.get(codename='add_image'),
+        )
+        self.owner.groups.add(image_adders_group)
 
         # Create an image for running tests on
         self.image = Image.objects.create(
@@ -121,6 +181,9 @@ class TestRenditions(TestCase):
             file=get_test_image_file(),
         )
 
+    def test_get_rendition_model(self):
+        self.assertIs(Image.get_rendition_model(), Rendition)
+
     def test_minification(self):
         rendition = self.image.get_rendition('width-400')
 
@@ -134,7 +197,6 @@ class TestRenditions(TestCase):
         # Check size
         self.assertEqual(rendition.width, 100)
         self.assertEqual(rendition.height, 75)
-
 
     def test_resize_to_min(self):
         rendition = self.image.get_rendition('min-120x120')
@@ -157,6 +219,10 @@ class TestRenditions(TestCase):
 
         # Check that they are the same object
         self.assertEqual(first_rendition, second_rendition)
+
+    def test_alt_attribute(self):
+        rendition = self.image.get_rendition('width-400')
+        self.assertEqual(rendition.alt, "Test image")
 
 
 class TestUsageCount(TestCase):
@@ -229,7 +295,7 @@ class TestGetWillowImage(TestCase):
         # should raise a SourceImageIOError
         with self.assertRaises(SourceImageIOError):
             with bad_image.get_willow_image():
-                self.fail() # Shouldn't get here
+                self.fail()  # Shouldn't get here
 
     def test_closes_image(self):
         # This tests that willow closes images after use
@@ -270,7 +336,9 @@ class TestIssue573(TestCase):
         # Create an image with a big filename and focal point
         image = Image.objects.create(
             title="Test image",
-            file=get_test_image_file('thisisaverylongfilename-abcdefghijklmnopqrstuvwxyz-supercalifragilisticexpialidocious.png'),
+            file=get_test_image_file(
+                'thisisaverylongfilename-abcdefghijklmnopqrstuvwxyz-supercalifragilisticexpialidocious.png'
+            ),
             focal_point_x=1000,
             focal_point_y=1000,
             focal_point_width=1000,
@@ -287,7 +355,7 @@ class TestIssue613(TestCase, WagtailTestUtils):
         from django.conf import settings
         from wagtail.wagtailsearch.backends import get_search_backend
 
-        backend_path = 'wagtail.wagtailsearch.backends.elasticsearch.ElasticSearch'
+        backend_path = 'wagtail.wagtailsearch.backends.elasticsearch'
 
         # Search WAGTAILSEARCH_BACKENDS for an entry that uses the given backend path
         for backend_name, backend_conf in settings.WAGTAILSEARCH_BACKENDS.items():
@@ -307,10 +375,10 @@ class TestIssue613(TestCase, WagtailTestUtils):
             'file': SimpleUploadedFile('test.png', get_test_image_file().file.getvalue()),
         }
         post_data.update(params)
-        response = self.client.post(reverse('wagtailimages_add_image'), post_data)
+        response = self.client.post(reverse('wagtailimages:add'), post_data)
 
         # Should redirect back to index
-        self.assertRedirects(response, reverse('wagtailimages_index'))
+        self.assertRedirects(response, reverse('wagtailimages:index'))
 
         # Check that the image was created
         images = Image.objects.filter(title="Test image")
@@ -335,10 +403,10 @@ class TestIssue613(TestCase, WagtailTestUtils):
             'title': "Edited",
         }
         post_data.update(params)
-        response = self.client.post(reverse('wagtailimages_edit_image', args=(self.image.id,)), post_data)
+        response = self.client.post(reverse('wagtailimages:edit', args=(self.image.id,)), post_data)
 
         # Should redirect back to index
-        self.assertRedirects(response, reverse('wagtailimages_index'))
+        self.assertRedirects(response, reverse('wagtailimages:index'))
 
         # Check that the image was edited
         image = Image.objects.get(id=self.image.id)

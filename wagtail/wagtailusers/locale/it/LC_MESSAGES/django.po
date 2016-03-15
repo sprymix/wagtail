@@ -3,46 +3,21 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Giacomo Ghizzani <giacomo.ghz@gmail.com>, 2015
+# Giacomo Ghizzani <giacomo.ghz@gmail.com>, 2015-2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-21 09:39+0100\n"
-"PO-Revision-Date: 2015-06-29 09:40+0000\n"
-"Last-Translator: Giacomo Ghizzani <giacomo.ghz@gmail.com>\n"
-"Language-Team: Italian (http://www.transifex.com/projects/p/wagtail/language/"
+"POT-Creation-Date: 2016-03-01 18:52+0000\n"
+"PO-Revision-Date: 2016-03-01 19:08+0000\n"
+"Last-Translator: mattwestcott <matthew@torchbox.com>\n"
+"Language-Team: Italian (http://www.transifex.com/torchbox/wagtail/language/"
 "it/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: it\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Administrator"
-msgstr "Amministratore"
-
-msgid "If ticked, this user has the ability to manage user accounts."
-msgstr ""
-"Se selezionata, l'utente ha la possibilità di gestire gli account utente."
-
-msgid "Email"
-msgstr "Email"
-
-msgid "First Name"
-msgstr "Nome"
-
-msgid "Last Name"
-msgstr "Cognome"
-
-msgid "A user with that username already exists."
-msgstr "Username esistente."
-
-msgid "The two password fields didn't match."
-msgstr "Le password non corrispondono"
-
-msgid "Username"
-msgstr "Username"
 
 msgid "Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr ""
@@ -51,6 +26,20 @@ msgstr ""
 
 msgid "This value may contain only letters, numbers and @/./+/-/_ characters."
 msgstr "Questo valore può contenere soltanto lettere, numeri e @/./+/-/_"
+
+msgid "A user with that username already exists."
+msgstr "Username esistente."
+
+msgid "The two password fields didn't match."
+msgstr "Le password non corrispondono"
+
+msgid "Administrator"
+msgstr "Amministratore"
+
+msgid "Administrators have full access to manage any object or setting."
+msgstr ""
+"Gli amministratori hanno pieno accesso per gestire qualsiasi oggetto o "
+"settaggio."
 
 msgid "Password"
 msgstr "Password"
@@ -64,32 +53,38 @@ msgstr "Conferma password"
 msgid "Enter the same password as above, for verification."
 msgstr "Inserire la stessa password di sopra, per verifica."
 
-msgid "Administrators have the ability to manage user accounts."
-msgstr "Gli amministratori hanno la possibilità di gestire gli account utente."
+msgid "Email"
+msgstr "Email"
+
+msgid "First Name"
+msgstr "Nome"
+
+msgid "Last Name"
+msgstr "Cognome"
 
 msgid "A group with that name already exists."
 msgstr "Gruppo già esistente."
 
-msgid "Submitted notifications"
-msgstr "Notifiche inviate"
+msgid "submitted notifications"
+msgstr "notifiche inviate"
 
 msgid "Receive notification when a page is submitted for moderation"
 msgstr "Ricevi una notifica quando una pagina viene inviata per la moderazione"
 
-msgid "Approved notifications"
-msgstr "Notifiche approvate"
+msgid "approved notifications"
+msgstr "notifiche approvate"
 
 msgid "Receive notification when your page edit is approved"
 msgstr "Ricevi notifica quando la modifica di una tua pagina viene approvata"
 
-msgid "Rejected notifications"
-msgstr "Notifiche rifiutate"
+msgid "rejected notifications"
+msgstr "notifiche rifiutate"
 
 msgid "Receive notification when your page edit is rejected"
 msgstr "Ricevi notifica quando la modifica di una tua pagina viene rifiutata"
 
-msgid "User Profile"
-msgstr "Profilo Utente"
+msgid "user profile"
+msgstr "profilo utente"
 
 msgid "Delete group"
 msgstr "Elimina gruppo"
@@ -148,9 +143,6 @@ msgstr "Permessi della pagina"
 msgid "Page"
 msgstr "Pagina"
 
-msgid "Permission type"
-msgstr "Tipo di permesso"
-
 msgid "Add a page permission"
 msgstr "Aggiungi un permesso alla pagina"
 
@@ -182,6 +174,9 @@ msgstr "Utenti"
 
 msgid "Add a user"
 msgstr "Aggiungi un utente"
+
+msgid "Username"
+msgstr "Username"
 
 msgid "Level"
 msgstr "Livello"

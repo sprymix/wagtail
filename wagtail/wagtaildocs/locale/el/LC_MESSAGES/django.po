@@ -6,15 +6,16 @@
 # jim dal <dimitrisdal@gmail.com>, 2014
 # serafeim <serafeim@torchbox.com>, 2014
 # serafeim <serafeim@torchbox.com>, 2014
+# dotoree <vdotoree@yahoo.gr>, 2015
 # Wasilis Mandratzis-Walz, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-21 09:38+0100\n"
-"PO-Revision-Date: 2015-04-21 08:40+0000\n"
-"Last-Translator: Karl Hobley <karl@torchbox.com>\n"
-"Language-Team: Greek (http://www.transifex.com/projects/p/wagtail/language/"
+"POT-Creation-Date: 2016-03-01 18:52+0000\n"
+"PO-Revision-Date: 2016-03-01 18:59+0000\n"
+"Last-Translator: mattwestcott <matthew@torchbox.com>\n"
+"Language-Team: Greek (http://www.transifex.com/torchbox/wagtail/language/"
 "el/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -22,14 +23,8 @@ msgstr ""
 "Language: el\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "Title"
-msgstr "Τίτλος"
-
-msgid "File"
-msgstr "Αρχείο"
-
-msgid "Tags"
-msgstr "Ετικέτες"
+msgid "Edit"
+msgstr "Επεξεργασία"
 
 msgid "Choose a document"
 msgstr "Επιλογή εγγράφου"
@@ -39,9 +34,6 @@ msgstr "Αναζήτηση"
 
 msgid "Upload"
 msgstr "Ανέβασμα"
-
-msgid "Save"
-msgstr "Αποθήκευση"
 
 #, python-format
 msgid ""
@@ -98,6 +90,9 @@ msgstr "Διόρθωση %(title)s"
 msgid "Editing"
 msgstr "Διόρθωση"
 
+msgid "Save"
+msgstr "Αποθήκευση"
+
 msgid "Filesize"
 msgstr "Μέγεθος Αρχείου"
 
@@ -106,6 +101,12 @@ msgstr "Το αρχείο δεν βρέθηκε"
 
 msgid "Documents"
 msgstr "Έγγραφα"
+
+msgid "Title"
+msgstr "Τίτλος"
+
+msgid "File"
+msgstr "Αρχείο"
 
 msgid "Uploaded"
 msgstr "Ανεβασμένο"
@@ -155,15 +156,15 @@ msgstr[1] ""
 "                <span>%(total)s</span> Έγγραφα\n"
 "            "
 
+msgid "Delete"
+msgstr "Διαγραφή"
+
 msgid "Search documents"
 msgstr "Αναζήτηση εγγράφων"
 
 #, python-brace-format
 msgid "Document '{0}' added."
 msgstr "Το έγγραφο '{0}' προστέθηκε."
-
-msgid "Edit"
-msgstr "Επεξεργασία"
 
 msgid "The document could not be saved due to errors."
 msgstr "Δεν ήταν δυνατή η αποθήκευση του εγγράφου."
@@ -177,9 +178,6 @@ msgid ""
 msgstr ""
 "Το αρχείο δεν μπορεσε να βρεθεί. Παρακαλούμε να αλλάξετε την πηγή ή να "
 "διαγράψετε το έγγραφο"
-
-msgid "Delete"
-msgstr "Διαγραφή"
 
 #, python-brace-format
 msgid "Document '{0}' deleted."

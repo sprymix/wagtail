@@ -1,4 +1,4 @@
-{% load wagtailimages_tags compress static %}
+{% load wagtailimages_tags static %}
 {% load i18n %}
 {% trans "Choose an image" as choose_str %}
 {% include "wagtailadmin/shared/header.html" with title=choose_str merged=1 tabbed=1 icon="image" %}
@@ -12,17 +12,19 @@
 
 <div class="tab-content">
     <section id="search" class="{% if not uploadform.errors %}active{% endif %} nice-padding">
-        <form class="image-search search-bar" action="{% url 'wagtailimages_chooser' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}" method="GET" autocomplete="off">
+        <form class="image-search search-bar" action="{% url 'wagtailimages:chooser' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}" method="GET" autocomplete="off">
             <ul class="fields">
                 {% for field in searchform %}
                     {% include "wagtailadmin/shared/field_as_li.html" with field=field %}
                 {% endfor %}
-                <li class="submit"><input type="submit" value="{% trans 'Search' %}" /></li>
+                {% if collections %}
+                    {% include "wagtailadmin/shared/collection_chooser.html" %}
+                {% endif %}
                 {% if popular_tags %}
                     <li class="taglist">
                         <h3>{% trans 'Popular tags' %}</h3>
                         {% for tag in popular_tags %}
-                            <a class="suggested-tag tag" href="{% url 'wagtailimages_index' %}?q={{ tag.name|urlencode }}">{{ tag.name }}</a>
+                            <a class="suggested-tag tag" href="{% url 'wagtailimages:index' %}?tag={{ tag.name|urlencode }}">{{ tag.name }}</a>
                         {% endfor %}
                     </li>
                 {% endif %}
@@ -38,7 +40,7 @@
                 <div class="drop-zone">
                     <p>{% trans "Drag and drop images into this area to upload immediately." %}</p>
 
-                    <form action="{% url 'wagtailimages_chooser_upload' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}"
+                    <form action="{% url 'wagtailimages:chooser_upload' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}"
                     method="POST" enctype="multipart/form-data">
                         <div class="replace-file-input">
                             <button class="bicolor icon icon-plus">{% trans "Or choose from your computer" %}</button>
@@ -60,7 +62,7 @@
         {% url 'wagtailadmin_tag_autocomplete' as autocomplete_url %}
         <script>
             window.fileupload_opts = {
-                simple_upload_url: "{% url 'wagtailimages_add_image' %}",
+                simple_upload_url: "{% url 'wagtailimages:add' %}",
                 accepted_file_types: /\.({{ allowed_extensions|join:"|" }})$/i, //must be regex
                 max_file_size: {{ max_filesize|default:"null" }}, //numeric format
                 errormessages: {

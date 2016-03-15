@@ -1,5 +1,3 @@
-import unittest
-
 from django.test import TestCase
 from django.core.cache import cache
 from django.utils.safestring import SafeString
@@ -99,7 +97,7 @@ class TestSiteRootPathsCache(TestCase):
         default_site = Site.objects.get(is_default_site=True)
 
         # Create a new homepage under current homepage
-        new_homepage = SimplePage(title="New Homepage", slug="new-homepage")
+        new_homepage = SimplePage(title="New Homepage", slug="new-homepage", content="hello")
         homepage.add_child(instance=new_homepage)
 
         # Set new homepage as the site root page
@@ -176,16 +174,20 @@ class TestResolveModelString(TestCase):
     def test_resolve_from_string_with_incorrect_default_app(self):
         self.assertRaises(LookupError, resolve_model_string, 'Page', default_app='wagtailadmin')
 
+    def test_resolve_from_string_with_unknown_model_string(self):
+        self.assertRaises(LookupError, resolve_model_string, 'wagtailadmin.Page')
+
     def test_resolve_from_string_with_no_default_app(self):
         self.assertRaises(ValueError, resolve_model_string, 'Page')
 
-    @unittest.expectedFailure # Raising LookupError instead
     def test_resolve_from_class_that_isnt_a_model(self):
         self.assertRaises(ValueError, resolve_model_string, object)
 
-    @unittest.expectedFailure # Raising LookupError instead
     def test_resolve_from_bad_type(self):
         self.assertRaises(ValueError, resolve_model_string, resolve_model_string)
+
+    def test_resolve_from_none(self):
+        self.assertRaises(ValueError, resolve_model_string, None)
 
 
 class TestRichtextTag(TestCase):

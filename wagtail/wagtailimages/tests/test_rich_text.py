@@ -1,7 +1,7 @@
-from django.test import TestCase
-
 from bs4 import BeautifulSoup
 from mock import patch
+
+from django.test import TestCase
 
 from wagtail.wagtailimages.rich_text import ImageEmbedHandler
 
@@ -9,7 +9,8 @@ from wagtail.wagtailimages.rich_text import ImageEmbedHandler
 class TestImageEmbedHandler(TestCase):
     def test_get_db_attributes(self):
         soup = BeautifulSoup(
-            '<b data-id="test-id" data-format="test-format" data-alt="test-alt">foo</b>'
+            '<b data-id="test-id" data-format="test-format" data-alt="test-alt">foo</b>',
+            'html5lib'
         )
         tag = soup.b
         result = ImageEmbedHandler.get_db_attributes(tag)
@@ -45,14 +46,7 @@ class TestImageEmbedHandler(TestCase):
              'format': 'left'},
             True
         )
-        self.assertIn('<img data-embedtype="image" data-id="1" data-format="left" data-alt="test-alt" class="richtext-image left"', result)
-
-    @patch('wagtail.wagtailimages.models.Image')
-    @patch('django.core.files.File')
-    def test_expand_db_attributes_for_editor_throws_exception(self, mock_file, mock_image):
-        result = ImageEmbedHandler.expand_db_attributes(
-            {'id': 1,
-             'format': 'left'},
-            True
+        self.assertIn(
+            '<img data-embedtype="image" data-id="1" data-format="left" '
+            'data-alt="test-alt" class="richtext-image left"', result
         )
-        self.assertEqual(result, '')

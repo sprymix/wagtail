@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
+from wagtail.wagtailsearch import index
+
 from wagtail.wagtailsnippets.models import register_snippet
 
 
@@ -33,6 +35,21 @@ class RegisterFunction(models.Model):
     pass
 register_snippet(RegisterFunction)
 
+
 @register_snippet
 class RegisterDecorator(models.Model):
     pass
+
+
+# A snippet model that inherits from index.Indexed can be searched on
+
+@register_snippet
+class SearchableSnippet(models.Model, index.Indexed):
+    text = models.CharField(max_length=255)
+
+    search_fields = (
+        index.SearchField('text'),
+    )
+
+    def __str__(self):
+        return self.text

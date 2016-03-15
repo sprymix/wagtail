@@ -4,17 +4,22 @@ from django.conf import settings
 from django import template
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.template.defaultfilters import stringfilter
+from django.utils.safestring import mark_safe
 
 from wagtail.wagtailcore import hooks
 from wagtail.wagtailcore.models import get_navigation_menu_items, UserPagePermissionsProxy, PageViewRestriction
 from wagtail.wagtailcore.utils import camelcase_to_underscore, escape_script
 from wagtail.wagtailcore.utils import cautious_slugify as _cautious_slugify
 from wagtail.wagtailadmin.menu import admin_menu
+from wagtail.wagtailadmin.search import admin_search_areas
+
+from wagtail.utils.pagination import DEFAULT_PAGE_KEY
 
 
 register = template.Library()
 
 register.filter('intcomma', intcomma)
+
 
 @register.inclusion_tag('wagtailadmin/shared/explorer_nav.html')
 def explorer_nav():
@@ -38,6 +43,17 @@ def main_nav(context):
         'menu_html': admin_menu.render_html(request),
         'request': request,
     }
+
+
+@register.inclusion_tag('wagtailadmin/shared/search_other.html', takes_context=True)
+def search_other(context, current=None):
+    request = context['request']
+
+    return {
+        'options_html': admin_search_areas.render_html(request, current),
+        'request': request,
+    }
+
 
 @register.simple_tag
 def main_nav_js():
@@ -76,15 +92,6 @@ def widgettype(bound_field):
             return ""
 
 
-
-@register.filter
-def meta_description(model):
-    try:
-        return model.model_class()._meta.description
-    except:
-        return ""
-
-
 @register.assignment_tag(takes_context=True)
 def page_permissions(context, page):
     """
@@ -111,7 +118,9 @@ def test_page_is_public(context, page):
     DB queries on repeated calls.
     """
     if 'all_page_view_restriction_paths' not in context:
-        context['all_page_view_restriction_paths'] = PageViewRestriction.objects.select_related('page').values_list('page__path', flat=True)
+        context['all_page_view_restriction_paths'] = PageViewRestriction.objects.select_related('page').values_list(
+            'page__path', flat=True
+        )
 
     is_private = any([
         page.path.startswith(restricted_path)
@@ -130,7 +139,7 @@ def hook_output(hook_name):
     Note that the output is not escaped - it is the hook function's responsibility to escape unsafe content.
     """
     snippets = [fn() for fn in hooks.get_hooks(hook_name)]
-    return ''.join(snippets)
+    return mark_safe(''.join(snippets))
 
 
 @register.assignment_tag
@@ -174,9 +183,15 @@ def render_with_errors(bound_field):
     """
     widget = bound_field.field.widget
     if bound_field.errors and hasattr(widget, 'render_with_errors'):
-        return widget.render_with_errors(bound_field.html_name, bound_field.value(), attrs={'id': bound_field.auto_id}, errors=bound_field.errors)
+        return widget.render_with_errors(
+            bound_field.html_name,
+            bound_field.value(),
+            attrs={'id': bound_field.auto_id},
+            errors=bound_field.errors
+        )
     else:
         return bound_field.as_widget()
+
 
 @register.filter
 def has_unrendered_errors(bound_field):
@@ -191,3 +206,78 @@ def has_unrendered_errors(bound_field):
 @stringfilter
 def cautious_slugify(value):
     return _cautious_slugify(value)
+
+
+@register.simple_tag(takes_context=True)
+def querystring(context, **kwargs):
+    """
+    Print out the current querystring. Any keyword arguments to this template
+    tag will be added to the querystring before it is printed out.
+
+        <a href="/page/{% querystring key='value' %}">
+
+    Will result in something like:
+
+        <a href="/page/?foo=bar&key=value">
+    """
+    request = context['request']
+    querydict = request.GET.copy()
+    # Can't do querydict.update(kwargs), because QueryDict.update() appends to
+    # the list of values, instead of replacing the values.
+    for key, value in kwargs.items():
+        if value is None:
+            # Remove the key if the value is None
+            querydict.pop(key, None)
+        else:
+            # Set the key otherwise
+            querydict[key] = value
+
+    return '?' + querydict.urlencode()
+
+
+@register.simple_tag(takes_context=True)
+def pagination_querystring(context, page_number, page_key=DEFAULT_PAGE_KEY):
+    """
+    Print out a querystring with an updated page number:
+
+        {% if page.has_next_page %}
+            <a href="{% pagination_link page.next_page_number %}">Next page</a>
+        {% endif %}
+    """
+    return querystring(context, **{page_key: page_number})
+
+
+@register.inclusion_tag("wagtailadmin/pages/listing/_pagination.html",
+                        takes_context=True)
+def paginate(context, page, base_url='', page_key=DEFAULT_PAGE_KEY,
+             classnames=''):
+    """
+    Print pagination previous/next links, and the page count. Take the
+    following arguments:
+
+    page
+        The current page of results. This should be a Django pagination `Page`
+        instance
+
+    base_url
+        The base URL of the next/previous page, with no querystring.
+        This is optional, and defaults to the current page by just printing the
+        querystring for the next/previous page.
+
+    page_key
+        The name of the page variable in the query string. Defaults to the same
+        name as used in the :func:`~wagtail.utils.pagination.paginate`
+        function.
+
+    classnames
+        Extra classes to add to the next/previous links.
+    """
+    request = context['request']
+    return {
+        'base_url': base_url,
+        'classnames': classnames,
+        'request': request,
+        'page': page,
+        'page_key': page_key,
+        'paginator': page.paginator,
+    }

@@ -1,6 +1,7 @@
-from six.moves.urllib.parse import urlparse
-
 from django.conf import settings
+from django.utils.six.moves.urllib.parse import urlparse
+
+from wagtail.wagtailcore.models import Page
 
 
 class BadRequestError(Exception):
@@ -15,3 +16,14 @@ def get_base_url(request=None):
         base_url_parsed = urlparse(base_url)
 
         return base_url_parsed.scheme + '://' + base_url_parsed.netloc
+
+
+def get_full_url(request, path):
+    base_url = get_base_url(request) or ''
+    return base_url + path
+
+
+def pages_for_site(site):
+    pages = Page.objects.public().live()
+    pages = pages.descendant_of(site.root_page, inclusive=True)
+    return pages

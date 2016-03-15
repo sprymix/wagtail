@@ -3,35 +3,38 @@ from __future__ import unicode_literals
 import os.path
 import hashlib
 from contextlib import contextmanager
-import warnings
-
-from six import BytesIO, text_type
+from collections import OrderedDict
 
 from taggit.managers import TaggableManager
 from willow.image import Image as WillowImage
 
+import django
 from django.core.files import File
-from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.signals import pre_delete, pre_save
 from django.dispatch.dispatcher import receiver
 from django.utils.safestring import mark_safe
-from django.utils.html import escape, format_html_join
+from django.utils.six import BytesIO, text_type
+from django.forms.widgets import flatatt
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
+from django.utils.six import string_types
 from django.core.urlresolvers import reverse
 
 from unidecode import unidecode
 
 from wagtail.wagtailcore import hooks
+from wagtail.wagtailcore.models import CollectionMember
 from wagtail.wagtailadmin.taggable import TagSearchable
 from wagtail.wagtailsearch import index
+from wagtail.wagtailsearch.queryset import SearchableQuerySetMixin
 from wagtail.wagtailimages.rect import Rect
 from wagtail.wagtailimages.exceptions import InvalidFilterSpecError
 from wagtail.wagtailadmin.utils import get_object_usage
-from wagtail.utils.deprecation import RemovedInWagtail12Warning
 
 
 # A mapping of image formats to extensions
@@ -101,60 +104,43 @@ def _rendition_for_missing_image(rendition_cls, image, filter):
 
 
 def get_upload_to(instance, filename):
-    folder_name = 'original_images'
-    filename = instance.file.field.storage.get_valid_name(filename)
-
-    # do a unidecode in the filename and then
-    # replace non-ascii characters in filename with _ , to sidestep issues with filesystem encoding
-    filename = "".join((i if ord(i) < 128 else '_') for i in unidecode(filename))
-
-    while len(os.path.join(folder_name, filename)) >= 95:
-        prefix, dot, extension = filename.rpartition('.')
-        filename = prefix[:-1] + dot + extension
-    return os.path.join(folder_name, filename)
+    # Dumb proxy to instance method.
+    return instance.get_upload_to(filename)
 
 
-@python_2_unicode_compatible
-class AbstractImage(models.Model, TagSearchable):
-    title = models.CharField(max_length=255, verbose_name=_('Title'))
-    file = models.ImageField(verbose_name=_('File'), upload_to=get_upload_to, width_field='width', height_field='height')
-    width = models.IntegerField(verbose_name=_('Width'), editable=False)
-    height = models.IntegerField(verbose_name=_('Height'), editable=False)
-    created_at = models.DateTimeField(verbose_name=_('Created at'), auto_now_add=True)
-    uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('Uploaded by user'), null=True, blank=True, editable=False)
-    show_in_catalogue = models.BooleanField(default=True)
+class ImageQuerySet(SearchableQuerySetMixin, models.QuerySet):
+    pass
 
-    tags = TaggableManager(blank=True, verbose_name=_('Tags'),
-            help_text=_('To enter multi-word tags, use double quotes: "some tag".'))
 
-    focal_point_x = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_y = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_width = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_height = models.PositiveIntegerField(null=True, blank=True)
+class WillowImageWrapper(object):
+    def is_stored_locally(self):
+        """
+        Returns True if the image is hosted on the local filesystem
+        """
+        try:
+            self.file.path
 
-    def get_usage(self):
-        return get_object_usage(self)
-
-    @property
-    def usage_url(self):
-        return reverse('wagtailimages_image_usage',
-                       args=(self.id,))
-
-    search_fields = TagSearchable.search_fields + (
-        index.FilterField('uploaded_by_user'),
-        index.FilterField('show_in_catalogue'),
-    )
-
-    def __str__(self):
-        return self.title
+            return True
+        except NotImplementedError:
+            return False
 
     @contextmanager
     def get_willow_image(self):
         # Open file if it is closed
         close_file = False
         try:
+            image_file = self.file
+
             if self.file.closed:
-                self.file.open('rb')
+                # Reopen the file
+                if self.is_stored_locally():
+                    self.file.open('rb')
+                else:
+                    # Some external storage backends don't allow reopening
+                    # the file. Get a fresh file instance. #1397
+                    storage = self._meta.get_field('file').storage
+                    image_file = storage.open(self.file.name, 'rb')
+
                 close_file = True
         except IOError as e:
             # re-throw this as a SourceImageIOError so that calling code can distinguish
@@ -162,13 +148,84 @@ class AbstractImage(models.Model, TagSearchable):
             raise SourceImageIOError(text_type(e))
 
         # Seek to beginning
-        self.file.seek(0)
+        image_file.seek(0)
 
         try:
-            yield WillowImage.open(self.file)
+            yield WillowImage.open(image_file)
         finally:
             if close_file:
-                self.file.close()
+                image_file.close()
+
+
+@python_2_unicode_compatible
+class AbstractImage(CollectionMember, TagSearchable, WillowImageWrapper):
+    title = models.CharField(max_length=255, verbose_name=_('title'))
+    file = models.ImageField(
+        verbose_name=_('file'), upload_to=get_upload_to, width_field='width', height_field='height'
+    )
+    width = models.IntegerField(verbose_name=_('width'), editable=False)
+    height = models.IntegerField(verbose_name=_('height'), editable=False)
+    created_at = models.DateTimeField(verbose_name=_('created at'), auto_now_add=True, db_index=True)
+    uploaded_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name=_('uploaded by user'),
+        null=True, blank=True, editable=False, on_delete=models.SET_NULL
+    )
+    show_in_catalogue = models.BooleanField(default=True)
+
+    tags = TaggableManager(blank=True, verbose_name=_('tags'),
+            help_text=_('To enter multi-word tags, use double quotes: "some tag".'))
+
+    focal_point_x = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_y = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_width = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_height = models.PositiveIntegerField(null=True, blank=True)
+
+    file_size = models.PositiveIntegerField(null=True, editable=False)
+
+    objects = ImageQuerySet.as_manager()
+
+    def get_file_size(self):
+        if self.file_size is None:
+            try:
+                self.file_size = self.file.size
+            except OSError:
+                # File doesn't exist
+                return
+
+            self.save(update_fields=['file_size'])
+
+        return self.file_size
+
+    def get_upload_to(self, filename):
+        folder_name = 'original_images'
+        filename = self.file.field.storage.get_valid_name(filename)
+
+        # do a unidecode in the filename and then
+        # replace non-ascii characters in filename with _ , to sidestep issues with filesystem encoding
+        filename = "".join((i if ord(i) < 128 else '_') for i in unidecode(filename))
+
+        # Truncate filename so it fits in the 100 character limit
+        # https://code.djangoproject.com/ticket/9893
+        while len(os.path.join(folder_name, filename)) >= 95:
+            prefix, dot, extension = filename.rpartition('.')
+            filename = prefix[:-1] + dot + extension
+        return os.path.join(folder_name, filename)
+
+    def get_usage(self):
+        return get_object_usage(self)
+
+    @property
+    def usage_url(self):
+        return reverse('wagtailimages:image_usage',
+                       args=(self.id,))
+
+    search_fields = TagSearchable.search_fields + CollectionMember.search_fields + (
+        index.FilterField('uploaded_by_user'),
+        index.FilterField('show_in_catalogue'),
+    )
+
+    def __str__(self):
+        return self.title
 
     def get_rect(self):
         return Rect(0, 0, self.width, self.height)
@@ -235,10 +292,16 @@ class AbstractImage(models.Model, TagSearchable):
 
         return Rect.from_point(x, y, width, height)
 
+    @classmethod
+    def get_rendition_model(cls):
+        """ Get the Rendition model for this Image model """
+        if django.VERSION >= (1, 9):
+            return cls.renditions.rel.related_model
+        else:
+            return cls.renditions.related.related_model
+
     def _get_rendition(self, renditions, filter, focal_point_key=''):
-        if not hasattr(filter, 'run'):
-            # assume we've been passed a filter spec string, rather than a Filter object
-            # TODO: keep an in-memory cache of filters, to avoid a db lookup
+        if isinstance(filter, string_types):
             filter, created = Filter.objects.get_or_create(spec=filter)
 
         spec_hash = filter.get_cache_key(self)
@@ -251,7 +314,7 @@ class AbstractImage(models.Model, TagSearchable):
         except ObjectDoesNotExist:
             try:
                 # Generate the rendition image
-                generated_image, output_format = filter.run(self, BytesIO())
+                generated_image = filter.run(self, BytesIO())
             except IOError:
                 return _rendition_for_missing_image(renditions.model, self,
                                                     filter=filter)
@@ -260,13 +323,14 @@ class AbstractImage(models.Model, TagSearchable):
             input_filename = os.path.basename(self.file.name)
             input_filename_without_extension, input_extension = os.path.splitext(input_filename)
             output_filename = _generate_output_filename(
-                                input_filename_without_extension, output_format,
+                                input_filename_without_extension,
+                                generated_image.format_name,
                                 spec_hash, focal_point_key)
 
             rendition, created = renditions.get_or_create(
                 filter=filter,
                 focal_point_key=focal_point_key,
-                defaults={'file': File(generated_image, name=output_filename)}
+                defaults={'file': File(generated_image.f, name=output_filename)}
             )
 
         return rendition
@@ -296,14 +360,8 @@ class AbstractImage(models.Model, TagSearchable):
         return self.title
 
     def is_editable_by_user(self, user):
-        if user.has_perm('wagtailimages.change_image'):
-            # user has global permission to change images
-            return True
-        elif user.has_perm('wagtailimages.add_image') and self.uploaded_by_user == user:
-            # user has image add permission, which also implicitly provides permission to edit their own images
-            return True
-        else:
-            return False
+        from wagtail.wagtailimages.permissions import permission_policy
+        return permission_policy.user_has_permission_for_instance(user, 'change', self)
 
     def get_focal_point_key(self):
         # generate new filename derived from old one, inserting the filter spec and focal point key before the extension
@@ -320,6 +378,7 @@ class Image(AbstractImage):
     admin_form_fields = (
         'title',
         'file',
+        'collection',
         'tags',
         'focal_point_x',
         'focal_point_y',
@@ -358,17 +417,22 @@ def get_image_model():
 
     image_model = apps.get_model(app_label, model_name)
     if image_model is None:
-        raise ImproperlyConfigured("WAGTAILIMAGES_IMAGE_MODEL refers to model '%s' that has not been installed" % settings.WAGTAILIMAGES_IMAGE_MODEL)
+        raise ImproperlyConfigured(
+            "WAGTAILIMAGES_IMAGE_MODEL refers to model '%s' that has not been installed" %
+            settings.WAGTAILIMAGES_IMAGE_MODEL
+        )
     return image_model
 
 
 class Filter(models.Model):
     """
-    Represents an operation that can be applied to an Image to produce a rendition
+    Represents one or more operations that can be applied to an Image to produce a rendition
     appropriate for final display on the website. Usually this would be a resize operation,
     but could potentially involve colour processing, etc.
     """
-    spec = models.CharField(max_length=255, db_index=True, unique=True)
+
+    # The spec pattern is operation1-var1-var2|operation2-var1
+    spec = models.CharField(max_length=255, unique=True)
 
     @cached_property
     def operations(self):
@@ -385,46 +449,37 @@ class Filter(models.Model):
 
             op_class = self._registered_operations[op_spec_parts[0]]
             operations.append(op_class(*op_spec_parts))
-
         return operations
 
     def run(self, image, output):
         with image.get_willow_image() as willow:
+            original_format = willow.format_name
+
+            # Fix orientation of image
+            willow = willow.auto_orient()
+
             for operation in self.operations:
-                operation.run(willow, image)
+                willow = operation.run(willow, image) or willow
 
-            output_format = willow.original_format
-
-            if willow.original_format == 'jpeg':
+            if original_format == 'jpeg':
                 # Allow changing of JPEG compression quality
                 if hasattr(settings, 'WAGTAILIMAGES_JPEG_QUALITY'):
                     quality = settings.WAGTAILIMAGES_JPEG_QUALITY
-                elif hasattr(settings, 'IMAGE_COMPRESSION_QUALITY'):
-                    quality = settings.IMAGE_COMPRESSION_QUALITY
-
-                    warnings.warn(
-                        "The IMAGE_COMPRESSION_QUALITY setting has been renamed to "
-                        "WAGTAILIMAGES_JPEG_QUALITY. Please update your settings.",
-                        RemovedInWagtail12Warning)
                 else:
                     quality = 85
 
-                willow.save_as_jpeg(output, quality=quality)
-            if willow.original_format == 'gif':
+                return willow.save_as_jpeg(output, quality=quality)
+            elif original_format == 'gif':
                 # Convert image to PNG if it's not animated
                 if not willow.has_animation():
-                    output_format = 'png'
-                    willow.save_as_png(output)
+                    return willow.save_as_png(output)
                 else:
-                    willow.save_as_gif(output)
-            if willow.original_format == 'bmp':
+                    return willow.save_as_gif(output)
+            elif original_format == 'bmp':
                 # Convert to PNG
-                output_format = 'png'
-                willow.save_as_png(output)
+                return willow.save_as_png(output)
             else:
-                willow.save(willow.original_format, output)
-
-        return output, output_format
+                return willow.save(original_format, output)
 
     def get_cache_key(self, image):
         return hashlib.sha1(self.spec).hexdigest()
@@ -461,7 +516,7 @@ class Filter(models.Model):
 
 
 class AbstractRendition(models.Model):
-    filter = models.ForeignKey('Filter', related_name='+')
+    filter = models.ForeignKey(Filter, related_name='+')
     file = models.ImageField(upload_to='images', width_field='width', height_field='height')
     width = models.IntegerField(editable=False)
     height = models.IntegerField(editable=False)
@@ -472,26 +527,43 @@ class AbstractRendition(models.Model):
         return self.file.url
 
     @property
-    def attrs(self):
-        return mark_safe(
-            'src="%s" width="%d" height="%d" alt="%s"' % (
-                escape(self.url), self.width, self.height,
-                escape(self.image.title))
-        )
+    def alt(self):
+        return self.image.title
 
-    def img_tag(self, extra_attributes=None):
-        if extra_attributes:
-            extra_attributes_string = format_html_join(' ', '{0}="{1}"', extra_attributes.items())
-            return mark_safe('<img %s %s>' % (self.attrs, extra_attributes_string))
-        else:
-            return mark_safe('<img %s>' % self.attrs)
+    @property
+    def attrs(self):
+        """
+        The src, width, height, and alt attributes for an <img> tag, as a HTML
+        string
+        """
+        return flatatt(self.attrs_dict)
+
+    @property
+    def attrs_dict(self):
+        """
+        A dict of the src, width, height, and alt attributes for an <img> tag.
+        """
+        return OrderedDict([
+            ('src', self.url),
+            ('width', self.width),
+            ('height', self.height),
+            ('alt', self.alt),
+        ])
+
+    def img_tag(self, extra_attributes={}):
+        attrs = self.attrs_dict.copy()
+        attrs.update(extra_attributes)
+        return mark_safe('<img{}>'.format(flatatt(attrs)))
+
+    def __html__(self):
+        return self.img_tag()
 
     class Meta:
         abstract = True
 
 
 class Rendition(AbstractRendition):
-    image = models.ForeignKey('Image', related_name='renditions')
+    image = models.ForeignKey(Image, related_name='renditions')
 
     class Meta:
         unique_together = (
@@ -499,7 +571,7 @@ class Rendition(AbstractRendition):
         )
 
 
-class UserRendition(AbstractRendition):
+class UserRendition(AbstractRendition, WillowImageWrapper):
     image = models.ForeignKey('Image', related_name='user_renditions')
 
     class Meta:
@@ -526,21 +598,26 @@ class UserRendition(AbstractRendition):
         except ObjectDoesNotExist:
             try:
                 # Generate the rendition image
-                generated_image, output_format = filter.run(self, BytesIO())
+                generated_image = filter.run(self, BytesIO())
             except IOError:
                 return _rendition_for_missing_image(
-                            self.image.renditions.model, self, filter=filter)
+                            self.image.renditions.model,
+                            self.image, filter=filter)
 
             # Generate filename
             input_filename = os.path.basename(self.file.name)
+
             input_filename_without_extension, input_extension = \
                 os.path.splitext(input_filename)
-            output_filename = _generate_output_filename(
-                input_filename_without_extension, output_format, spec_hash)
 
-            rendition, created = self.renditions.get_or_create(
+            output_filename = _generate_output_filename(
+                input_filename_without_extension, generated_image.format_name,
+                spec_hash)
+
+            rendition, created = self.image.renditions.get_or_create(
                 filter=filter,
-                defaults={'file': File(generated_image, name=output_filename)}
+                defaults={'file': File(generated_image.f,
+                                       name=output_filename)}
             )
 
         return rendition

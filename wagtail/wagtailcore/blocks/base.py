@@ -8,13 +8,12 @@ from importlib import import_module
 
 from django.core import checks
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import six
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
-from django.utils.encoding import force_text
+from django.utils.encoding import python_2_unicode_compatible, force_text
 from django.template.loader import render_to_string
 from django import forms
-
-import six
 
 
 __all__ = ['BaseBlock', 'Block', 'BoundBlock', 'DeclarativeSubBlocksMetaclass', 'BlockWidget', 'BlockField']
@@ -41,6 +40,8 @@ class BaseBlock(type):
 class Block(six.with_metaclass(BaseBlock, object)):
     name = ''
     creation_counter = 0
+
+    TEMPLATE_VAR = 'value'
 
     class Meta:
         label = None
@@ -199,6 +200,12 @@ class Block(six.with_metaclass(BaseBlock, object)):
         """
         return value
 
+    def get_context(self, value):
+        return {
+            'self': value,
+            self.TEMPLATE_VAR: value,
+        }
+
     def render(self, value):
         """
         Return a text rendering of 'value', suitable for display on templates. By default, this will
@@ -207,7 +214,7 @@ class Block(six.with_metaclass(BaseBlock, object)):
         """
         template = getattr(self.meta, 'template', None)
         if template:
-            return render_to_string(template, {'self': value})
+            return render_to_string(template, self.get_context(value))
         else:
             return self.render_basic(value)
 
@@ -366,6 +373,7 @@ class Block(six.with_metaclass(BaseBlock, object)):
     __hash__ = None
 
 
+@python_2_unicode_compatible
 class BoundBlock(object):
     def __init__(self, block, value, prefix=None, errors=None):
         self.block = block
@@ -382,6 +390,10 @@ class BoundBlock(object):
     def id_for_label(self):
         return self.block.id_for_label(self.prefix)
 
+    def __str__(self):
+        """Render the value according to the block's native rendering"""
+        return self.block.render(self.value)
+
 
 class DeclarativeSubBlocksMetaclass(BaseBlock):
     """
@@ -389,7 +401,8 @@ class DeclarativeSubBlocksMetaclass(BaseBlock):
     (cheerfully stolen from https://github.com/django/django/blob/master/django/forms/forms.py)
     """
     def __new__(mcs, name, bases, attrs):
-        # Collect sub-blocks from current class.
+        # Collect sub-blocks declared on the current class.
+        # These are available on the class as `declared_blocks`
         current_blocks = []
         for key, value in list(attrs.items()):
             if isinstance(value, Block):
@@ -399,23 +412,22 @@ class DeclarativeSubBlocksMetaclass(BaseBlock):
         current_blocks.sort(key=lambda x: x[1].creation_counter)
         attrs['declared_blocks'] = collections.OrderedDict(current_blocks)
 
-        new_class = (super(DeclarativeSubBlocksMetaclass, mcs)
-            .__new__(mcs, name, bases, attrs))
+        new_class = (super(DeclarativeSubBlocksMetaclass, mcs).__new__(
+            mcs, name, bases, attrs))
 
-        # Walk through the MRO.
-        declared_blocks = collections.OrderedDict()
+        # Walk through the MRO, collecting all inherited sub-blocks, to make
+        # the combined `base_blocks`.
+        base_blocks = collections.OrderedDict()
         for base in reversed(new_class.__mro__):
             # Collect sub-blocks from base class.
             if hasattr(base, 'declared_blocks'):
-                declared_blocks.update(base.declared_blocks)
+                base_blocks.update(base.declared_blocks)
 
             # Field shadowing.
             for attr, value in base.__dict__.items():
-                if value is None and attr in declared_blocks:
-                    declared_blocks.pop(attr)
-
-        new_class.base_blocks = declared_blocks
-        new_class.declared_blocks = declared_blocks
+                if value is None and attr in base_blocks:
+                    base_blocks.pop(attr)
+        new_class.base_blocks = base_blocks
 
         return new_class
 

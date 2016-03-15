@@ -4,14 +4,15 @@
 #
 # Translators:
 # hanfeng <appweb.cn@gmail.com>, 2014
+# Leway Colin <colin4124@gmail.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-21 09:38+0100\n"
-"PO-Revision-Date: 2015-04-17 11:48+0000\n"
-"Last-Translator: Karl Hobley <karl@torchbox.com>\n"
-"Language-Team: Chinese (http://www.transifex.com/projects/p/wagtail/language/"
+"POT-Creation-Date: 2016-03-01 18:51+0000\n"
+"PO-Revision-Date: 2016-03-01 18:55+0000\n"
+"Last-Translator: mattwestcott <matthew@torchbox.com>\n"
+"Language-Team: Chinese (http://www.transifex.com/torchbox/wagtail/language/"
 "zh/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -24,6 +25,9 @@ msgstr "搜索"
 
 msgid "Search term"
 msgstr "搜索词"
+
+msgid "Enter password"
+msgstr "请输入密码"
 
 msgid "Enter your email address to reset your password"
 msgstr "输入您的电子邮箱来重置您的密码"
@@ -38,6 +42,9 @@ msgstr "对不起，你不能在此够重置你的密码，因为您的账号是
 
 msgid "This email address is not recognised."
 msgstr "没有找到这个电子邮件地址。"
+
+msgid "This slug is already in use"
+msgstr "这个唯一的地址已被占用"
 
 msgid "Account"
 msgstr "账号"
@@ -58,6 +65,9 @@ msgstr "修改密码"
 
 msgid "Change the password you use to log in."
 msgstr "修改您用于登录的密码。"
+
+msgid "Choose which email notifications to receive."
+msgstr "请选择接收邮件提醒的方式"
 
 msgid "Change Password"
 msgstr "修改密码"
@@ -102,6 +112,15 @@ msgstr "仪表板"
 msgid "Menu"
 msgstr "菜单"
 
+msgid "Move up"
+msgstr "向上移动"
+
+msgid "Move down"
+msgstr "向下移动"
+
+msgid "Delete"
+msgstr "删除"
+
 msgid "Explorer"
 msgstr "浏览"
 
@@ -126,14 +145,8 @@ msgstr "插入一个链接"
 msgid "Add an external link"
 msgstr "添加一个外部链接"
 
-msgid "Move up"
-msgstr "向上移动"
-
-msgid "Move down"
-msgstr "向下移动"
-
-msgid "Delete"
-msgstr "删除"
+msgid "Save"
+msgstr "保存"
 
 #, python-format
 msgid "Welcome to the %(site_name)s Wagtail CMS"
@@ -218,10 +231,6 @@ msgstr "你可以在此编辑这个页面："
 msgid "The page \"%(page)s\" has been submitted for moderation"
 msgstr "这个页面 \"%(page)s\" 已经提交审核"
 
-#, python-format
-msgid "The page \"%(page)s\" has been submitted for moderation."
-msgstr "这个页面 \"%(page)s\" 已经提交审核。"
-
 msgid "You can preview the page here:"
 msgstr "你可以在此预览这页："
 
@@ -293,6 +302,9 @@ msgstr "是的，停止发布"
 msgid "Pages using"
 msgstr "页面在用"
 
+msgid "Copy"
+msgstr "复制"
+
 #, python-format
 msgid "New %(page_type)s"
 msgstr "新%(page_type)s类"
@@ -300,17 +312,14 @@ msgstr "新%(page_type)s类"
 msgid "New"
 msgstr "新"
 
-msgid "Save as draft"
-msgstr "保存为草稿"
+msgid "Save draft"
+msgstr "保存草稿"
 
 msgid "Publish"
 msgstr "发布"
 
 msgid "Submit for moderation"
 msgstr "提交审核"
-
-msgid "Save draft"
-msgstr "保存草稿"
 
 #, python-format
 msgid "Last modified: %(last_mod)s"
@@ -327,19 +336,6 @@ msgstr "浏览%(title)s"
 msgid "Drag"
 msgstr "拖动"
 
-msgid "No pages have been created."
-msgstr "没有已保存的页面"
-
-#, python-format
-msgid "Why not <a href=\"%(add_page_url)s\">add one</a>?"
-msgstr "为什么不<a href=\"%(add_page_url)s\">添加一页</a>?"
-
-msgid "Previous"
-msgstr "向前"
-
-msgid "Next"
-msgstr "往后"
-
 msgid "Explore"
 msgstr "浏览"
 
@@ -352,6 +348,12 @@ msgstr "添加子页面"
 
 msgid "Add child page"
 msgstr "添加子页面"
+
+msgid "Previous"
+msgstr "向前"
+
+msgid "Next"
+msgstr "往后"
 
 msgid "Disable ordering of child pages"
 msgstr "禁止自页面的顺序"
@@ -370,30 +372,68 @@ msgstr "为%(title)s选择一个新的根页面"
 msgid "Select a new parent page for <span>%(title)s</span>"
 msgstr "为<span>%(title)s</span>选择一个新的根页面"
 
-msgid "Images"
-msgstr "图像"
-
-msgid "Documents"
-msgstr "文档"
-
-msgid "Users"
-msgstr "用户"
-
-#, python-format
-msgid ""
-"\n"
-"                Page %(page_number)s of %(num_pages)s.\n"
-"            "
-msgstr ""
-"\n"
-"                第 %(page_number)s / %(num_pages)s页.\n"
-"            "
-
 msgid "Enter a search term above"
 msgstr "请在上面输入搜索词"
 
 msgid "Home"
 msgstr "主页"
+
+msgid "January"
+msgstr "一月"
+
+msgid "February"
+msgstr "二月"
+
+msgid "March"
+msgstr "三月"
+
+msgid "April"
+msgstr "四月"
+
+msgid "May"
+msgstr "五月"
+
+msgid "June"
+msgstr "六月"
+
+msgid "July"
+msgstr "七月"
+
+msgid "August"
+msgstr "八月"
+
+msgid "September"
+msgstr "九月"
+
+msgid "October"
+msgstr "十月"
+
+msgid "November"
+msgstr "十一月"
+
+msgid "December"
+msgstr "十二月"
+
+msgid "Sun"
+msgstr "星期日"
+
+msgid "Mon"
+msgstr "星期一"
+
+msgid "Tue"
+msgstr "星期二"
+
+msgid "Wed"
+msgstr "星期三"
+
+msgid "Thu"
+msgstr "星期四"
+
+msgid "Fri"
+msgstr "星期五"
+
+msgid "Sat"
+msgstr "星期六"
 
 msgid "Log out"
 msgstr "登出"
@@ -404,9 +444,6 @@ msgstr "第%(page_num)s页 共%(total_pages)s页"
 
 msgid "Your password has been changed successfully!"
 msgstr "您的密码已经更改成功。"
-
-msgid "This slug is already in use"
-msgstr "这个唯一的地址已被占用"
 
 #, python-brace-format
 msgid "Page '{0}' created."

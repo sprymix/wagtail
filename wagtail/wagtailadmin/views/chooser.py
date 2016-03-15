@@ -1,87 +1,145 @@
-from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404, render
 from django.http import Http404
-from django.utils.http import urlencode
 
+from wagtail.utils.pagination import paginate
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
-from wagtail.wagtailadmin.forms import SearchForm, ExternalLinkChooserForm, ExternalLinkChooserWithLinkTextForm, EmailLinkChooserForm, EmailLinkChooserWithLinkTextForm
+from wagtail.wagtailadmin.forms import (
+    SearchForm, ExternalLinkChooserForm, ExternalLinkChooserWithLinkTextForm,
+    EmailLinkChooserForm, EmailLinkChooserWithLinkTextForm)
 
 from wagtail.wagtailcore.models import Page
+from wagtail.wagtailcore.utils import resolve_model_string
 
 
-def get_querystring(request):
-    return urlencode({
-        'page_type': request.GET.get('page_type', ''),
-        'allow_external_link': request.GET.get('allow_external_link', ''),
-        'allow_email_link': request.GET.get('allow_email_link', ''),
-        'prompt_for_link_text': request.GET.get('prompt_for_link_text', ''),
-    })
+def shared_context(request, extra_context={}):
+    context = {
+        'allow_external_link': request.GET.get('allow_external_link'),
+        'allow_email_link': request.GET.get('allow_email_link'),
+    }
+    context.update(extra_context)
+    return context
+
+
+def page_models_from_string(string):
+    page_models = []
+
+    for sub_string in string.split(','):
+        page_model = resolve_model_string(sub_string)
+
+        if not issubclass(page_model, Page):
+            raise ValueError("Model is not a page")
+
+        page_models.append(page_model)
+
+    return tuple(page_models)
+
+
+def filter_page_type(queryset, page_models):
+    qs = queryset.none()
+
+    for model in page_models:
+        qs |= queryset.type(model)
+
+    return qs
 
 
 def browse(request, parent_page_id=None):
-    page_type = request.GET.get('page_type') or 'wagtailcore.page'
-    content_type_app_name, content_type_model_name = page_type.split('.')
+    # Find parent page
+    if parent_page_id:
+        parent_page = get_object_or_404(Page, id=parent_page_id)
+    else:
+        parent_page = Page.get_first_root_node()
 
-    is_searching = False
-    page_types_restricted = page_type != 'wagtailcore.page'
+    # Get children of parent page
+    pages = parent_page.get_children()
 
-    try:
-        content_type = ContentType.objects.get_by_natural_key(content_type_app_name, content_type_model_name)
-    except ContentType.DoesNotExist:
-        raise Http404
-    desired_class = content_type.model_class()
+    # Filter them by page type
+    # A missing or empty page_type parameter indicates 'all page types' (i.e. descendants of wagtailcore.page)
+    page_type_string = request.GET.get('page_type') or 'wagtailcore.page'
+    if page_type_string != 'wagtailcore.page':
+        try:
+            desired_classes = page_models_from_string(page_type_string)
+        except (ValueError, LookupError):
+            raise Http404
 
-    if 'q' in request.GET:
-        search_form = SearchForm(request.GET)
-        if search_form.is_valid() and search_form.cleaned_data['q']:
-            pages = desired_class.objects.exclude(
-                depth=1  # never include root
-            ).filter(title__icontains=search_form.cleaned_data['q'])[:10]
-            is_searching = True
+        # restrict the page listing to just those pages that:
+        # - are of the given content type (taking into account class inheritance)
+        # - or can be navigated into (i.e. have children)
+        choosable_pages = filter_page_type(pages, desired_classes)
+        descendable_pages = pages.filter(numchild__gt=0)
+        pages = choosable_pages | descendable_pages
+    else:
+        desired_classes = (Page, )
 
-    if not is_searching:
-        if parent_page_id:
-            parent_page = get_object_or_404(Page, id=parent_page_id)
-        else:
-            parent_page = Page.get_first_root_node()
+    can_choose_root = request.GET.get('can_choose_root', False)
 
-        parent_page.can_choose = issubclass(parent_page.specific_class, desired_class)
-        search_form = SearchForm()
-        pages = parent_page.get_children()
+    # Parent page can be chosen if it is a instance of desired_classes
+    parent_page.can_choose = (
+        issubclass(parent_page.specific_class or Page, desired_classes) and
+        (can_choose_root or not parent_page.is_root())
+    )
 
-    # restrict the page listing to just those pages that:
-    # - are of the given content type (taking into account class inheritance)
-    # - or can be navigated into (i.e. have children)
+    # Pagination
+    # We apply pagination first so we don't need to walk the entire list
+    # in the block below
+    paginator, pages = paginate(request, pages, per_page=25)
 
-    shown_pages = []
+    # Annotate each page with can_choose/can_decend flags
     for page in pages:
-        page.can_choose = issubclass(page.specific_class or Page, desired_class)
+        if desired_classes == (Page, ):
+            page.can_choose = True
+        else:
+            page.can_choose = issubclass(page.specific_class or Page, desired_classes)
+
         page.can_descend = page.get_children_count()
 
-        if page.can_choose or page.can_descend:
-            shown_pages.append(page)
-
-    if is_searching:
-        return render(request, 'wagtailadmin/chooser/_search_results.html', {
-            'querystring': get_querystring(request),
-            'searchform': search_form,
-            'pages': shown_pages,
-            'page_type_string': page_type,
-            'page_type': desired_class,
-            'page_types_restricted': page_types_restricted
+    # Render
+    return render_modal_workflow(
+        request,
+        'wagtailadmin/chooser/browse.html', 'wagtailadmin/chooser/browse.js',
+        shared_context(request, {
+            'parent_page': parent_page,
+            'pages': pages,
+            'search_form': SearchForm(),
+            'page_type_string': page_type_string,
+            'page_type_names': [desired_class.get_verbose_name() for desired_class in desired_classes],
+            'page_types_restricted': (page_type_string != 'wagtailcore.page')
         })
+    )
 
-    return render_modal_workflow(request, 'wagtailadmin/chooser/browse.html', 'wagtailadmin/chooser/browse.js', {
-        'allow_external_link': request.GET.get('allow_external_link'),
-        'allow_email_link': request.GET.get('allow_email_link'),
-        'querystring': get_querystring(request),
-        'parent_page': parent_page,
-        'pages': shown_pages,
-        'search_form': search_form,
-        'page_type_string': page_type,
-        'page_type': desired_class,
-        'page_types_restricted': page_types_restricted
-    })
+
+def search(request, parent_page_id=None):
+    # A missing or empty page_type parameter indicates 'all page types' (i.e. descendants of wagtailcore.page)
+    page_type_string = request.GET.get('page_type') or 'wagtailcore.page'
+
+    try:
+        desired_classes = page_models_from_string(page_type_string)
+    except (ValueError, LookupError):
+        raise Http404
+
+    search_form = SearchForm(request.GET)
+    if search_form.is_valid() and search_form.cleaned_data['q']:
+        pages = Page.objects.exclude(
+            depth=1  # never include root
+        )
+        pages = filter_page_type(pages, desired_classes)
+        pages = pages.search(search_form.cleaned_data['q'], fields=['title'])
+    else:
+        pages = Page.objects.none()
+
+    paginator, pages = paginate(request, pages, per_page=25)
+
+    for page in pages:
+        page.can_choose = True
+
+    return render(
+        request, 'wagtailadmin/chooser/_search_results.html',
+        shared_context(request, {
+            'searchform': search_form,
+            'pages': pages,
+            'page_type_string': page_type_string,
+        })
+    )
 
 
 def external_link(request):
@@ -113,11 +171,9 @@ def external_link(request):
     return render_modal_workflow(
         request,
         'wagtailadmin/chooser/external_link.html', 'wagtailadmin/chooser/external_link.js',
-        {
-            'querystring': get_querystring(request),
-            'allow_email_link': request.GET.get('allow_email_link'),
+        shared_context(request, {
             'form': form,
-        }
+        })
     )
 
 
@@ -137,7 +193,9 @@ def email_link(request):
                 None, 'wagtailadmin/chooser/external_link_chosen.js',
                 {
                     'url': 'mailto:' + form.cleaned_data['email_address'],
-                    'link_text': form.cleaned_data['link_text'] if (prompt_for_link_text and form.cleaned_data['link_text']) else form.cleaned_data['email_address']
+                    'link_text': form.cleaned_data['link_text'] if (
+                        prompt_for_link_text and form.cleaned_data['link_text']
+                    ) else form.cleaned_data['email_address']
                 }
             )
     else:
@@ -146,9 +204,7 @@ def email_link(request):
     return render_modal_workflow(
         request,
         'wagtailadmin/chooser/email_link.html', 'wagtailadmin/chooser/email_link.js',
-        {
-            'querystring': get_querystring(request),
-            'allow_external_link': request.GET.get('allow_external_link'),
+        shared_context(request, {
             'form': form,
-        }
+        })
     )

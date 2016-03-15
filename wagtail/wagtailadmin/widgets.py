@@ -2,9 +2,11 @@ from __future__ import absolute_import, unicode_literals
 
 import json
 
+from django.utils.formats import get_format
 from django.core.urlresolvers import reverse
 from django.forms import widgets
 from django.contrib.contenttypes.models import ContentType
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 
@@ -24,7 +26,8 @@ class AdminAutoHeightTextInput(WidgetWithScript, widgets.Textarea):
         super(AdminAutoHeightTextInput, self).__init__(default_attrs)
 
     def render_js_init(self, id_, name, value):
-        return '$("#{0}").autosize();'.format(id_)
+        return 'autosize($("#{0}"));'.format(id_)
+
 
 class AdminDateInput(WidgetWithScript, widgets.DateInput):
     # Set a default date format to match the one that our JS date picker expects -
@@ -34,7 +37,10 @@ class AdminDateInput(WidgetWithScript, widgets.DateInput):
         super(AdminDateInput, self).__init__(attrs=attrs, format=format)
 
     def render_js_init(self, id_, name, value):
-        return 'initDateChooser({0});'.format(json.dumps(id_))
+        return 'initDateChooser({0}, {1});'.format(
+            json.dumps(id_),
+            json.dumps({'dayOfWeekStart': get_format('FIRST_DAY_OF_WEEK')})
+        )
 
 
 class AdminTimeInput(WidgetWithScript, widgets.TimeInput):
@@ -50,7 +56,10 @@ class AdminDateTimeInput(WidgetWithScript, widgets.DateTimeInput):
         super(AdminDateTimeInput, self).__init__(attrs=attrs, format=format)
 
     def render_js_init(self, id_, name, value):
-        return 'initDateTimeChooser({0});'.format(json.dumps(id_))
+        return 'initDateTimeChooser({0}, {1});'.format(
+            json.dumps(id_),
+            json.dumps({'dayOfWeekStart': get_format('FIRST_DAY_OF_WEEK')})
+        )
 
 
 class AdminTagWidget(WidgetWithScript, TagWidget):
@@ -66,7 +75,11 @@ class AdminChooser(WidgetWithScript, widgets.Input):
     choose_another_text = _("Choose another item")
     clear_choice_text = _("Clear choice")
     link_to_chosen_text = _("Edit this item")
-    disallow_edit = False
+    show_edit_link = True
+
+    # when looping over form fields, this one should appear in visible_fields, not hidden_fields
+    # despite the underlying input being type="hidden"
+    is_hidden = False
 
     def get_instance(self, model_class, value):
         # helper method for cleanly turning 'value' into an instance object
@@ -107,23 +120,35 @@ class AdminChooser(WidgetWithScript, widgets.Input):
             self.clear_choice_text = kwargs.pop('clear_choice_text')
         if 'link_to_chosen_text' in kwargs:
             self.link_to_chosen_text = kwargs.pop('link_to_chosen_text')
-        if 'disallow_edit' in kwargs:
-            self.disallow_edit = kwargs.pop('disallow_edit')
+        if 'show_edit_link' in kwargs:
+            self.show_edit_link = kwargs.pop('show_edit_link')
         super(AdminChooser, self).__init__(**kwargs)
 
 
 class AdminPageChooser(AdminChooser):
-    target_content_type = None
     choose_one_text = _('Choose a page')
     choose_another_text = _('Choose another page')
     link_to_chosen_text = _('Edit this page')
 
-    def __init__(self, content_type=None, **kwargs):
+    def __init__(self, content_type=None, can_choose_root=False, **kwargs):
         super(AdminPageChooser, self).__init__(**kwargs)
-        self.target_content_type = content_type or ContentType.objects.get_for_model(Page)
+        self._content_type = content_type
+        self.can_choose_root = can_choose_root
+
+    @cached_property
+    def target_content_types(self):
+        target_content_types = self._content_type or ContentType.objects.get_for_model(Page)
+        # Make sure target_content_types is a list or tuple
+        if not isinstance(target_content_types, (list, tuple)):
+            target_content_types = [target_content_types]
+        return target_content_types
 
     def render_html(self, name, value, attrs):
-        model_class = self.target_content_type.model_class()
+        if len(self.target_content_types) == 1:
+            model_class = self.target_content_types[0].model_class()
+        else:
+            model_class = Page
+
         instance, value = self.get_instance_and_id(model_class, value)
 
         original_field_html = super(AdminPageChooser, self).render_html(name, value, attrs)
@@ -137,17 +162,27 @@ class AdminPageChooser(AdminChooser):
         })
 
     def render_js_init(self, id_, name, value):
-        model_class = self.target_content_type.model_class()
-        if isinstance(value, model_class):
+        if isinstance(value, Page):
             page = value
         else:
-            page = self.get_instance(model_class, value)
-        parent = page.get_parent() if page else None
-        content_type = self.target_content_type
+            # Value is an ID look up object
+            if len(self.target_content_types) == 1:
+                model_class = self.target_content_types[0].model_class()
+            else:
+                model_class = Page
 
-        return "createPageChooser({id}, {content_type}, {parent});".format(
+            page = self.get_instance(model_class, value)
+
+        parent = page.get_parent() if page else None
+
+        return "createPageChooser({id}, {content_type}, {parent}, {can_choose_root});".format(
             id=json.dumps(id_),
-            content_type=json.dumps('{app}.{model}'.format(
-                app=content_type.app_label,
-                model=content_type.model)),
-            parent=json.dumps(parent.id if parent else None))
+            content_type=json.dumps([
+                '{app}.{model}'.format(
+                    app=content_type.app_label,
+                    model=content_type.model)
+                for content_type in self.target_content_types
+            ]),
+            parent=json.dumps(parent.id if parent else None),
+            can_choose_root=('true' if self.can_choose_root else 'false')
+        )

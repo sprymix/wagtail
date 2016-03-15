@@ -1,21 +1,22 @@
 import json
-import uuid
 
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib.auth.decorators import permission_required
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.template import RequestContext
-from django.template.loader import render_to_string
-from django.views.decorators.http import require_POST
 
+from wagtail.utils.pagination import paginate
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
+from wagtail.wagtailadmin.utils import PermissionPolicyChecker
+from wagtail.wagtailcore.models import Collection
 from wagtail.wagtailsearch.backends import get_search_backends
 
-from wagtail.wagtaildocs.models import Document
-from wagtail.wagtaildocs.forms import DocumentForm, DocumentFormMulti
+from wagtail.wagtaildocs.models import get_document_model
+from wagtail.wagtaildocs.forms import get_document_form
+from wagtail.wagtaildocs.permissions import permission_policy
+
+
+permission_checker = PermissionPolicyChecker(permission_policy)
+
 
 def get_document_json(document):
     """
@@ -26,12 +27,15 @@ def get_document_json(document):
     return json.dumps({
         'id': document.id,
         'title': document.title,
-        'edit_link': reverse('wagtaildocs_edit_document', args=(document.id,)),
+        'edit_link': reverse('wagtaildocs:edit', args=(document.id,)),
     })
 
 
 def chooser(request):
-    if request.user.has_perm('wagtaildocs.add_document'):
+    Document = get_document_model()
+
+    if permission_policy.user_has_permission(request.user, 'add'):
+        DocumentForm = get_document_form(Document)
         uploadform = DocumentForm()
     else:
         uploadform = None
@@ -40,32 +44,25 @@ def chooser(request):
 
     q = None
     is_searching = False
-    if 'q' in request.GET or 'p' in request.GET:
+    if 'q' in request.GET or 'p' in request.GET or 'collection_id' in request.GET:
+        documents = Document.objects.all()
+
+        collection_id = request.GET.get('collection_id')
+        if collection_id:
+            documents = documents.filter(collection=collection_id)
+
         searchform = SearchForm(request.GET)
         if searchform.is_valid():
             q = searchform.cleaned_data['q']
 
-            # page number
-            p = request.GET.get("p", 1)
-
-            documents = Document.search(q, results_per_page=10, prefetch_tags=True)
-
+            documents = documents.search(q)
             is_searching = True
-
         else:
-            documents = Document.objects.order_by('-created_at')
-
-            p = request.GET.get("p", 1)
-            paginator = Paginator(documents, 10)
-
-            try:
-                documents = paginator.page(p)
-            except PageNotAnInteger:
-                documents = paginator.page(1)
-            except EmptyPage:
-                documents = paginator.page(paginator.num_pages)
-
+            documents = documents.order_by('-created_at')
             is_searching = False
+
+        # Pagination
+        paginator, documents = paginate(request, documents, per_page=10)
 
         return render(request, "wagtaildocs/chooser/results.html", {
             'documents': documents,
@@ -75,101 +72,57 @@ def chooser(request):
     else:
         searchform = SearchForm()
 
-        documents = Document.objects.order_by('-created_at')
-        p = request.GET.get("p", 1)
-        paginator = Paginator(documents, 10)
+        collections = Collection.objects.all()
+        if len(collections) < 2:
+            collections = None
 
-        try:
-            documents = paginator.page(p)
-        except PageNotAnInteger:
-            documents = paginator.page(1)
-        except EmptyPage:
-            documents = paginator.page(paginator.num_pages)
+        documents = Document.objects.order_by('-created_at')
+        paginator, documents = paginate(request, documents, per_page=10)
 
     return render_modal_workflow(request, 'wagtaildocs/chooser/chooser.html', 'wagtaildocs/chooser/chooser.js', {
         'documents': documents,
         'uploadform': uploadform,
         'searchform': searchform,
+        'collections': collections,
         'is_searching': False,
-        'uploadid': uuid.uuid4(),
     })
 
 
 def document_chosen(request, document_id):
-    document = get_object_or_404(Document, id=document_id)
-
-    document_json = json.dumps({
-        'id': document.id,
-        'title': document.title,
-        'edit_link': reverse('wagtaildocs_edit_document', args=(document.id,)),
-        'url': document.file.url,
-    })
+    document = get_object_or_404(get_document_model(), id=document_id)
 
     return render_modal_workflow(
         request, None, 'wagtaildocs/chooser/document_chosen.js',
-        {'document_json': document_json}
+        {'document_json': get_document_json(document)}
     )
 
 
-def json_response(document):
-    return HttpResponse(json.dumps(document), content_type='application/json')
-
-
-@require_POST
-@permission_required('wagtaildocs.add_document')
+@permission_checker.require('add')
 def chooser_upload(request):
-    if not request.is_ajax():
-        return HttpResponseBadRequest("Cannot POST to this view without AJAX")
+    Document = get_document_model()
+    DocumentForm = get_document_form(Document)
 
-    if not request.FILES:
-        return HttpResponseBadRequest("Must upload a file")
+    if request.POST:
+        document = Document(uploaded_by_user=request.user)
+        form = DocumentForm(request.POST, request.FILES, instance=document)
 
-    # Save it
-    doc = Document(uploaded_by_user=request.user,
-                   title=request.FILES['files[]'].name,
-                   file=request.FILES['files[]'])
-    doc.save()
+        if form.is_valid():
+            form.save()
 
-    # Success! Send back an edit form for this doc to the user
-    form = DocumentFormMulti(instance=doc, prefix='doc-%d' % doc.id)
+            # Reindex the document to make sure all tags are indexed
+            for backend in get_search_backends():
+                backend.add(document)
 
-    return json_response({
-        'success': True,
-        'doc_id': int(doc.id),
-        'form': render_to_string('wagtaildocs/chooser/update.html', {
-            'doc': doc,
-            'form': form,
-        }, context_instance=RequestContext(request)),
-    })
+            return render_modal_workflow(
+                request, None, 'wagtaildocs/chooser/document_chosen.js',
+                {'document_json': get_document_json(document)}
+            )
+    else:
+        form = DocumentForm()
 
+    documents = Document.objects.order_by('title')
 
-@require_POST
-@permission_required('wagtailadmin.access_admin')
-def chooser_select(request, doc_id):
-    document = get_object_or_404(Document, id=doc_id)
-
-    if not request.is_ajax():
-        return HttpResponseBadRequest("Cannot POST to this view without AJAX")
-
-    if not document.is_editable_by_user(request.user):
-        raise PermissionDenied
-
-    form = DocumentFormMulti(request.POST, request.FILES, instance=document,
-                             prefix='doc-' + doc_id)
-
-    if form.is_valid():
-        form.save()
-
-        # Reindex the document to make sure all tags are indexed
-        for backend in get_search_backends():
-            backend.add(document)
-
-        document_json = json.dumps({
-            'id': document.id,
-            'title': document.title,
-            'url': document.file.url
-        })
-        return render_modal_workflow(
-            request, None, 'wagtaildocs/chooser/document_chosen.js',
-            {'document_json': document_json}
-        )
+    return render_modal_workflow(
+        request, 'wagtaildocs/chooser/chooser.html', 'wagtaildocs/chooser/chooser.js',
+        {'documents': documents, 'uploadform': form}
+    )
