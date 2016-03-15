@@ -1,13 +1,13 @@
-======
-Topics
-======
+===========
+Usage guide
+===========
 
 .. toctree::
     :maxdepth: 2
 
-    creating_pages
+    pages
     writing_templates
-    images/index
+    images
     search/index
     snippets
     streamfield

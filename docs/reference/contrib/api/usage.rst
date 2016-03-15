@@ -258,9 +258,14 @@ Exact matches on field values can be done by using a query parameter with the sa
 Filtering by section of the tree
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is also possible to filter the listing to only include pages with a particular parent. This is useful if you have multiple blogs on your site and only want to view the contents of one of them.
+It is also possible to filter the listing to only include pages with a particular parent or ancestor. This is useful if you have multiple blogs on your site and only want to view the contents of one of them.
 
-For example (imagine we are in the same project as all previous examples, and page id ``7`` refers to the other blog index):
+
+**child_of**
+
+Filters the listing to only include direct children of the specified page.
+
+For example, to get all the pages that are direct children of page 7.
 
 .. code-block:: json
 
@@ -281,6 +286,62 @@ For example (imagine we are in the same project as all previous examples, and pa
                     "detail_url": "http://api.example.com/api/v1/pages/4/"
                 },
                 "title": "Other blog 1"
+            }
+        ]
+    }
+
+
+**descendant_of**
+
+.. versionadded:: 1.1
+
+Filters the listing to only include descendants of the specified page.
+
+For example, to get all pages underneath the homepage:
+
+.. code-block:: json
+
+    GET /api/v1/pages/?descendant_of=2
+
+    HTTP 200 OK
+    Content-Type: application/json
+
+    {
+        "meta": {
+            "total_count": 1
+        },
+        "pages": [
+            {
+                "id": 3,
+                "meta": {
+                    "type": "demo.BlogIndexPage",
+                    "detail_url": "http://api.example.com/api/v1/pages/3/"
+                },
+                "title": "Blog"
+            },
+            {
+                "id": 4,
+                "meta": {
+                    "type": "demo.BlogPage",
+                    "detail_url": "http://api.example.com/api/v1/pages/4/"
+                },
+                "title": "My blog 1",
+            },
+            {
+                "id": 5,
+                "meta": {
+                    "type": "demo.BlogPage",
+                    "detail_url": "http://api.example.com/api/v1/pages/5/"
+                },
+                "title": "My blog 2",
+            },
+            {
+                "id": 6,
+                "meta": {
+                    "type": "demo.BlogPage",
+                    "detail_url": "http://api.example.com/api/v1/pages/6/"
+                },
+                "title": "My blog 3",
             }
         ]
     }
@@ -358,7 +419,7 @@ Like filtering, it is also possible to order on database fields. The endpoint ac
 Pagination
 ^^^^^^^^^^
 
-Pagination is done using two query parameters called ``limit`` and ``offset``. ``limit`` sets the number of results to return and ``offset`` is the index of the first result to return. The default value for ``limit`` is ``20`` and its maximum value is ``100`` (which can be changed using the ``WAGTAILAPI_MAX_RESULTS`` setting).
+Pagination is done using two query parameters called ``limit`` and ``offset``. ``limit`` sets the number of results to return and ``offset`` is the index of the first result to return. The default and maximum value for ``limit`` is ``20``. The maximum value can be changed using the ``WAGTAILAPI_LIMIT_MAX`` setting.
 
 .. code-block:: json
 
@@ -686,7 +747,7 @@ The images endpoint also accepts the ``order`` parameter which should be set to 
 Pagination
 ^^^^^^^^^^
 
-Pagination is done using two query parameters called ``limit`` and ``offset``. ``limit`` sets the number of results to return and ``offset`` is the index of the first result to return. The default value for ``limit`` is ``20`` and its maximum value is ``100`` (which can be changed using the ``WAGTAILAPI_MAX_RESULTS`` setting).
+Pagination is done using two query parameters called ``limit`` and ``offset``. ``limit`` sets the number of results to return and ``offset`` is the index of the first result to return. The default and maximum value for ``limit`` is ``20``. The maximum value can be changed using the ``WAGTAILAPI_LIMIT_MAX`` setting.
 
 .. code-block:: json
 

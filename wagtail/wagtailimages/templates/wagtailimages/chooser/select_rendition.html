@@ -7,7 +7,7 @@
     <div class="crop-image">
         {% image image original %}
     </div>
-    <form action="{% url 'wagtailimages_chooser_select_rendition' image.id %}{% if form.post_processing_spec %}?pps={{ form.post_processing_spec|iriencode }}{% endif %}" method="POST">
+    <form action="{% url 'wagtailimages:chooser_select_rendition' image.id %}{% if form.post_processing_spec %}?pps={{ form.post_processing_spec|iriencode }}{% endif %}" method="POST">
         {% csrf_token %}
         <ul class="fields">
             {% for field in form %}

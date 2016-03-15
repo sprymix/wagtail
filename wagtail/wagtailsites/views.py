@@ -1,79 +1,55 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import permission_required, user_passes_test
-from django.utils.translation import ugettext as _
-from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext_lazy as __
 
 from wagtail.wagtailcore.models import Site
+from wagtail.wagtailcore.permissions import site_permission_policy
 from wagtail.wagtailsites.forms import SiteForm
-from wagtail.wagtailadmin import messages
-
-def user_has_site_model_perm(user):
-    for verb in ['add', 'change', 'delete']:
-        if user.has_perm('site.%s_site' % verb):
-            return True
-    return False
+from wagtail.wagtailadmin.views.generic import IndexView, CreateView, EditView, DeleteView
 
 
-@user_passes_test(user_has_site_model_perm)
-def index(request):
-    sites = Site.objects.all()
-    return render(request, 'wagtailsites/index.html', {
-        'sites': sites,
-    })
+class Index(IndexView):
+    permission_policy = site_permission_policy
+    model = Site
+    context_object_name = 'sites'
+    template_name = 'wagtailsites/index.html'
+    add_url_name = 'wagtailsites:add'
+    page_title = __("Sites")
+    add_item_label = __("Add a site")
+    header_icon = 'site'
 
 
-@permission_required('site.add_site')
-def create(request):
-    if request.POST:
-        form = SiteForm(request.POST)
-        if form.is_valid():
-            site = form.save()
-            messages.success(request, _("Site '{0}' created.").format(site.hostname), buttons=[
-                messages.button(reverse('wagtailsites_edit', args=(site.id,)), _('Edit'))
-            ])
-            return redirect('wagtailsites_index')
-        else:
-            messages.error(request, _("The site could not be created due to errors."))
-    else:
-        form = SiteForm()
-
-    return render(request, 'wagtailsites/create.html', {
-        'form': form,
-    })
+class Create(CreateView):
+    permission_policy = site_permission_policy
+    form_class = SiteForm
+    page_title = __("Add site")
+    success_message = __("Site '{0}' created.")
+    add_url_name = 'wagtailsites:add'
+    edit_url_name = 'wagtailsites:edit'
+    index_url_name = 'wagtailsites:index'
+    template_name = 'wagtailsites/create.html'
+    header_icon = 'site'
 
 
-@permission_required('site.change_site')
-def edit(request, site_id):
-    site = get_object_or_404(Site, id=site_id)
-
-    if request.POST:
-        form = SiteForm(request.POST, instance=site)
-        if form.is_valid():
-            site = form.save()
-            messages.success(request, _("Site '{0}' updated.").format(site.hostname), buttons=[
-                messages.button(reverse('wagtailsites_edit', args=(site.id,)), _('Edit'))
-            ])
-            return redirect('wagtailsites_index')
-        else:
-            messages.error(request, _("The site could not be saved due to errors."))
-    else:
-        form = SiteForm(instance=site)
-
-    return render(request, 'wagtailsites/edit.html', {
-        'site': site,
-        'form': form,
-    })
+class Edit(EditView):
+    permission_policy = site_permission_policy
+    model = Site
+    form_class = SiteForm
+    success_message = __("Site '{0}' updated.")
+    error_message = __("The site could not be saved due to errors.")
+    delete_item_label = __("Delete site")
+    edit_url_name = 'wagtailsites:edit'
+    index_url_name = 'wagtailsites:index'
+    delete_url_name = 'wagtailsites:delete'
+    context_object_name = 'site'
+    template_name = 'wagtailsites/edit.html'
+    header_icon = 'site'
 
 
-@permission_required('site.delete_site')
-def delete(request, site_id):
-    site = get_object_or_404(Site, id=site_id)
-
-    if request.POST:
-        site.delete()
-        messages.success(request, _("Site '{0}' deleted.").format(site.hostname))
-        return redirect('wagtailsites_index')
-
-    return render(request, "wagtailsites/confirm_delete.html", {
-        'site': site,
-    })
+class Delete(DeleteView):
+    permission_policy = site_permission_policy
+    model = Site
+    success_message = __("Site '{0}' deleted.")
+    index_url_name = 'wagtailsites:index'
+    delete_url_name = 'wagtailsites:delete'
+    page_title = __("Delete site")
+    confirmation_message = __("Are you sure you want to delete this site?")
+    header_icon = 'site'

@@ -4,6 +4,8 @@ from wagtail.wagtailsearch.backends.base import BaseSearch, BaseSearchQuery, Bas
 
 
 class DBSearchQuery(BaseSearchQuery):
+    DEFAULT_OPERATOR = 'and'
+
     def _process_lookup(self, field, lookup, value):
         return models.Q(**{field.get_attname(self.queryset.model) + '__' + lookup: value})
 
@@ -22,10 +24,12 @@ class DBSearchQuery(BaseSearchQuery):
 
         return q
 
-    def get_q(self):
-        # Get filters as a q object
-        q = self._get_filters_from_queryset()
+    def get_extra_q(self):
+        # Run _get_filters_from_queryset to test that no fields that are not
+        # a FilterField have been used in the query.
+        self._get_filters_from_queryset()
 
+        q = models.Q()
         model = self.queryset.model
 
         if self.query_string is not None:
@@ -50,17 +54,20 @@ class DBSearchQuery(BaseSearchQuery):
                     # Filter on this field
                     term_query |= models.Q(**{'%s__icontains' % field_name: term})
 
-                q &= term_query
+                if self.operator == 'or':
+                    q |= term_query
+                elif self.operator == 'and':
+                    q &= term_query
 
         return q
 
 
 class DBSearchResults(BaseSearchResults):
     def get_queryset(self):
-        model = self.query.queryset.model
-        q = self.query.get_q()
+        queryset = self.query.queryset
+        q = self.query.get_extra_q()
 
-        return model.objects.filter(q).distinct()[self.start:self.stop]
+        return queryset.filter(q).distinct()[self.start:self.stop]
 
     def _do_search(self):
         if self.return_pks:
@@ -73,28 +80,26 @@ class DBSearchResults(BaseSearchResults):
 
 
 class DBSearch(BaseSearch):
+    query_class = DBSearchQuery
+    results_class = DBSearchResults
+
     def __init__(self, params):
         super(DBSearch, self).__init__(params)
 
     def reset_index(self):
-        pass # Not needed
+        pass  # Not needed
 
     def add_type(self, model):
-        pass # Not needed
+        pass  # Not needed
 
     def refresh_index(self):
-        pass # Not needed
+        pass  # Not needed
 
     def add(self, obj):
-        pass # Not needed
+        pass  # Not needed
 
     def add_bulk(self, model, obj_list):
-        return # Not needed
+        return  # Not needed
 
     def delete(self, obj):
-        pass # Not needed
-
-    def _search(self, queryset, query_string, fields=None, return_pks=False,
-                                              include_partials=True):
-        return DBSearchResults(self, DBSearchQuery(queryset, query_string, fields=fields),
-                                     return_pks=return_pks)
+        pass  # Not needed

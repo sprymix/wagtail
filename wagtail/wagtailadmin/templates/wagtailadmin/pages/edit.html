@@ -3,7 +3,7 @@
 {% load gravatar %}
 {% load i18n %}
 {% block titletag %}{% blocktrans with title=page.title page_type=content_type.model_class.get_verbose_name %}Editing {{ page_type }}: {{ title }}{% endblocktrans %}{% endblock %}
-{% block bodyclass %}menu-explorer page-editor model-{{ content_type.model }}{% endblock %}
+{% block bodyclass %}page-editor {% if page.live %}page-is-live{% endif %} model-{{ content_type.model }}{% endblock %}
 
 {% block content %}
     {% page_permissions page as page_perms %}
@@ -16,11 +16,7 @@
             </div>
             <div class="right col3">
                 {% trans "Status" %}
-                {% if page.live %}
-                    <a href="{{ page.url }}" class="status-tag {% if page.live %}primary{% endif %}">{{ page.status_string }}</a>
-                {% else %}
-                    <span class="status-tag">{{ page.status_string }}</span>
-                {% endif %}
+                {% include "wagtailadmin/shared/page_status_tag.html" with page=page %}
 
                 {% include "wagtailadmin/pages/_privacy_switch.html" with page=page page_perms=page_perms only %}
                 {% include "wagtailadmin/pages/_lock_switch.html" %}
@@ -28,29 +24,38 @@
         </div>
     </header>
 
-    <form id="page-edit-form" action="{% url 'wagtailadmin_pages_edit' page.id %}" method="POST">
+    <form id="page-edit-form" action="{% url 'wagtailadmin_pages:edit' page.id %}" method="POST"{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
         {% csrf_token %}
         {{ edit_handler.render_form_content }}
+
+        {% if is_revision %}
+            <input type="hidden" name="revision" value="{{ revision.id }}" />
+        {% endif %}
 
         <footer>
             <ul>
                 <li class="actions">
-                    <div class="dropdown dropup dropdown-button match-width">
-                        <input type="submit" value="{% if page.locked %}{% trans 'Page locked' %}{% else %}{% trans 'Save and continue editing' %}{% endif %}" class="stay button" {% if page.locked %}disabled {% endif %} />
+                    <div class="dropdown dropup dropdown-button match-width {% if is_revision %}warning{% endif %}">
+                        <button type="submit" class="action-save button-longrunning stay {% if is_revision %}warning{% endif %}" tabindex="3" data-clicked-text="{% trans 'Saving...' %}" {% if page.locked %}disabled {% endif %}><span class="icon icon-spinner"></span><em>{% if page.locked %}{% trans 'Page locked' %}{% else %}{% if is_revision %}{% trans 'Replace current draft' %}{% else %}{% trans 'Save draft and continue editing...' %}{% endif %}{% endif %}</em></button>
 
                         {% if not page.locked %}
                             <div class="dropdown-toggle icon icon-arrow-up"></div>
                             <ul role="menu">
-                                {% if page_perms.can_unpublish %}
-                                    <li><a href="{% url 'wagtailadmin_pages_unpublish' page.id %}">{% trans 'Unpublish' %}</a></li>
+                                {% if not is_revision and page_perms.can_unpublish %}
+                                    <li><a href="{% url 'wagtailadmin_pages:unpublish' page.id %}">{% trans 'Unpublish' %}</a></li>
                                 {% endif %}
-                                {% if page_perms.can_delete %}
-                                    <li><a href="{% url 'wagtailadmin_pages_delete' page.id %}" class="shortcut">{% trans 'Delete' %}</a></li>
+                                {% if not is_revision and page_perms.can_delete %}
+                                    <li><a href="{% url 'wagtailadmin_pages:delete' page.id %}" class="shortcut">{% trans 'Delete' %}</a></li>
                                 {% endif %}
                                 {% if page_perms.can_publish %}
-                                    <li><input type="submit" name="action-publish" value="{% trans 'Publish' %}" class="button" /></li>
+                                    <li>
+                                        <button type="submit" name="action-publish" value="action-publish" class="button-longrunning {% if is_revision %}warning{% endif %}" tabindex="3" data-clicked-text="{% trans 'Publishing...' %}" {% if page.locked %}disabled {% endif %}><span class="icon icon-spinner"></span><em>{% if is_revision %}{% trans 'Publish this revision' %}{% else %}{% trans 'Publish' %}{% endif %}</em></button>
+                                    </li>
                                 {% endif %}
-                                <li><input type="submit" name="action-submit" value="{% trans 'Submit for moderation' %}" class="button" /></li>
+                                {% if not is_revision %}
+                                    <li><input type="submit" name="action-submit" value="{% trans 'Submit for moderation' %}" class="button" /></li>
+                                {% endif %}
+
                                 <li><input type="submit" value="{% trans 'Save draft' %}" class="leave button" /></li>
                             </ul>
                         {% endif %}
@@ -86,6 +91,7 @@
                                     <span class="avatar small icon icon-user"><img src="{% gravatar_url page.get_latest_revision.user.email 25 %}" /></span>
                                 {% endif %}
                             {% endif %}
+                            <a href="{% url 'wagtailadmin_pages:revisions_index' page.id %}" class="underlined">Revisions</a>
                         {% endif %}
                     </p>
                 </li>
@@ -96,8 +102,27 @@
 {% endblock %}
 
 {% block extra_css %}
+    {{ block.super }}
     {% include "wagtailadmin/pages/_editor_css.html" %}
 {% endblock %}
 {% block extra_js %}
+    {{ block.super }}
     {% include "wagtailadmin/pages/_editor_js.html" %}
+
+    <script>
+        $(function() {
+            /* Make user confirm before leaving the editor if there are unsaved changes */
+            {% trans "This page has unsaved changes." as confirmation_message %}
+            enableDirtyFormCheck(
+                '#page-edit-form',
+                {
+                    confirmationMessage: '{{ confirmation_message|escapejs }}',
+
+                    {% if form.errors %}
+                        alwaysDirty: true,
+                    {% endif %}
+                }
+            );
+        });
+    </script>
 {% endblock %}

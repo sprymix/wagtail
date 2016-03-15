@@ -1,12 +1,15 @@
-import warnings
-
 from django import forms
 from django.forms.models import modelform_factory
 from django.utils.translation import ugettext as _
 
-from wagtail.utils.deprecation import RemovedInWagtail12Warning
+from wagtail.wagtailadmin import widgets
+from wagtail.wagtailadmin.forms import (
+    BaseCollectionMemberForm, collection_member_permission_formset_factory
+)
 from wagtail.wagtailimages.formats import get_image_formats
 from wagtail.wagtailimages.fields import WagtailImageField
+from wagtail.wagtailimages.models import Image
+from wagtail.wagtailimages.permissions import permission_policy as images_permission_policy
 
 
 # Callback to allow us to override the default form field for the image file field
@@ -19,20 +22,21 @@ def formfield_for_dbfield(db_field, **kwargs):
     return db_field.formfield(**kwargs)
 
 
+class BaseImageForm(BaseCollectionMemberForm):
+    permission_policy = images_permission_policy
+
+
 def get_image_form(model, hide_file=False):
-    if hasattr(model, 'admin_form_fields'):
-        fields = model.admin_form_fields
-    else:
-        fields = '__all__'
-
-        warnings.warn(
-            "Custom image models without an 'admin_form_fields' attribute are now deprecated. "
-            "Add admin_form_fields = (tuple of field names) to {classname}".format(
-                classname=model.__name__
-            ), RemovedInWagtail12Warning, stacklevel=2)
-
+    fields = model.admin_form_fields
+    if 'collection' not in fields:
+        # force addition of the 'collection' field, because leaving it out can
+        # cause dubious results when multiple collections exist (e.g adding the
+        # document to the root collection where the user may not have permission) -
+        # and when only one collection exists, it will get hidden anyway.
+        fields = list(fields) + ['collection']
 
     widgets = {
+        'tags': widgets.AdminTagWidget,
         'focal_point_x': forms.HiddenInput(attrs={'class': 'focal_point_x'}),
         'focal_point_y': forms.HiddenInput(attrs={'class': 'focal_point_y'}),
         'focal_point_width': forms.HiddenInput(attrs={'class': 'focal_point_width'}),
@@ -49,6 +53,7 @@ def get_image_form(model, hide_file=False):
 
     return modelform_factory(
         model,
+        form=BaseImageForm,
         fields=fields,
         formfield_callback=formfield_for_dbfield,
         widgets=widgets)
@@ -118,3 +123,13 @@ class ImageCropperForm(forms.Form):
             kwargs['initial']['force_selection'] = True
 
         super(ImageCropperForm, self).__init__(*args, **kwargs)
+
+
+GroupImagePermissionFormSet = collection_member_permission_formset_factory(
+    Image,
+    [
+        ('add_image', _("Add"), _("Add/edit images you own")),
+        ('change_image', _("Edit"), _("Edit any image")),
+    ],
+    'wagtailimages/permissions/includes/image_permissions_formset.html'
+)

@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*
+from __future__ import unicode_literals
+
 import json
 
 from django.apps import apps
 from django.test import TestCase
 from django.db import models
+from django.template import Template, Context, engines
+from django.utils.safestring import SafeText
+from django.utils.six import text_type
 
 from wagtail.tests.testapp.models import StreamModel
 from wagtail.wagtailcore import blocks
@@ -128,3 +134,60 @@ class TestStreamValueAccess(TestCase):
         self.assertEqual(len(fetched_body), 1)
         self.assertIsInstance(fetched_body[0].value, RichText)
         self.assertEqual(fetched_body[0].value.source, "<h2>hello world</h2>")
+
+
+class TestStreamFieldRenderingBase(TestCase):
+    def setUp(self):
+        self.image = Image.objects.create(
+            title='Test image',
+            file=get_test_image_file())
+
+        self.instance = StreamModel.objects.create(body=json.dumps([
+            {'type': 'rich_text', 'value': '<p>Rich text</p>'},
+            {'type': 'rich_text', 'value': '<p>Привет, Микола</p>'},
+            {'type': 'image', 'value': self.image.pk},
+            {'type': 'text', 'value': 'Hello, World!'}]))
+
+        img_tag = self.image.get_rendition('original').img_tag()
+        self.expected = ''.join([
+            '<div class="block-rich_text"><div class="rich-text"><p>Rich text</p></div></div>',
+            '<div class="block-rich_text"><div class="rich-text"><p>Привет, Микола</p></div></div>',
+            '<div class="block-image">{}</div>'.format(img_tag),
+            '<div class="block-text">Hello, World!</div>',
+        ])
+
+
+class TestStreamFieldRendering(TestStreamFieldRenderingBase):
+    def test_to_string(self):
+        rendered = text_type(self.instance.body)
+        self.assertHTMLEqual(rendered, self.expected)
+        self.assertIsInstance(rendered, SafeText)
+
+    def test___html___access(self):
+        rendered = self.instance.body.__html__()
+        self.assertHTMLEqual(rendered, self.expected)
+        self.assertIsInstance(rendered, SafeText)
+
+
+class TestStreamFieldDjangoRendering(TestStreamFieldRenderingBase):
+    def render(self, string, context):
+        return Template(string).render(Context(context))
+
+    def test_render(self):
+        rendered = self.render('{{ instance.body }}', {
+            'instance': self.instance})
+        self.assertHTMLEqual(rendered, self.expected)
+
+
+class TestStreamFieldJinjaRendering(TestStreamFieldRenderingBase):
+    def setUp(self):
+        super(TestStreamFieldJinjaRendering, self).setUp()
+        self.engine = engines['jinja2']
+
+    def render(self, string, context):
+        return self.engine.from_string(string).render(context)
+
+    def test_render(self):
+        rendered = self.render('{{ instance.body }}', {
+            'instance': self.instance})
+        self.assertHTMLEqual(rendered, self.expected)

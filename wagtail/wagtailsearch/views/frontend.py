@@ -1,8 +1,6 @@
-import json
-
 from django.conf import settings
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from wagtail.wagtailcore import models
@@ -40,13 +38,18 @@ def search(
 
     # Search
     if query_string != '':
-        search_results = models.Page.search(
-            query_string,
-            show_unpublished=show_unpublished,
-            search_title_only=search_title_only,
-            extra_filters=extra_filters,
-            path=path if path else request.site.root_page.path
-        )
+        pages = models.Page.objects.filter(path__startswith=(path or request.site.root_page.path))
+
+        if not show_unpublished:
+            pages = pages.live()
+
+        if extra_filters:
+            pages = pages.filter(**extra_filters)
+
+        if search_title_only:
+            search_results = pages.search(query_string, fields=['title'])
+        else:
+            search_results = pages.search(query_string)
 
         # Get query object
         query = Query.get(query_string)
@@ -66,7 +69,8 @@ def search(
         query = None
         search_results = None
 
-    if use_json: # Return a json response
+    if use_json:
+        # Return a json response
         if search_results:
             search_results_json = []
             for result in search_results:
@@ -78,10 +82,11 @@ def search(
                     if hasattr(result_specific, attr)
                 ))
 
-            return HttpResponse(json.dumps(search_results_json))
+            return JsonResponse(search_results_json, safe=False)
         else:
-            return HttpResponse('[]')
-    else: # Render a template
+            return JsonResponse([], safe=False)
+    else:
+        # Render a template
         if request.is_ajax() and template_ajax:
             template = template_ajax
 

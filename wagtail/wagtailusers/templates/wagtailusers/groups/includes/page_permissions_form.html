@@ -1,17 +1,14 @@
 {% load i18n %}
 
 <td>
-    {% include "wagtailadmin/edit_handlers/field_panel_field.html" with field=form.page only %}
-</td>
-<td>
-    {% include "wagtailadmin/edit_handlers/field_panel_field.html" with field=form.permission_type only %}
-
-    {{ form.id }}
-    {{ form.ORDER }}
+    {% include "wagtailadmin/shared/field.html" with field=form.page only %}
     {{ form.DELETE }}
 </td>
 
-<td>
-    <button class="button-secondary button-small no" id="{{ form.DELETE.id_for_label }}-button">{% trans "Delete" %}</button>
-</td>
+{% for option in form.permission_types %}
+    <td>{{ option.tag }}</td>
+{% endfor %}
 
+<td>
+    <button class="button-secondary button-small no" type="button" id="{{ form.DELETE.id_for_label }}-button">{% trans "Delete" %}</button>
+</td>

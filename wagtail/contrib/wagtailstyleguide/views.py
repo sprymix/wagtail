@@ -1,13 +1,14 @@
 from django import forms
 from django.shortcuts import render
 from django.utils.translation import ugettext as _
+from django.core.paginator import Paginator
 from wagtail.wagtailadmin import messages
-from django.contrib.auth.decorators import permission_required
 
 from wagtail.wagtailadmin.forms import SearchForm
 from wagtail.wagtailadmin.widgets import AdminPageChooser, AdminDateInput, AdminTimeInput, AdminDateTimeInput
 from wagtail.wagtailimages.widgets import AdminImageChooser
 from wagtail.wagtaildocs.widgets import AdminDocumentChooser
+
 
 class ExampleForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -31,14 +32,13 @@ class ExampleForm(forms.Form):
     time = forms.TimeField()
     datetime = forms.DateTimeField()
     select = forms.ChoiceField(choices=CHOICES)
+    radio_select = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect)
     boolean = forms.BooleanField(required=False)
     page_chooser = forms.BooleanField(required=True)
     image_chooser = forms.BooleanField(required=True)
     document_chooser = forms.BooleanField(required=True)
 
 
-
-@permission_required('wagtailadmin.access_admin')
 def index(request):
 
     form = SearchForm(placeholder=_("Search something"))
@@ -58,19 +58,11 @@ def index(request):
         messages.button('', _('Edit'))
     ])
 
-    fake_pagination = {
-        'number': 1,
-        'previous_page_number': 1,
-        'next_page_number': 2,
-        'has_previous': True,
-        'has_next': True,
-        'paginator': {
-            'num_pages': 10,
-        },
-    }
+    paginator = Paginator(list(range(100)), 10)
+    page = paginator.page(2)
 
     return render(request, 'wagtailstyleguide/base.html', {
         'search_form': form,
         'example_form': example_form,
-        'fake_pagination': fake_pagination,
+        'example_page': page,
     })

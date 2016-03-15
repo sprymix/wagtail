@@ -29,7 +29,7 @@ Features
 * Straightforward integration with existing Django apps
 * Simple, configurable permissions
 * Workflow support
-* An extensible `form builder <http://docs.wagtail.io/en/latest/form_builder.html>`_
+* An extensible `form builder <http://docs.wagtail.io/en/latest/reference/contrib/forms.html>`_
 * Multi-site and multi-language support
 * Optional `static site generation <http://docs.wagtail.io/en/latest/reference/contrib/staticsitegen.html>`_
 * Excellent `test coverage <https://coveralls.io/r/torchbox/wagtail?branch=master>`_
@@ -38,14 +38,15 @@ Find out more at `wagtail.io <http://wagtail.io/>`_.
 
 Getting started
 ~~~~~~~~~~~~~~~
-    .. code-block::
 
-     pip install wagtail
-     wagtail start mysite
-     cd mysite
-     python manage.py migrate
-     python manage.py createsuperuser
-     python manage.py runserver
+.. code-block:: sh
+
+    pip install wagtail
+    wagtail start mysite
+    cd mysite
+    python manage.py migrate
+    python manage.py createsuperuser
+    python manage.py runserver
 
 then sign in at http://127.0.0.1:8000/admin/
 
@@ -69,7 +70,7 @@ Wagtail is sponsored by `Torchbox <https://torchbox.com/>`_. If you need help im
 
 Compatibility
 ~~~~~~~~~~~~~
-Wagtail supports Django 1.7.1+ on Python 2.7, 3.3 and 3.4. Supported database backends are PostgreSQL, MySQL and SQLite.
+Wagtail supports Django 1.8.1+ on Python 2.7, 3.3, 3.4 and 3.5. Supported database backends are PostgreSQL, MySQL and SQLite.
 
 Contributing
 ~~~~~~~~~~~~

@@ -1,8 +1,8 @@
-from six import text_type
 
 from django.db.models.query import QuerySet
 from django.db.models.lookups import Lookup
 from django.db.models.sql.where import SubqueryConstraint, WhereNode
+from django.utils.six import text_type
 
 from wagtail.wagtailsearch.index import class_is_indexed
 
@@ -16,21 +16,16 @@ class FieldError(Exception):
 
 
 class BaseSearchQuery(object):
-    def __init__(self, queryset, query_string, fields=None,
-                                               include_partials=True):
+    DEFAULT_OPERATOR = 'or'
+
+    def __init__(self, queryset, query_string, fields=None, operator=None, order_by_relevance=True,
+                 include_partials=True):
         self.queryset = queryset
         self.query_string = query_string
         self.fields = fields
+        self.operator = operator or self.DEFAULT_OPERATOR
+        self.order_by_relevance = order_by_relevance
         self.include_partials = include_partials
-
-    def _get_searchable_field(self, field_attname):
-        # Get field
-        field = dict(
-            (field.get_attname(self.queryset.model), field)
-            for field in self.queryset.model.get_searchable_search_fields()
-        ).get(field_attname, None)
-
-        return field
 
     def _get_filterable_field(self, field_attname):
         # Get field
@@ -52,13 +47,19 @@ class BaseSearchQuery(object):
         field = self._get_filterable_field(field_attname)
 
         if field is None:
-            raise FieldError('Cannot filter search results with field "' + field_attname + '". Please add index.FilterField(\'' + field_attname + '\') to ' + self.queryset.model.__name__ + '.search_fields.')
+            raise FieldError(
+                'Cannot filter search results with field "' + field_attname + '". Please add index.FilterField(\'' +
+                field_attname + '\') to ' + self.queryset.model.__name__ + '.search_fields.'
+            )
 
         # Process the lookup
         result = self._process_lookup(field, lookup, value)
 
         if result is None:
-            raise FilterError('Could not apply filter on search results: "' + field_attname + '__' + lookup + ' = ' + text_type(value) + '". Lookup "' + lookup + '"" not recognosed.')
+            raise FilterError(
+                'Could not apply filter on search results: "' + field_attname + '__' +
+                lookup + ' = ' + text_type(value) + '". Lookup "' + lookup + '"" not recognised.'
+            )
 
         return result
 
@@ -68,6 +69,10 @@ class BaseSearchQuery(object):
             field_attname = where_node.lhs.target.attname
             lookup = where_node.lookup_name
             value = where_node.rhs
+
+            # Ignore pointer fields that show up in specific page type queries
+            if field_attname.endswith('_ptr_id'):
+                return
 
             # Process the filter
             return self._process_filter(field_attname, lookup, value)
@@ -173,12 +178,18 @@ class BaseSearchResults(object):
         data = list(self[:21])
         if len(data) > 20:
             data[-1] = "...(remaining elements truncated)..."
-        return repr(data)
+        return '<SearchResults %r>' % data
 
 
 class BaseSearch(object):
+    query_class = None
+    results_class = None
+
     def __init__(self, params):
         pass
+
+    def get_rebuilder(self):
+        return None
 
     def reset_index(self):
         raise NotImplementedError
@@ -198,12 +209,9 @@ class BaseSearch(object):
     def delete(self, obj):
         raise NotImplementedError
 
-    def _search(self, queryset, query_string, fields=None):
-        raise NotImplementedError
-
     def search(self, query_string, model_or_queryset, fields=None, filters=None,
-                     prefetch_related=None, return_pks=False,
-                     include_partials=True):
+               prefetch_related=None, operator=None, order_by_relevance=True,
+               include_partials=True):
         # Find model/queryset
         if isinstance(model_or_queryset, QuerySet):
             model = model_or_queryset.model
@@ -229,7 +237,15 @@ class BaseSearch(object):
             for prefetch in prefetch_related:
                 queryset = queryset.prefetch_related(prefetch)
 
+        # Check operator
+        if operator is not None:
+            operator = operator.lower()
+            if operator not in ['or', 'and']:
+                raise ValueError("operator must be either 'or' or 'and'")
+
         # Search
-        return self._search(queryset, query_string, fields=fields,
-                            return_pks=return_pks,
-                            include_partials=include_partials)
+        search_query = self.query_class(
+            queryset, query_string, fields=fields, operator=operator, order_by_relevance=order_by_relevance,
+            include_partials=include_partials
+        )
+        return self.results_class(self, search_query)

@@ -7,12 +7,20 @@ Wagtail ships with a variety of extra optional modules.
 .. toctree::
     :maxdepth: 2
 
+    settings
     forms
     staticsitegen
     sitemaps
     frontendcache
     routablepage
     api/index
+    searchpromotions
+
+
+:doc:`settings`
+---------------
+
+Site-wide settings that are editable by administrators in the Wagtail admin.
 
 
 :doc:`forms`
@@ -49,3 +57,9 @@ Provides a way of embedding Django URLconfs into pages.
 ----------------
 
 A module for adding a read only, JSON based web API to your Wagtail site
+
+
+:doc:`searchpromotions`
+-----------------------
+
+A module for managing "Promoted Search Results"

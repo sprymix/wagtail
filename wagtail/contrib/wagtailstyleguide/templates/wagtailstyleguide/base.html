@@ -1,10 +1,10 @@
 {% extends "wagtailadmin/base.html" %}
-{% load wagtailadmin_tags compress i18n static gravatar %}
+{% load wagtailadmin_tags i18n staticfiles gravatar %}
 
 {% block extra_css %}
-    {% compress css %}
-        <link rel="stylesheet" href="{% static 'wagtailstyleguide/css/styleguide.css' %}" type="text/css" />
-    {% endcompress %}
+    {{ block.super }}
+
+    <link rel="stylesheet" href="{% static 'wagtailstyleguide/css/styleguide.css' %}" type="text/css" />
 {% endblock %}
 
 {% block titletag %}{% trans 'Styleguide' %}{% endblock %}
@@ -37,7 +37,7 @@
             </ul>
         </nav>
 
-        <section id="palette">
+        <section id="palette" class="palette">
             <h2>Colour palette</h2>
 
             <ul>
@@ -63,7 +63,7 @@
                 <li class="color-green">color-green</li>
                 <li class="color-blue">color-blue</li>
             </ul>
-           
+
         </section>
 
         <section id="typography">
@@ -153,7 +153,7 @@
                 <li><div class="title"><h2><a href="">List item</a></h2></div></li>
                 <li><div class="title"><h2><a href="">List item</a></h2></div></li>
                 <li><div class="title"><h2><a href="">List item</a></h2></div></li>
-            </ul>   
+            </ul>
 
 
             <h3><code>ul</code> listings with multiple columns</h3>
@@ -224,7 +224,7 @@
 
         <section id="pagination">
             <h2>Pagination</h2>
-            {% include "wagtailadmin/shared/pagination_nav.html" with items=fake_pagination linkurl="wagtailadmin_explore" %}
+            {% paginate example_page %}
         </section>
 
         <section id="buttons">
@@ -284,21 +284,59 @@
             <h4>Positive</h4>
 
             <a href="#" class="button yes">yes</a>
-            <a href="#" class="button button-small yes">yes</a> 
+            <a href="#" class="button button-small yes">yes</a>
 
             <h4>Negative</h4>
 
             <a href="#" class="button no">No</a>
-            <a href="#" class="button button-small no">No</a> 
+            <a href="#" class="button button-small no">No</a>
 
-            
+            <h3>Buttons with internal loading indicators (currently only <code>button</code> supported)</h3>
+            <p class="help-block help-warning">Note that in some browsers, clicking these buttons minutely affects the appearance of Dropdown buttons, below. This is yet to be resolved.</p>
+            <button class="button-longrunning"><span class="icon icon-spinner"></span>Click me</button>
+
+            <h4>Secondary</h4>
+            <button class="button-secondary button-longrunning"><span class="icon icon-spinner"></span>Click me</button>
+
+            <h4>Small</h4>
+            <button class="button-small button-longrunning"><span class="icon icon-spinner"></span>Click me</button>
+
+            <h4>Buttons where the text is replaced on click</h4>
+            <button class="button-longrunning" data-clicked-text="Test"><span class="icon icon-spinner"></span><em>Click me</em></button>
+
+            <h4>Arbitrarily bigger</h4>
+            <style>
+                #button-arbitrarily-bigger{
+                    font-size:1.5em;
+                    padding:1.1em 2.4em;
+                    height:3.5em;
+                }
+            </style>
+            <button class="button-longrunning" id="button-arbitrarily-bigger"><span class="icon icon-spinner"></span>Click me</button>
+
             <h3>Mixtures</h3>
 
             <button class="icon text-replace yes icon-tick">A proper button</button>
             <a href="#" class="button icon text-replace white icon-cog">A link button</a>
             <span class="button icon text-replace no icon-bin">A non-link button</span>
             <a href="#" class="button bicolor disabled icon icon-tick">button link</a>
-            
+
+        </section>
+
+        <section id="button-groups">
+            <h2>Button groups</h2>
+            <p>Adds rounding to first and last items only</p>
+            <div class="button-group">
+                <button>button element</button>
+                <button>button element</button>
+                <button>button element</button>
+            </div>
+            <br />
+            <div class="button-group">
+                <button class="icon text-replace yes icon-tick">A proper button</button>
+                <a href="#" class="button icon text-replace white icon-cog">A link button</a>
+                <span class="button icon text-replace no icon-bin">A non-link button</span>
+            </div>
         </section>
 
         <section id="dropdowns">
@@ -374,7 +412,7 @@
 
             {% include "wagtailadmin/shared/header.html" with title=title_trans %}
 
-            {% include "wagtailadmin/shared/header.html" with title=title_trans add_link="wagtailimages_add_image" icon="image" add_text="button" search_url="wagtailimages_index" %}
+            {% include "wagtailadmin/shared/header.html" with title=title_trans add_link="wagtailimages:add" icon="image" add_text="button" search_url="wagtailimages:index" %}
         </section>
 
         <section id="forms">
@@ -393,7 +431,7 @@
                 </ul>
             </form>
 
-            <h3>TODO: Rich text input</h3>            
+            <h3>TODO: Rich text input</h3>
             <h3>TODO: Snippet chooser</h3>
         </section>
 
@@ -440,7 +478,7 @@
 
         <section id="progress">
             <h2>Progress indicators</h2>
-            
+
             <div id="progress-example" class="progress active">
                 <div class="bar">60%</div>
             </div>
@@ -472,9 +510,13 @@
             <div class="loading-mask loading" style="width:200px">
                 <img src="{% static 'wagtailadmin/images/wagtail-logo.svg' %}" width="200" />
             </div>
+
+            <h3>Image transparency</h3>
+            <p>It can be useful to show users the transparent areas of images. Add a transparency checkerboard with the <code>.show-transparency</code> on the <code>img</code> tag thus:</p>
+            <img src="{% static 'wagtailadmin/images/wagtail-logo.svg' %}" width="200" class="show-transparency" />
         </section>
 
-        <section id="icons">
+        <section id="icons" class="icons">
             <h2>Icons</h2>
 
             <ul class="unlist">
@@ -563,10 +605,12 @@
 
         </section>
     </div>
-   
+
 {% endblock %}
 
 {% block extra_js %}
+    {{ block.super }}
+
     {% include "wagtailadmin/pages/_editor_js.html" %}
     <script>
         $(function(){
@@ -599,8 +643,8 @@
                     runprogress();
                     clearTimeout(to);
                     var to2 = setTimeout(function(){
-                        $('#progress-example .bar').css('width', '20%'); 
-                    }, 2000);                
+                        $('#progress-example .bar').css('width', '20%');
+                    }, 2000);
                 }, 3000);
                 $('#progress-example .bar').css('width', '80%');
             })();

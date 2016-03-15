@@ -11,7 +11,8 @@ We'd also recommend Virtualenv, which provides isolated Python environments:
  * `Virtualenv <https://virtualenv.pypa.io/en/latest/installation.html>`_
 
 
-Before we install Wagtail we should install Pillow for image manipulation. Before you run ``pip install Pillow`` note that most platforms require you install additional libraries first: `Platform-specific installation instructions <http://pillow.readthedocs.org/en/latest/installation.html#os-x-installation>`_
+.. important::
+   Before installing Wagtail, it is necessary to install the **libjpeg** and **zlib** libraries, which provide support for working with JPEG, PNG and GIF images (via the Python **Pillow** library). The way to do this varies by platform - see Pillow's `platform-specific installation instructions <http://pillow.readthedocs.org/en/latest/installation.html#external-libraries>`_.
 
 With the above installed, the quickest way to install Wagtail is::
 
@@ -34,6 +35,7 @@ Inside your ``mysite`` folder, we now just run the setup steps necessary for any
 
 Your site is now accessible at ``http://localhost:8000``, with the admin backend available at ``http://localhost:8000/admin/``.
 
+This will set you up with a new standalone Wagtail project. If you'd like to add Wagtail to an existing Django project instead, see :doc:`integrating_into_django`.
 
 There are a few optional packages which are not installed by default but are recommended to improve performance or add features to Wagtail, including:
 
@@ -46,3 +48,4 @@ There are a few optional packages which are not installed by default but are rec
 
     tutorial
     demo_site
+    integrating_into_django

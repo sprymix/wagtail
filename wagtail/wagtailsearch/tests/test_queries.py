@@ -1,12 +1,11 @@
-from six import StringIO
 
 from django.test import TestCase
 from django.core import management
+from django.utils.six import StringIO
 
 from wagtail.wagtailsearch import models
 from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailsearch.utils import normalise_query_string
-
 
 
 class TestHitCounter(TestCase):
@@ -130,7 +129,6 @@ class TestQueryChooserView(TestCase, WagtailTestUtils):
     def test_search(self):
         response = self.get({'q': "Hello"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['query_string'], "Hello")
 
     def test_pagination(self):
         pages = ['0', '1', '-1', '9999', 'Not a page']

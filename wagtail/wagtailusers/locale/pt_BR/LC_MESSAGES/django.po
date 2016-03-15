@@ -12,41 +12,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-21 09:39+0100\n"
-"PO-Revision-Date: 2015-04-21 11:37+0000\n"
-"Last-Translator: Claudemiro Alves Feitosa Neto <dimiro1@gmail.com>\n"
-"Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/"
+"POT-Creation-Date: 2016-03-01 18:52+0000\n"
+"PO-Revision-Date: 2016-03-01 19:08+0000\n"
+"Last-Translator: mattwestcott <matthew@torchbox.com>\n"
+"Language-Team: Portuguese (Brazil) (http://www.transifex.com/torchbox/"
 "wagtail/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: pt_BR\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-
-msgid "Administrator"
-msgstr "Administrador"
-
-msgid "If ticked, this user has the ability to manage user accounts."
-msgstr ""
-"Se marcado, este usuário terá a habilidade de gerenciar contas de usuários."
-
-msgid "Email"
-msgstr "Email"
-
-msgid "First Name"
-msgstr "Primeiro nome"
-
-msgid "Last Name"
-msgstr "Último nome"
-
-msgid "A user with that username already exists."
-msgstr "Um usuário com este nome já existe."
-
-msgid "The two password fields didn't match."
-msgstr "Os dois campos de senha não coincidem."
-
-msgid "Username"
-msgstr "Nome de usuário"
 
 msgid "Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr ""
@@ -55,6 +30,15 @@ msgstr ""
 msgid "This value may contain only letters, numbers and @/./+/-/_ characters."
 msgstr ""
 "Este valor pode conter somente letras, números e os caracteres @/./+/-/_."
+
+msgid "A user with that username already exists."
+msgstr "Um usuário com este nome já existe."
+
+msgid "The two password fields didn't match."
+msgstr "Os dois campos de senha não coincidem."
+
+msgid "Administrator"
+msgstr "Administrador"
 
 msgid "Password"
 msgstr "Senha"
@@ -68,32 +52,26 @@ msgstr "Confirmação de senha"
 msgid "Enter the same password as above, for verification."
 msgstr "Digite a mesma senha como acima, para verificação."
 
-msgid "Administrators have the ability to manage user accounts."
-msgstr "Administradores tem a habilidade de gerenciar contas de usuários."
+msgid "Email"
+msgstr "Email"
+
+msgid "First Name"
+msgstr "Primeiro nome"
+
+msgid "Last Name"
+msgstr "Último nome"
 
 msgid "A group with that name already exists."
 msgstr "Um grupo com este nome já existe."
 
-msgid "Submitted notifications"
-msgstr "Notificações submetidas"
-
 msgid "Receive notification when a page is submitted for moderation"
 msgstr "Receber uma notificação quando uma página é enviada para a moderação"
-
-msgid "Approved notifications"
-msgstr "Notificações aprovadas"
 
 msgid "Receive notification when your page edit is approved"
 msgstr "Receber uma notificação quando a edição da sua página for aprovada"
 
-msgid "Rejected notifications"
-msgstr "Notificações rejeitadas"
-
 msgid "Receive notification when your page edit is rejected"
 msgstr "Receber uma notificação quando a edição da sua página é rejeitada"
-
-msgid "User Profile"
-msgstr "Perfil de usuário"
 
 msgid "Delete group"
 msgstr "Remover grupo"
@@ -152,9 +130,6 @@ msgstr "Permissões de página"
 msgid "Page"
 msgstr "Página"
 
-msgid "Permission type"
-msgstr "Tipo de permissão"
-
 msgid "Add a page permission"
 msgstr "Adicionar uma permissão de página"
 
@@ -186,6 +161,9 @@ msgstr "Usuários"
 
 msgid "Add a user"
 msgstr "Adicionar um usuário"
+
+msgid "Username"
+msgstr "Nome de usuário"
 
 msgid "Level"
 msgstr "Nível"
@@ -272,6 +250,3 @@ msgstr "Usuário '{0}' atualizado."
 
 msgid "The user could not be saved due to errors."
 msgstr "O usuário não pôde ser salvo devido à erros."
-
-msgid "Groups"
-msgstr "Grupos"

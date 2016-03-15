@@ -4,16 +4,17 @@
 #
 # Translators:
 # Jose Lourenco <jose@lourenco.ws>, 2014-2015
+# Manuela Silva <h_manuela_rodsilva@gmail.com>, 2015
 # Thiago Cangussu <cangussu.thg@gmail.com>, 2014
 # Tiago Henriques <trinosauro@gmail.com>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-21 09:39+0100\n"
-"PO-Revision-Date: 2015-04-29 17:38+0000\n"
-"Last-Translator: Tiago Henriques <trinosauro@gmail.com>\n"
-"Language-Team: Portuguese (Portugal) (http://www.transifex.com/projects/p/"
+"POT-Creation-Date: 2016-03-01 18:52+0000\n"
+"PO-Revision-Date: 2016-03-01 19:01+0000\n"
+"Last-Translator: mattwestcott <matthew@torchbox.com>\n"
+"Language-Team: Portuguese (Portugal) (http://www.transifex.com/torchbox/"
 "wagtail/language/pt_PT/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,23 +24,6 @@ msgstr ""
 
 msgid "GIF, JPEG, PNG"
 msgstr "GIF, JPEG, PNG"
-
-#, python-format
-msgid "Not a supported image format. Supported formats: %s."
-msgstr "Formato de imagem não suportado. Formatos suportados: %s."
-
-#, python-format
-msgid "Not a valid %s image."
-msgstr "Imagem %s inválida."
-
-#, python-format
-msgid "This file is too big. Maximum filesize %(max_upload_size)s."
-msgstr "O ficheiro é demasiado grande. Tamanho máximo %(max_upload_size)s."
-
-#, python-format
-msgid "This file is too big (%%(max_upload_size)s). Maximum filesize %s."
-msgstr ""
-"Este ficheiro é demasiado grande (%%(max_upload_size)s). Tamanho máximo %s."
 
 #, python-format
 msgid ""
@@ -53,11 +37,27 @@ msgstr ""
 msgid "Supported formats: %(supported_formats)s."
 msgstr "Formatos suportados: %(supported_formats)s."
 
+#, python-format
+msgid "Not a supported image format. Supported formats: %s."
+msgstr "Formato de imagem não suportado. Formatos suportados: %s."
+
+#, python-format
+msgid "Not a valid %s image."
+msgstr "Imagem %s inválida."
+
+#, python-format
+msgid "This file is too big (%%s). Maximum filesize %s."
+msgstr "Este ficheiro é muito grande (%%s). Tamanho máximo %s."
+
+#, python-format
+msgid "This file is too big. Maximum filesize %s."
+msgstr "Este ficheiro é muito grande. Tamanho do ficheiro máximo %s."
+
 msgid "Filter"
 msgstr "Filtro"
 
 msgid "Original size"
-msgstr "Dimensão original"
+msgstr "Tamanho original"
 
 msgid "Resize to width"
 msgstr "Redimensionar pela largura"
@@ -69,7 +69,7 @@ msgid "Resize to min"
 msgstr "Redimensionar pelo mínimo"
 
 msgid "Resize to max"
-msgstr "Redimensionar pelo máximo"
+msgstr "Redimensionar para o máximo"
 
 msgid "Resize to fill"
 msgstr "Redimensionar para preencher"
@@ -83,20 +83,8 @@ msgstr "Altura"
 msgid "Closeness"
 msgstr "Proximidade"
 
-msgid "Title"
-msgstr "Título"
-
-msgid "File"
-msgstr "Ficheiro"
-
-msgid "Created at"
-msgstr "Criada a"
-
-msgid "Uploaded by user"
-msgstr "Carregado pelo utilizador"
-
-msgid "Tags"
-msgstr "Palavras-chave"
+msgid "Edit"
+msgstr "Editar"
 
 msgid "Choose an image"
 msgstr "Escolher uma imagem"
@@ -243,6 +231,9 @@ msgstr "Utilização de %(title)s"
 msgid "Usage of"
 msgstr "Utilização de"
 
+msgid "Title"
+msgstr "Título"
+
 msgid "Parent"
 msgstr "Mãe"
 
@@ -312,9 +303,6 @@ msgstr "Imagem '{0}' apagada."
 #, python-brace-format
 msgid "Image '{0}' added."
 msgstr "Imagem '{0}' adicionada."
-
-msgid "Edit"
-msgstr "Editar"
 
 msgid "The image could not be created due to errors."
 msgstr "A imagem não pôde ser criada devido a erros."

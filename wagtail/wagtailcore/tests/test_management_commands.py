@@ -1,10 +1,9 @@
 from datetime import timedelta
 
-from six import StringIO
-
 from django.test import TestCase
 from django.core import management
 from django.utils import timezone
+from django.utils.six import StringIO
 from django.db import models
 
 from wagtail.wagtailcore.models import Page, PageRevision
@@ -81,7 +80,9 @@ class TestFixTreeCommand(TestCase):
         # Check that the issues were detected
         output_string = output.read()
         self.assertIn("Incorrect numchild value found for pages: [2]", output_string)
-        self.assertIn("Orphaned pages found: [4, 5, 6, 9]", output_string)
+        # Note that page ID 15 was also deleted, but is not picked up here, as
+        # it is a child of 14.
+        self.assertIn("Orphaned pages found: [4, 5, 6, 9, 13, 15]", output_string)
 
         # Check that christmas_page is still in the tree
         self.assertTrue(Page.objects.filter(id=christmas_page.id).exists())
@@ -103,7 +104,7 @@ class TestFixTreeCommand(TestCase):
         # Check that the issues were detected
         output_string = output.read()
         self.assertIn("Incorrect numchild value found for pages: [2]", output_string)
-        self.assertIn("4 orphaned pages deleted.", output_string)
+        self.assertIn("7 orphaned pages deleted.", output_string)
 
         # Check that christmas_page has been deleted
         self.assertFalse(Page.objects.filter(id=christmas_page.id).exists())
@@ -174,6 +175,7 @@ class TestPublishScheduledPagesCommand(TestCase):
         page = SimplePage(
             title="Hello world!",
             slug="hello-world",
+            content="hello",
             live=False,
             has_unpublished_changes=True,
             go_live_at=timezone.now() - timedelta(days=1),
@@ -203,6 +205,7 @@ class TestPublishScheduledPagesCommand(TestCase):
         page = SimplePage(
             title="Hello world!",
             slug="hello-world",
+            content="hello",
             live=False,
             has_unpublished_changes=True,
             go_live_at=timezone.now() - timedelta(days=1),
@@ -225,6 +228,7 @@ class TestPublishScheduledPagesCommand(TestCase):
         page = SimplePage(
             title="Hello world!",
             slug="hello-world",
+            content="hello",
             live=False,
             go_live_at=timezone.now() + timedelta(days=1),
         )
@@ -256,6 +260,7 @@ class TestPublishScheduledPagesCommand(TestCase):
         page = SimplePage(
             title="Hello world!",
             slug="hello-world",
+            content="hello",
             live=True,
             has_unpublished_changes=False,
             expire_at=timezone.now() - timedelta(days=1),
@@ -281,6 +286,7 @@ class TestPublishScheduledPagesCommand(TestCase):
         page = SimplePage(
             title="Hello world!",
             slug="hello-world",
+            content="hello",
             live=True,
             expire_at=timezone.now() + timedelta(days=1),
         )
@@ -299,6 +305,7 @@ class TestPublishScheduledPagesCommand(TestCase):
         page = SimplePage(
             title="Hello world!",
             slug="hello-world",
+            content="hello",
             live=False,
             expire_at=timezone.now() - timedelta(days=1),
         )

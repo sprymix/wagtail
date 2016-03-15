@@ -49,11 +49,13 @@ class Query(models.Model):
     @classmethod
     def get_most_popular(cls, date_since=None):
         # TODO: Implement date_since
-        return cls.objects.filter(daily_hits__isnull=False).annotate(_hits=models.Sum('daily_hits__hits')).distinct().order_by('-_hits')
+        return (cls.objects.filter(daily_hits__isnull=False)
+                .annotate(_hits=models.Sum('daily_hits__hits'))
+                .distinct().order_by('-_hits'))
 
 
 class QueryDailyHits(models.Model):
-    query = models.ForeignKey(Query, db_index=True, related_name='daily_hits')
+    query = models.ForeignKey(Query, db_index=True, related_name='daily_hits', on_delete=models.CASCADE)
     date = models.DateField()
     hits = models.IntegerField(default=0)
 
@@ -71,17 +73,3 @@ class QueryDailyHits(models.Model):
             ('query', 'date'),
         )
         verbose_name = _('Query Daily Hits')
-
-
-class EditorsPick(models.Model):
-    query = models.ForeignKey(Query, db_index=True, related_name='editors_picks')
-    page = models.ForeignKey('wagtailcore.Page', verbose_name=_('Page'))
-    sort_order = models.IntegerField(null=True, blank=True, editable=False)
-    description = models.TextField(verbose_name=_('Description'), blank=True)
-
-    def __repr__(self):
-        return 'EditorsPick(query="' + self.query.query_string + '", page="' + self.page.title + '")'
-
-    class Meta:
-        ordering = ('sort_order', )
-        verbose_name = _("Editor's Pick")

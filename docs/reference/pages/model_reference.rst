@@ -1,3 +1,4 @@
+===============
 Model Reference
 ===============
 
@@ -5,13 +6,15 @@ Model Reference
 
 This document contains reference information for the model classes inside the ``wagtailcore`` module.
 
+.. _page-model-ref:
 
 ``Page``
-~~~~~~~~
+========
 
-.. autoclass:: Page
+Database fields
+~~~~~~~~~~~~~~~
 
-    **Database fields:**
+.. class:: Page
 
     .. attribute:: title
 
@@ -79,7 +82,12 @@ This document contains reference information for the model classes inside the ``
 
         This is used by the :meth:`~wagtail.wagtailcore.query.PageQuerySet.in_menu` QuerySet filter.
 
-    In addition to the model fields provided, ``Page`` has many properties and methods that you may wish to reference, use, or override in creating your own models. Those listed here are relatively straightforward to use, but consult the Wagtail source code for a full view of what's possible.
+Methods and properies
+~~~~~~~~~~~~~~~~~~~~~
+
+In addition to the model fields provided, ``Page`` has many properties and methods that you may wish to reference, use, or override in creating your own models. Those listed here are relatively straightforward to use, but consult the Wagtail source code for a full view of what's possible.
+
+.. class:: Page
 
     .. autoattribute:: specific
 
@@ -88,6 +96,12 @@ This document contains reference information for the model classes inside the ``
     .. autoattribute:: url
 
     .. autoattribute:: full_url
+
+    .. automethod:: relative_url
+
+    .. automethod:: get_site
+
+    .. automethod:: get_url_parts
 
     .. automethod:: route
 
@@ -108,56 +122,66 @@ This document contains reference information for the model classes inside the ``
     .. automethod:: get_siblings
 
     .. attribute:: search_fields
-        
+
         A list of fields to be indexed by the search engine. See Search docs :ref:`wagtailsearch_indexing_fields`
 
     .. attribute:: subpage_types
 
-        A whitelist of page models which can be created as children of this page type e.g a ``BlogIndex`` page might allow ``BlogPage``, but not ``JobPage`` e.g
+        A whitelist of page models which can be created as children of this page type. For example, a ``BlogIndex`` page might allow a ``BlogPage`` as a child, but not a ``JobPage``:
 
         .. code-block:: python
 
             class BlogIndex(Page):
                 subpage_types = ['mysite.BlogPage', 'mysite.BlogArchivePage']
-                
-        The creation of child pages can be blocked altogether for a given page by setting it's subpage_types attribute to an empty array e.g
-        
+
+        The creation of child pages can be blocked altogether for a given page by setting it's subpage_types attribute to an empty array:
+
         .. code-block:: python
 
             class BlogPage(Page):
                 subpage_types = []
-                
+
     .. attribute:: parent_page_types
 
-        A whitelist of page models which are allowed as parent page types e.g a ``BlogPage`` may only allow itself to be created below the ``BlogIndex`` page e.g
+        A whitelist of page models which are allowed as parent page types. For example, a ``BlogPage`` may only allow itself to be created below the ``BlogIndex`` page:
 
         .. code-block:: python
 
             class BlogPage(Page):
                 parent_page_types = ['mysite.BlogIndexPage']
-                
-        Pages can block themselves from being created at all by setting parent_page_types to an empty array (this is useful for creating unique pages that should only be created once) e.g
-        
+
+        Pages can block themselves from being created at all by setting parent_page_types to an empty array (this is useful for creating unique pages that should only be created once):
+
         .. code-block:: python
 
             class HiddenPage(Page):
                 parent_page_types = []
 
+    .. automethod:: can_exist_under
+
+    .. automethod:: can_create_at
+
+    .. automethod:: can_move_to
+
     .. attribute:: password_required_template
 
         Defines which template file should be used to render the login form for Protected pages using this model. This overrides the default, defined using ``PASSWORD_REQUIRED_TEMPLATE`` in your settings. See :ref:`private_pages`
 
+    .. attribute:: is_creatable
+
+        Controls if this page can be created through the Wagtail administration. Defaults to True, and is not inherited by subclasses. This is useful when using `multi-table inheritance <https://docs.djangoproject.com/en/1.8/topics/db/models/#multi-table-inheritance>`_, to stop the base model from being created as an actual page.
 
 ``Site``
-~~~~~~~~
+========
 
 The ``Site`` model is useful for multi-site installations as it allows an administrator to configure which part of the tree to use for each hostname that the server responds on.
 
 This configuration is used by the :class:`~wagtail.wagtailcore.middleware.SiteMiddleware` middleware class which checks each request against this configuration and appends the Site object to the Django request object.
 
-.. autoclass:: Site
+Database fields
+~~~~~~~~~~~~~~~
 
-    **Database fields:**
+.. class:: Site
 
     .. attribute:: hostname
 
@@ -177,6 +201,14 @@ This configuration is used by the :class:`~wagtail.wagtailcore.middleware.SiteMi
 
         This is the port number that the site responds on.
 
+    .. attribute:: site_name
+
+        (text - optional)
+
+        A human-readable name for the site. This is not used by Wagtail itself, but is suitable for use on the site front-end, such as in ``<title>`` elements.
+
+        For example: ``Rod's World of Birds``
+
     .. attribute:: root_page
 
         (foreign key to :class:`~wagtail.wagtailcore.models.Page`)
@@ -191,7 +223,10 @@ This configuration is used by the :class:`~wagtail.wagtailcore.middleware.SiteMi
 
         The default site is used as a fallback in situations where a site with the required hostname/port couldn't be found.
 
-    **Methods and attributes:**
+Methods and properties
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. class:: Site
 
     .. automethod:: find_for_request
 
@@ -207,19 +242,21 @@ This configuration is used by the :class:`~wagtail.wagtailcore.middleware.SiteMi
 
     .. automethod:: get_site_root_paths
 
+.. _page-revision-model-ref:
+
 ``PageRevision``
-~~~~~~~~~~~~~~~~
+================
 
 Every time a page is edited a new ``PageRevision`` is created and saved to the database. It can be used to find the full history of all changes that have been made to a page and it also provides a place for new changes to be kept before going live.
 
- - Revisions can be created from any :class:`~wagtail.wagtailcore.models.Page` object calling its :meth:`~Page.create_revision` method
+ - Revisions can be created from any :class:`~wagtail.wagtailcore.models.Page` object by calling its :meth:`~Page.save_revision` method
  - The content of the page is JSON-serialised and stored in the :attr:`~PageRevision.content_json` field
  - You can retrieve a ``PageRevision`` as a :class:`~wagtail.wagtailcore.models.Page` object by calling the :meth:`~PageRevision.as_page_object` method
 
+Database fields
+~~~~~~~~~~~~~~~
 
-.. autoclass:: PageRevision
-
-    **Database fields:**
+.. class:: PageRevision
 
     .. attribute:: page
 
@@ -249,7 +286,10 @@ Every time a page is edited a new ``PageRevision`` is created and saved to the d
 
         This field contains the JSON content for the page at the time the revision was created
 
-    **Managers:**
+Managers
+~~~~~~~~
+
+.. class:: PageRevision
 
     .. attribute:: objects
 
@@ -271,7 +311,10 @@ Every time a page is edited a new ``PageRevision`` is created and saved to the d
 
             PageRevision.submitted_revisions.all()
 
-    **Methods and attributes:**
+Methods and properties
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. class:: PageRevision
 
     .. automethod:: as_page_object
 
@@ -294,11 +337,12 @@ Every time a page is edited a new ``PageRevision`` is created and saved to the d
         Calling this will copy the content of this revision into the live page object. If the page is in draft, it will be published.
 
 ``GroupPagePermission``
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
-.. autoclass:: GroupPagePermission
+Database fields
+~~~~~~~~~~~~~~~
 
-    **Database fields:**
+.. class:: GroupPagePermission
 
     .. attribute:: group
 
@@ -313,11 +357,12 @@ Every time a page is edited a new ``PageRevision`` is created and saved to the d
         (choice list)
 
 ``PageViewRestriction``
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
-.. autoclass:: PageViewRestriction
+Database fields
+~~~~~~~~~~~~~~~
 
-    **Database fields:**
+.. class:: PageViewRestriction
 
     .. attribute:: page
 
@@ -328,11 +373,12 @@ Every time a page is edited a new ``PageRevision`` is created and saved to the d
         (text)
 
 ``Orderable`` (abstract)
-~~~~~~~~~~~~~~~~~~~~~~~~
+========================
 
-.. autoclass:: Orderable
+Database fields
+~~~~~~~~~~~~~~~
 
-    **Database fields:**
+.. class:: Orderable
 
     .. attribute:: sort_order
 

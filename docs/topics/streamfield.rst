@@ -34,11 +34,11 @@ Using StreamField
             ('image', ImageChooserBlock()),
         ])
 
-    BlogPage.content_panels = [
-        FieldPanel('author'),
-        FieldPanel('date'),
-        StreamFieldPanel('body'),
-    ]
+        content_panels = Page.content_panels + [
+            FieldPanel('author'),
+            FieldPanel('date'),
+            StreamFieldPanel('body'),
+        ]
 
 
 Note: StreamField is not backwards compatible with other field types such as RichTextField; if you migrate an existing field to StreamField, the existing data will be lost.
@@ -188,7 +188,13 @@ PageChooserBlock
 
 ``wagtail.wagtailcore.blocks.PageChooserBlock``
 
-A control for selecting a page object, using Wagtail's page browser. The keyword argument ``required`` is accepted.
+A control for selecting a page object, using Wagtail's page browser. The following keyword arguments are accepted:
+
+``required`` (default: True)
+  If true, the field cannot be left blank.
+
+``can_choose_root`` (default: False)
+  If true, the editor can choose the tree root as a page. Normally this would be undesirable, since the tree root is never a usable page, but in some specialised cases it may be appropriate; for example, a block providing a feed of related articles could use a PageChooserBlock to select which subsection articles will be taken from, with the root corresponding to 'everywhere'.
 
 DocumentChooserBlock
 ~~~~~~~~~~~~~~~~~~~~
@@ -360,17 +366,17 @@ Template rendering
 
 The simplest way to render the contents of a StreamField into your template is to output it as a variable, like any other field:
 
-.. code-block:: django
+.. code-block:: html+django
 
-    {{ self.body }}
+    {{ page.body }}
 
 
 This will render each block of the stream in turn, wrapped in a ``<div class="block-my_block_name">`` element (where ``my_block_name`` is the block name given in the StreamField definition). If you wish to provide your own HTML markup, you can instead iterate over the field's value to access each block in turn:
 
-.. code-block:: django
+.. code-block:: html+django
 
     <article>
-        {% for block in self.body %}
+        {% for block in page.body %}
             <section>{{ block }}</section>
         {% endfor %}
     </article>
@@ -378,10 +384,10 @@ This will render each block of the stream in turn, wrapped in a ``<div class="bl
 
 For more control over the rendering of specific block types, each block object provides ``block_type`` and ``value`` properties:
 
-.. code-block:: django
+.. code-block:: html+django
 
     <article>
-        {% for block in self.body %}
+        {% for block in page.body %}
             {% if block.block_type == 'heading' %}
                 <h1>{{ block.value }}</h1>
             {% else %}
@@ -426,20 +432,165 @@ Or, when defined as a subclass of StructBlock:
             icon = 'user'
 
 
-Within the template, the block value is accessible as the variable ``self``:
+Within the template, the block value is accessible as the variable ``value``:
 
-.. code-block:: django
+.. code-block:: html+django
 
     {% load wagtailimages_tags %}
 
     <div class="person">
-        {% image self.photo width-400 %}
-        <h2>{{ self.first_name }} {{ self.surname }}</h2>
-        {{ self.bound_blocks.biography.render }}
+        {% image value.photo width-400 %}
+        <h2>{{ value.first_name }} {{ value.surname }}</h2>
+        {{ value.biography }}
     </div>
 
 
-The line ``self.bound_blocks.biography.render`` warrants further explanation. While blocks such as RichTextBlock are aware of their own rendering, the actual block *values* (as returned when accessing properties of a StructBlock, such as ``self.biography``), are just plain Python values such as strings. To access the block's proper HTML rendering, you must retrieve the 'bound block' - an object which has access to both the rendering method and the value - via the ``bound_blocks`` property.
+.. _streamfield_get_context:
+
+To pass additional context variables to the template, block subclasses can override the ``get_context`` method:
+
+.. code-block:: python
+
+    import datetime
+
+    class EventBlock(blocks.StructBlock):
+        title = blocks.CharBlock(required=True)
+        date = blocks.DateBlock(required=True)
+
+        def get_context(self, value):
+            context = super(EventBlock, self).get_context(value)
+            context['is_happening_today'] = (value['date'] == datetime.date.today())
+            return context
+
+        class Meta:
+            template = 'myapp/blocks/event.html'
+
+
+In this example, the variable ``is_happening_today`` will be made available within the block template.
+
+
+BoundBlocks and values
+----------------------
+
+As you've seen above, it's possible to assign a particular template rendering to a block. This can be done on any block type, not just StructBlocks - however, there are some extra details to be aware of. Consider the following block definition:
+
+.. code-block:: python
+
+    class HeadingBlock(blocks.CharBlock):
+        class Meta:
+            template = 'blocks/heading.html'
+
+where blocks/heading.html consists of:
+
+.. code-block:: html+django
+
+    <h1>{{ value }}</h1>
+
+This gives us a block that behaves as an ordinary text field, but wraps its output in ``<h1>`` tags whenever it is rendered:
+
+.. code-block:: python
+
+    class BlogPage(Page):
+        body = StreamField([
+            # ...
+            'heading': HeadingBlock(),
+            # ...
+        ])
+
+.. code-block:: html+django
+
+    {% for block in page.body %}
+        {% if block.block_type == 'heading' %}
+            {{ block }}  {# this block will output its own <h1>...</h1> tags #}
+        {% endif %}
+    {% endfor %}
+
+This is a powerful feature, but it involves some complexity behind the scenes to make it work. Effectively, HeadingBlock has a double identity - logically it represents a plain Python string value, but in circumstances such as this it needs to yield a 'magic' object that knows its own custom HTML representation. This 'magic' object is an instance of ``BoundBlock`` - an object that represents the pairing of a value and its block definition. (Django developers may recognise this as the same principle behind ``BoundField`` in Django's forms framework.)
+
+Most of the time, you won't need to worry about whether you're dealing with a plain value or a BoundBlock; you can trust Wagtail to do the right thing. However, there are certain cases where the distinction becomes important. For example, consider the following setup:
+
+.. code-block:: python
+
+    class EventBlock(blocks.StructBlock):
+        heading = HeadingBlock()
+        description = blocks.TextBlock()
+        # ...
+
+        class Meta:
+            template = 'blocks/event.html'
+
+where blocks/event.html is:
+
+.. code-block:: html+django
+
+    <div class="event {% if value.heading == 'Party!' %}lots-of-balloons{% endif %}">
+        {{ value.heading }}
+        - {{ value.description }}
+    </div>
+
+In this case, ``value.heading`` returns the plain string value; if this weren't the case, the comparison in ``{% if value.heading == 'Party!' %}`` would never succeed. This in turn means that ``{{ value.heading }}`` renders as the plain string, without the ``<h1>`` tags.
+
+Interactions between BoundBlocks and plain values work according to the following rules:
+
+1. When iterating over the value of a StreamField or StreamBlock (as in ``{% for block in page.body %}``), you will get back a sequence of BoundBlocks.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This means that ``{{ block }}`` will always render using the block's own template, if one is supplied. More specifically, these ``block`` objects will be instances of StreamChild, which additionally provides the ``block_type`` property.
+
+2. If you have a BoundBlock instance, you can access the plain value as ``block.value``.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For example, if you had a particular page template where you wanted HeadingBlock to display as ``<h2>`` rather than ``<h1>``, you could write:
+
+.. code-block:: html+django
+
+    {% for block in page.body %}
+        {% if block.block_type == 'heading' %}
+            <h2>{{ block.value }}</h2>
+        {% endif %}
+    {% endfor %}
+
+3. Accessing a child of a StructBlock (as in ``value.heading``) will return a plain value; to retrieve the BoundBlock instead, use ``value.bound_blocks.heading``.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This ensures that template tags such as ``{% if value.heading == 'Party!' %}`` and ``{% image value.photo fill-320x200 %}`` work as expected. The event template above could be rewritten as follows to access the HeadingBlock content as a BoundBlock and use its own HTML representation (with ``<h1>`` tags included):
+
+.. code-block:: html+django
+
+    <div class="event {% if value.heading == 'Party!' %}lots-of-balloons{% endif %}">
+        {{ value.bound_block.heading }}
+        {{ value.description }}
+    </div>
+
+However, in this case it's probably more readable to make the ``<h1>`` tag explicit in the EventBlock's template:
+
+.. code-block:: html+django
+
+    <div class="event {% if value.heading == 'Party!' %}lots-of-balloons{% endif %}">
+        <h1>{{ value.heading }}</h1>
+        {{ value.description }}
+    </div>
+
+4. The value of a ListBlock is a plain Python list; iterating over it returns plain child values.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+5. StructBlock and StreamBlock values always know how to render their own templates, even if you only have the plain value rather than the BoundBlock.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is possible because the HTML rendering behaviour of these blocks does not interfere with their main role as a container for data - there's no "double identity" as there is for blocks like CharBlock. For example, if a StructBlock is nested in another StructBlock, as in:
+
+.. code-block:: python
+
+    class EventBlock(blocks.StructBlock):
+        heading = HeadingBlock()
+        description = blocks.TextBlock()
+        guest_speaker = blocks.StructBlock([
+            ('first_name', blocks.CharBlock()),
+            ('surname', blocks.CharBlock()),
+            ('photo', ImageChooserBlock()),
+        ], template='blocks/speaker.html')
+
+then writing ``{{ value.guest_speaker }}`` within the EventBlock's template will use the template rendering from blocks/speaker.html for that field.
 
 
 Custom block types
@@ -467,7 +618,7 @@ As with any model field in Django, any changes to a model definition that affect
 
 To mitigate this, StructBlock, StreamBlock and ChoiceBlock implement additional logic to ensure that any subclasses of these blocks are deconstructed to plain instances of StructBlock, StreamBlock and ChoiceBlock - in this way, the migrations avoid having any references to your custom class definitions. This is possible because these block types provide a standard pattern for inheritance, and know how to reconstruct the block definition for any subclass that follows that pattern.
 
-If you subclass any other block class, such as ``FieldBlock``, you will need to either keep that class definition in place for the lifetime of your project, or implement a `custom deconstruct method <https://docs.djangoproject.com/en/1.7/topics/migrations/#custom-deconstruct-method>`__ that expresses your block entirely in terms of classes that are guaranteed to remain in place. Similarly, if you customise a StructBlock, StreamBlock or ChoiceBlock subclass to the point where it can no longer be expressed as an instance of the basic block type - for example, if you add extra arguments to the constructor - you will need to provide your own ``deconstruct`` method.
+If you subclass any other block class, such as ``FieldBlock``, you will need to either keep that class definition in place for the lifetime of your project, or implement a `custom deconstruct method <https://docs.djangoproject.com/en/1.9/topics/migrations/#custom-deconstruct-method>`__ that expresses your block entirely in terms of classes that are guaranteed to remain in place. Similarly, if you customise a StructBlock, StreamBlock or ChoiceBlock subclass to the point where it can no longer be expressed as an instance of the basic block type - for example, if you add extra arguments to the constructor - you will need to provide your own ``deconstruct`` method.
 
 Migrating RichTextFields to StreamField
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

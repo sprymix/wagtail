@@ -2,33 +2,45 @@ import datetime
 
 import csv
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.encoding import smart_str
+from django.utils.translation import ugettext as _
 
+from wagtail.utils.pagination import paginate
 from wagtail.wagtailcore.models import Page
 from wagtail.wagtailforms.models import FormSubmission, get_forms_for_user
 from wagtail.wagtailforms.forms import SelectDateForm
+from wagtail.wagtailadmin import messages
 
 
 def index(request):
-    p = request.GET.get("p", 1)
-
     form_pages = get_forms_for_user(request.user)
 
-    paginator = Paginator(form_pages, 20)
-
-    try:
-        form_pages = paginator.page(p)
-    except PageNotAnInteger:
-        form_pages = paginator.page(1)
-    except EmptyPage:
-        form_pages = paginator.page(paginator.num_pages)
+    paginator, form_pages = paginate(request, form_pages)
 
     return render(request, 'wagtailforms/index.html', {
         'form_pages': form_pages,
+    })
+
+
+def delete_submission(request, page_id, submission_id):
+    if not get_forms_for_user(request.user).filter(id=page_id).exists():
+        raise PermissionDenied
+
+    submission = get_object_or_404(FormSubmission, id=submission_id)
+    page = get_object_or_404(Page, id=page_id)
+
+    if request.method == 'POST':
+        submission.delete()
+
+        messages.success(request, _("Submission deleted."))
+        return redirect('wagtailforms:list_submissions', page_id)
+
+    return render(request, 'wagtailforms/confirm_delete.html', {
+        'page': page,
+        'submission': submission
     })
 
 
@@ -78,27 +90,22 @@ def list_submissions(request, page_id):
             writer.writerow(data_row)
         return response
 
-    p = request.GET.get('p', 1)
-    paginator = Paginator(submissions, 20)
-
-    try:
-        submissions = paginator.page(p)
-    except PageNotAnInteger:
-        submissions = paginator.page(1)
-    except EmptyPage:
-        submissions = paginator.page(paginator.num_pages)
+    paginator, submissions = paginate(request, submissions)
 
     data_headings = [label for name, label in data_fields]
     data_rows = []
     for s in submissions:
         form_data = s.get_data()
         data_row = [s.submit_time] + [form_data.get(name) for name, label in data_fields]
-        data_rows.append(data_row)
+        data_rows.append({
+            "model_id": s.id,
+            "fields": data_row
+        })
 
     return render(request, 'wagtailforms/index_submissions.html', {
-         'form_page': form_page,
-         'select_date_form': select_date_form,
-         'submissions': submissions,
-         'data_headings': data_headings,
-         'data_rows': data_rows
+        'form_page': form_page,
+        'select_date_form': select_date_form,
+        'submissions': submissions,
+        'data_headings': data_headings,
+        'data_rows': data_rows
     })
