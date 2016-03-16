@@ -601,7 +601,8 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
                 generated_image = filter.run(self, BytesIO())
             except IOError:
                 return _rendition_for_missing_image(
-                            self.image.renditions.model, self, filter=filter)
+                            self.image.renditions.model,
+                            self.image, filter=filter)
 
             # Generate filename
             input_filename = os.path.basename(self.file.name)
