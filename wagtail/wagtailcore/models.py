@@ -279,6 +279,11 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         max_length=255,
         help_text=_("The page title as you'd like it to be seen by the public")
     )
+    private_title = models.CharField(
+        verbose_name=_('private title'),
+        max_length=200, null=True, blank=True,
+        help_text=_('Title for internal use.')
+    )
     slug = models.SlugField(
         verbose_name=_('slug'),
         max_length=255,
