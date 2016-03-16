@@ -1,4 +1,4 @@
-{% load wagtailimages_tags compress static %}
+{% load wagtailimages_tags static %}
 {% load i18n %}
 {% trans "Choose an image" as choose_str %}
 {% include "wagtailadmin/shared/header.html" with title=choose_str merged=1 tabbed=1 icon="image" %}
@@ -62,7 +62,7 @@
         {% url 'wagtailadmin_tag_autocomplete' as autocomplete_url %}
         <script>
             window.fileupload_opts = {
-                simple_upload_url: "{% url 'wagtailimages_add_image' %}",
+                simple_upload_url: "{% url 'wagtailimages:add' %}",
                 accepted_file_types: /\.({{ allowed_extensions|join:"|" }})$/i, //must be regex
                 max_file_size: {{ max_filesize|default:"null" }}, //numeric format
                 errormessages: {

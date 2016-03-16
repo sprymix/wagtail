@@ -135,9 +135,7 @@ def chooser(request):
         searchform = SearchForm(request.GET)
         if searchform.is_valid():
             q = searchform.cleaned_data['q']
-
-            filters = {'show_in_catalogue': True}
-            images = images.search(q, filter=filters)
+            images = images.search(q)
             is_searching = True
         else:
             is_searching = False
