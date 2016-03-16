@@ -41,6 +41,8 @@ def index(request, parent_page_id=None):
     if ordering not in [
         'title',
         '-title',
+        'private_title',
+        '-private_title',
         'content_type',
         '-content_type',
         'live', '-live',

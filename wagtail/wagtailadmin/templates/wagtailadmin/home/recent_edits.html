@@ -5,11 +5,13 @@
             <h2>{% trans "Your most recent edits" %}</h2>
             <table class="listing listing-page">
                 <col />
+                <col />
                 <col width="15%"/>
                 <col width="15%"/>
                 <thead>
                     <tr>
                         <th class="title">{% trans "Title" %}</th>
+                        <th class="title">{% trans "Private Title" %}</th>
                         <th>{% trans "Date" %}</th>
                         <th>{% trans "Status" %}</th>
                     </tr>
@@ -33,6 +35,9 @@
                                         <li><a href="{{ revision.page.url }}" class="button button-small button-secondary">{% trans 'Live' %}</a></li>
                                     {% endif %}
                                 </ul>
+                            </td>
+                            <td class="private-title" valign="top">
+                                {{ revision.page.private_title }}
                             </td>
                             <td valign="top"><div class="human-readable-date" title="{{ revision.created_at|date:"d M Y H:i" }}">{{ revision.created_at|timesince }} ago</div></td>
                             <td valign="top">
