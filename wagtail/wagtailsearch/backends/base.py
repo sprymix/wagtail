@@ -211,7 +211,7 @@ class BaseSearch(object):
 
     def search(self, query_string, model_or_queryset, fields=None, filters=None,
                prefetch_related=None, operator=None, order_by_relevance=True,
-               include_partials=True):
+               include_partials=True, return_pks=False):
         # Find model/queryset
         if isinstance(model_or_queryset, QuerySet):
             model = model_or_queryset.model
@@ -248,4 +248,4 @@ class BaseSearch(object):
             queryset, query_string, fields=fields, operator=operator, order_by_relevance=order_by_relevance,
             include_partials=include_partials
         )
-        return self.results_class(self, search_query)
+        return self.results_class(self, search_query, return_pks=return_pks)
