@@ -28,6 +28,8 @@ class BaseImageForm(BaseCollectionMemberForm):
 
 def get_image_form(model, hide_file=False):
     fields = model.admin_form_fields
+    exclude = None
+
     if 'collection' not in fields:
         # force addition of the 'collection' field, because leaving it out can
         # cause dubious results when multiple collections exist (e.g adding the
@@ -44,7 +46,7 @@ def get_image_form(model, hide_file=False):
     }
 
     if hide_file:
-        form_widgets['file'] = forms.HiddenInput()
+        exclude = ['file']
     else:
         # set the 'file' widget to a FileInput rather than the default ClearableFileInput
         # so that when editing, we don't get the 'currently: ...' banner which is
@@ -55,6 +57,7 @@ def get_image_form(model, hide_file=False):
         model,
         form=BaseImageForm,
         fields=fields,
+        exclude=exclude,
         formfield_callback=formfield_for_dbfield,
         widgets=form_widgets)
 

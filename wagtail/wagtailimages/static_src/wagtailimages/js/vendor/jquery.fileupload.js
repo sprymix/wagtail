@@ -1178,7 +1178,12 @@
                 if (that.options.replaceFileInput) {
                     that._replaceFileInput(data.fileInput);
                 }
-                if (that._trigger(
+                // BUGFIX: we do not want to trigger additional 'change' events
+                // in response to a 'change' event to avoid infinite loop here.
+                if ((e.originalEvent instanceof $.Event &&
+                     e.originalEvent.type == 'change')
+                    ||
+                    that._trigger(
                         'change',
                         $.Event('change', {delegatedEvent: e}),
                         data

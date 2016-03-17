@@ -230,7 +230,7 @@ class CropRectangleOperation(Operation):
         self.rect = (int(r0), int(r1), int(r2), int(r3))
 
     def run(self, willow, image):
-        willow.crop(self.rect)
+        return willow.crop(self.rect)
 
 
 class ForceFitOperation(Operation):
