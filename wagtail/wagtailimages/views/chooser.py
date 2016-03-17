@@ -7,8 +7,7 @@ from django.shortcuts import get_object_or_404, render
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import ugettext as _
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.template import RequestContext
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
@@ -25,6 +24,7 @@ from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm, \
                                         ImageCropperForm
 from wagtail.wagtailimages.formats import get_image_format
 from wagtail.wagtailimages.permissions import permission_policy
+from wagtail.wagtailimages.fields import ALLOWED_EXTENSIONS
 
 
 permission_checker = PermissionPolicyChecker(permission_policy)
@@ -178,6 +178,14 @@ def chooser(request):
         'uploadid': uuid.uuid4(),
         'post_processing_spec': request.GET.get('pps'),
         'additional_params': get_cropper_params(request),
+        'allowed_extensions': ALLOWED_EXTENSIONS,
+        'error_max_file_size':
+            uploadform.fields['file']
+                      .error_messages['file_too_large_unknown_size']
+                        if uploadform else None,
+        'error_accepted_file_types':
+            uploadform.fields['file'].error_messages['invalid_image']
+                        if uploadform else None,
     })
 
 
@@ -188,10 +196,6 @@ def image_chosen(request, image_id):
         request, None, 'wagtailimages/chooser/image_chosen.js',
         {'image_json': get_image_json(image)}
     )
-
-
-def json_response(document):
-    return HttpResponse(json.dumps(document), content_type='application/json')
 
 
 @require_POST
@@ -217,7 +221,7 @@ def chooser_upload(request):
     will_select_format = request.GET.get('select_format')
     will_select_rendition = request.GET.get('select_rendition')
 
-    return json_response({
+    return JsonResponse({
         'success': True,
         'image_id': int(image.id),
         'form': render_to_string('wagtailimages/chooser/update.html', {
@@ -226,7 +230,7 @@ def chooser_upload(request):
             'will_select_format': will_select_format,
             'will_select_rendition': will_select_rendition,
             'additional_params': get_cropper_params(request),
-        }, context_instance=RequestContext(request)),
+        }, request=request),
     })
 
 
@@ -234,7 +238,7 @@ def chooser_upload(request):
 @permission_checker.require('add')
 def chooser_select(request, image_id):
     Image = get_image_model()
-    ImageForm = get_image_form(hide_file=True)
+    ImageForm = get_image_form(Image, hide_file=True)
 
     image = get_object_or_404(Image, id=image_id)
 
@@ -284,14 +288,14 @@ def chooser_select(request, image_id):
     else:
         # something was wrong with the submitted data
         #
-        return json_response({
+        return JsonResponse({
             'success': False,
             'image_id': int(image_id),
             'form': render_to_string('wagtailimages/chooser/update.html', {
                 'image': image,
                 'form': form,
                 'additional_params': get_cropper_params(request),
-            }, context_instance=RequestContext(request)),
+            }, request=request),
         })
 
 

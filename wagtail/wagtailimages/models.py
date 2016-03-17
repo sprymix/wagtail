@@ -39,9 +39,9 @@ from wagtail.wagtailadmin.utils import get_object_usage
 
 # A mapping of image formats to extensions
 FORMAT_EXTENSIONS = {
-    'jpeg': '.jpg',
-    'png': '.png',
-    'gif': '.gif',
+    'jpeg': 'jpg',
+    'png': 'png',
+    'gif': 'gif',
 }
 
 
@@ -54,20 +54,15 @@ class SourceImageIOError(IOError):
 
 def _generate_output_filename(input_filename, output_format,
                               spec_hash,
-                              focal_point_key='',
                               max_len=80):
     input_filename_parts = os.path.basename(input_filename).split('.')
     filename_without_extension = '.'.join(input_filename_parts[:-1])
     filename_extension = FORMAT_EXTENSIONS[output_format]
 
-    if focal_point_key:
-        focal_point_key = 'focus-' + focal_point_key
-
     # we want to condense arbitrarily long specs into a finite string
     #
     extra_name_length = (len(spec_hash) + len(filename_extension)
-                            + len(focal_point_key)
-                            + 3) # + 3 for the '.' used
+                            + 2) # + 2 for the '.' used
 
     if extra_name_length >= max_len:
         raise RuntimeError('image file path is too long: {}'.format(
@@ -75,12 +70,8 @@ def _generate_output_filename(input_filename, output_format,
 
     # trim filename base so that we're well under 100 chars
     filename_without_extension = filename_without_extension[:max_len - extra_name_length]
-    if focal_point_key:
-        output_filename_parts = [filename_without_extension, focal_point_key,
-                                 spec_hash, filename_extension]
-    else:
-        output_filename_parts = [filename_without_extension,
-                                 spec_hash, filename_extension]
+    output_filename_parts = [filename_without_extension,
+                             spec_hash, filename_extension]
 
     output_filename = '.'.join(output_filename_parts)
     return output_filename
@@ -321,11 +312,10 @@ class AbstractImage(CollectionMember, TagSearchable, WillowImageWrapper):
 
             # Generate filename
             input_filename = os.path.basename(self.file.name)
-            input_filename_without_extension, input_extension = os.path.splitext(input_filename)
             output_filename = _generate_output_filename(
-                                input_filename_without_extension,
+                                input_filename,
                                 generated_image.format_name,
-                                spec_hash, focal_point_key)
+                                spec_hash)
 
             rendition, created = renditions.get_or_create(
                 filter=filter,
@@ -482,7 +472,7 @@ class Filter(models.Model):
                 return willow.save(original_format, output)
 
     def get_cache_key(self, image):
-        return hashlib.sha1(self.spec).hexdigest()
+        return hashlib.sha1(self.spec).hexdigest()[:8] + self.get_vary_key(image)
 
 
     def get_vary_key(self, image):
@@ -607,11 +597,8 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
             # Generate filename
             input_filename = os.path.basename(self.file.name)
 
-            input_filename_without_extension, input_extension = \
-                os.path.splitext(input_filename)
-
             output_filename = _generate_output_filename(
-                input_filename_without_extension, generated_image.format_name,
+                input_filename, generated_image.format_name,
                 spec_hash)
 
             rendition, created = self.image.renditions.get_or_create(
