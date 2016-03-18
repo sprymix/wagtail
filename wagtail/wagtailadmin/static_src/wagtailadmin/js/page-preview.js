@@ -32,7 +32,7 @@ function createPreviewButtonHandler(form, button) {
                             frame.document.close();
 
                             var hideTimeout = setTimeout(function(){
-                                pdoc.getElementById('loading-spinner-wrapper').className += 'remove';
+                                pdoc.getElementById('loading-spinner-wrapper').className += ' remove';
                                 clearTimeout(hideTimeout);
                             }) // just enough to give effect without adding discernible slowness
                         } else {
@@ -70,4 +70,3 @@ function createPreviewButtonHandler(form, button) {
         }
     }
 }
-
