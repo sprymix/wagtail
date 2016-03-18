@@ -103,3 +103,6 @@ class DBSearch(BaseSearch):
 
     def delete(self, obj):
         pass  # Not needed
+
+
+SearchBackend = DBSearch

@@ -631,42 +631,44 @@ class ElasticSearch(BaseSearch):
     atomic_rebuilder_class = ElasticSearchAtomicIndexRebuilder
 
     settings = {
-        'analysis': {
-            'analyzer': {
-                'ngram_analyzer': {
-                    'type': 'custom',
-                    'tokenizer': 'lowercase',
-                    'filter': ['asciifolding', 'ngram']
+        'settings': {
+            'analysis': {
+                'analyzer': {
+                    'ngram_analyzer': {
+                        'type': 'custom',
+                        'tokenizer': 'lowercase',
+                        'filter': ['asciifolding', 'ngram']
+                    },
+                    'edgengram_analyzer': {
+                        'type': 'custom',
+                        'tokenizer': 'lowercase',
+                        'filter': ['asciifolding', 'edgengram']
+                    }
                 },
-                'edgengram_analyzer': {
-                    'type': 'custom',
-                    'tokenizer': 'lowercase',
-                    'filter': ['asciifolding', 'edgengram']
-                }
-            },
-            'tokenizer': {
-                'ngram_tokenizer': {
-                    'type': 'nGram',
-                    'min_gram': 3,
-                    'max_gram': 15,
+                'tokenizer': {
+                    'ngram_tokenizer': {
+                        'type': 'nGram',
+                        'min_gram': 3,
+                        'max_gram': 15,
+                    },
+                    'edgengram_tokenizer': {
+                        'type': 'edgeNGram',
+                        'min_gram': 3,
+                        'max_gram': 15,
+                        'side': 'front'
+                    }
                 },
-                'edgengram_tokenizer': {
-                    'type': 'edgeNGram',
-                    'min_gram': 3,
-                    'max_gram': 15,
-                    'side': 'front'
-                }
-            },
-            'filter': {
-                'ngram': {
-                    'type': 'nGram',
-                    'min_gram': 3,
-                    'max_gram': 15
-                },
-                'edgengram': {
-                    'type': 'edgeNGram',
-                    'min_gram': 3,
-                    'max_gram': 15
+                'filter': {
+                    'ngram': {
+                        'type': 'nGram',
+                        'min_gram': 3,
+                        'max_gram': 15
+                    },
+                    'edgengram': {
+                        'type': 'edgeNGram',
+                        'min_gram': 3,
+                        'max_gram': 15
+                    }
                 }
             }
         }
