@@ -354,7 +354,7 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
     )
 
     search_fields = (
-        index.SearchField('title', partial_match=True, boost=2),
+        index.SearchField('title', partial_match=True, boost=10),
         index.FilterField('id'),
         index.FilterField('live'),
         index.FilterField('owner'),
