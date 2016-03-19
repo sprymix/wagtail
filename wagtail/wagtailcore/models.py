@@ -1464,6 +1464,10 @@ class PageRevision(models.Model):
         # Override the possibly-outdated tree parameter fields from this revision object
         # with up-to-date values
         obj.pk = self.page.pk
+        for parent_class in self.page._meta.get_parent_list():
+            parent_pk = parent_class._meta.pk.attname
+            setattr(obj, parent_pk, getattr(self.page, parent_pk))
+
         obj.path = self.page.path
         obj.depth = self.page.depth
         obj.numchild = self.page.numchild
