@@ -196,22 +196,9 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
                           parent_page=parent_page)
 
         if form.is_valid():
-            # Initialize the empty page in the treebeard so that we put the page
-            # in the correct place in the hierarchy. We cannot rely on automatic
-            # "add_child" since the parent and child pages may be of different
-            # classes. We also cannot use "add_child" with a committed child
-            # page.
-            #
-            parent_page.add_child(instance=page)
-
             is_publishing = bool(request.POST.get('action-publish')) and parent_page_perms.can_publish_subpage()
             is_submitting = bool(request.POST.get('action-submit'))
 
-            # save whatever page updates we need
-            #
-            page.save()
-
-            # Set live to False and has_unpublished_changes to True if we are not publishing
             if not is_publishing:
                 page.live = False
 
