@@ -327,7 +327,7 @@ class AbstractImage(CollectionMember, TagSearchable, WillowImageWrapper):
 
     def get_rendition(self, filter):
         return self._get_rendition(self.renditions, filter,
-                                   self.get_focal_point_key())
+                                   self.get_focal_point_key(filter))
 
     def get_user_rendition(self, filter):
         return self._get_rendition(self.user_renditions, filter)
@@ -353,10 +353,10 @@ class AbstractImage(CollectionMember, TagSearchable, WillowImageWrapper):
         from wagtail.wagtailimages.permissions import permission_policy
         return permission_policy.user_has_permission_for_instance(user, 'change', self)
 
-    def get_focal_point_key(self):
+    def get_focal_point_key(self, filter):
         # generate new filename derived from old one, inserting the filter spec and focal point key before the extension
         if self.has_focal_point():
-            return self.get_focal_point().get_key()
+            return filter.get_vary_key(self)
         else:
             return ''
 
