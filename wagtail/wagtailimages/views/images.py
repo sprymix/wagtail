@@ -33,14 +33,15 @@ def index(request):
         request.user, ['change', 'delete']
     ).order_by('-created_at')
 
+    images = images.filter(show_in_catalogue=True)
+
     # Search
     query_string = None
     if 'q' in request.GET:
         form = SearchForm(request.GET, placeholder=_("Search images"))
         if form.is_valid():
             query_string = form.cleaned_data['q']
-            images = images.search(query_string,
-                                   filters={'show_in_catalogue': True})
+            images = images.search(query_string)
     else:
         form = SearchForm(placeholder=_("Search images"))
 
