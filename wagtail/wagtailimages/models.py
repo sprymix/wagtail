@@ -612,6 +612,15 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
 
         return rendition
 
+    def get_rect(self):
+        return Rect(0, 0, self.width, self.height)
+
+    def get_focal_point(self):
+        return None
+
+    def has_focal_point(self):
+        return False
+
 
 # Receive the pre_delete signal and delete the file associated with the model instance.
 @receiver(pre_delete, sender=Rendition)
