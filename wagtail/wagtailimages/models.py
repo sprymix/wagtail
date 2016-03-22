@@ -292,9 +292,6 @@ class AbstractImage(CollectionMember, TagSearchable, WillowImageWrapper):
             return cls.renditions.related.related_model
 
     def _get_rendition(self, renditions, filter, focal_point_key=''):
-        if isinstance(filter, string_types):
-            filter, created = Filter.objects.get_or_create(spec=filter)
-
         spec_hash = filter.get_cache_key(self)
 
         try:
@@ -326,10 +323,16 @@ class AbstractImage(CollectionMember, TagSearchable, WillowImageWrapper):
         return rendition
 
     def get_rendition(self, filter):
+        if isinstance(filter, string_types):
+            filter, created = Filter.objects.get_or_create(spec=filter)
+
         return self._get_rendition(self.renditions, filter,
                                    self.get_focal_point_key(filter))
 
     def get_user_rendition(self, filter):
+        if isinstance(filter, string_types):
+            filter, created = Filter.objects.get_or_create(spec=filter)
+
         return self._get_rendition(self.user_renditions, filter)
 
     def is_portrait(self):
