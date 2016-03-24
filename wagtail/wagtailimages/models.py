@@ -590,8 +590,8 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
             )
         except ObjectDoesNotExist:
             try:
-                # Generate the rendition image
-                generated_image = filter.run(self, BytesIO())
+                # Generate the rendition image using the original image
+                generated_image = filter.run(self.image, BytesIO())
             except IOError:
                 return _rendition_for_missing_image(
                             self.image.renditions.model,
