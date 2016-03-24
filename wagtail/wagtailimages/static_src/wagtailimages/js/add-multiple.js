@@ -141,8 +141,9 @@ $(function() {
 
                     $('.right', itemElement).append(response.form);
 
-                    // run tagit enhancement
-                    $('.tag_field input', itemElement).tagit(window.tagit_opts);
+                    // run tagit enhancement, targeting specifically
+                    // the core tag field
+                    $('.tag_field .input > input', itemElement).tagit(window.tagit_opts);
                 } else {
                     // special processing for one file only uploads
                     if (oneFileOnly) {
@@ -190,8 +191,9 @@ $(function() {
                     }
 
                     form.replaceWith(data.form);
-                    // run tagit enhancement on new form
-                    $('.tag_field input', form).tagit(window.tagit_opts);
+                    // run tagit enhancement on new form, targeting specifically
+                    // the core tag field
+                    $('.tag_field .input > input', form).tagit(window.tagit_opts);
                 }
             });
         });
