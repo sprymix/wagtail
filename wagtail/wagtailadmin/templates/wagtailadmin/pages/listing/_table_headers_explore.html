@@ -39,10 +39,10 @@ ordering: the current sort parameter
     <th class="private-title">
         {% if sortable %}
             <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "private_title" %}-{% endif %}private_title" class="icon icon-arrow-{% if ordering == "-private_title" %}up-after{% else %}down-after{% endif %} {% if ordering == "private_title" or ordering == "-private_title" %}teal {% endif %}">
-                {% trans 'Internal title' %}
+                {% trans 'Private title' %}
             </a>
         {% else %}
-            {% trans 'Internal title' %}
+            {% trans 'Private title' %}
         {% endif %}
     </th>
     {% if show_parent %}
