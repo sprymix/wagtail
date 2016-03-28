@@ -294,6 +294,7 @@ def edit(request, page_id):
 
             is_publishing = bool(request.POST.get('action-publish')) and page_perms.can_publish()
             is_submitting = bool(request.POST.get('action-submit'))
+            is_unarchiving = bool(request.POST.get('action-unarchive'))
             is_reverting = bool(request.POST.get('revision'))
 
             # If a revision ID was passed in the form, get that revision so its
@@ -397,6 +398,14 @@ def edit(request, page_id):
                         page.title,
                         previous_revision.created_at.strftime("%d %b %Y %H:%M")
                     )
+                elif is_unarchiving:
+                    Page.objects.filter(pk=page.pk).update(archived=False)
+
+                    message = _(
+                        "Page '{0}' has been updated and unarchived."
+                    ).format(
+                        page.title
+                    )
                 else:
                     message = _(
                         "Page '{0}' has been updated."
@@ -474,6 +483,30 @@ def delete(request, page_id):
         return redirect('wagtailadmin_explore', parent_id)
 
     return render(request, 'wagtailadmin/pages/confirm_delete.html', {
+        'page': page,
+        'descendant_count': page.get_descendant_count()
+    })
+
+
+def archive(request, page_id):
+    page = get_object_or_404(Page, id=page_id)
+    if not page.permissions_for_user(request.user).can_archive():
+        raise PermissionDenied
+
+    if request.method == 'POST':
+        parent_id = page.get_parent().id
+        page.archive()
+
+        messages.success(request, _("Page '{0}' archived.").format(page.title))
+
+        for fn in hooks.get_hooks('after_delete_archive'):
+            result = fn(request, page)
+            if hasattr(result, 'status_code'):
+                return result
+
+        return redirect('wagtailadmin_explore', parent_id)
+
+    return render(request, 'wagtailadmin/pages/confirm_archive.html', {
         'page': page,
         'descendant_count': page.get_descendant_count()
     })

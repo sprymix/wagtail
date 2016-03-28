@@ -301,6 +301,13 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
         default=False,
         editable=False
     )
+    archived = models.BooleanField(
+        default=False,
+        editable=True,
+        blank=False,
+        null=False,
+        serialize='ignore_in_revision',
+        help_text=_("Whether this content is archived"))
     url_path = models.TextField(verbose_name=_('URL path'), blank=True, editable=False)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -496,6 +503,18 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
             )
 
         return result
+
+    def archive(self, commit=True):
+        for subpage in self.get_descendants().filter(archived=False):
+            subpage.unpublish(commit=commit)
+            subpage.archived = True
+
+        self.unpublish(commit=commit)
+        self.archived = True
+        logger.info("Page archived: \"%s\" id=%d", self.title, self.id)
+
+        if commit:
+            self.save()
 
     def delete(self, *args, **kwargs):
         # Ensure that deletion always happens on an instance of Page, not a specific subclass. This
@@ -1731,6 +1750,14 @@ class PagePermissionTester(object):
         if not self.user.is_active:
             return False
         if (not self.page.live) or self.page_is_root:
+            return False
+        if self.page.locked:
+            return False
+
+        return self.user.is_superuser or ('publish' in self.permissions)
+
+    def can_archive(self):
+        if not self.user.is_active:
             return False
         if self.page.locked:
             return False
