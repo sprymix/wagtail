@@ -195,7 +195,7 @@ class WidthHeightOperation(Operation):
         image_width, image_height = willow.get_size()
 
         if self.method == 'width':
-            if not force and image_width <= self.size:
+            if not self.force and image_width <= self.size:
                 return
 
             scale = self.size / image_width
@@ -204,7 +204,7 @@ class WidthHeightOperation(Operation):
             height = int(image_height * scale)
 
         elif self.method == 'height':
-            if not force and image_height <= self.size:
+            if not self.force and image_height <= self.size:
                 return
 
             scale = self.size / image_height
