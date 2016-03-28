@@ -8,7 +8,10 @@ $(function() {
     // prevents browser default drag/drop
     if (!$('html').hasClass('dragdrop_override')) {
         $(document).bind('drop dragover', function (e) {
-            e.preventDefault();
+            // the delegated events should still be propagated
+            if (!e.delegatedEvent) {
+              e.preventDefault();
+            }
         });
         $('html').addClass('dragdrop_override');
     }

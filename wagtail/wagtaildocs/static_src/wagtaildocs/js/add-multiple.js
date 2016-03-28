@@ -6,9 +6,15 @@ $(function() {
     }
 
     // prevents browser default drag/drop
-    $(document).bind('drop dragover', function(e) {
-        e.preventDefault();
-    });
+    if (!$('html').hasClass('dragdrop_override')) {
+        $(document).bind('drop dragover', function (e) {
+            // the delegated events should still be propagated
+            if (!e.delegatedEvent) {
+              e.preventDefault();
+            }
+        });
+        $('html').addClass('dragdrop_override');
+    }
 
     $('#fileupload').fileupload({
         dataType: 'html',
