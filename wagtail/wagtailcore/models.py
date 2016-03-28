@@ -1549,6 +1549,8 @@ class PageRevision(models.Model):
             page.revisions.update(approved_go_live_at=None)
         page.expired = False  # When a page is published it can't be expired
 
+        page.archived = False  # When a page is published it can't be archived
+
         # Set first_published_at if the page is being published now
         if page.live and page.first_published_at is None:
             page.first_published_at = timezone.now()
