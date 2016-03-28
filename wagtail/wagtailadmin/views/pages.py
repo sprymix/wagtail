@@ -315,6 +315,11 @@ def edit(request, page_id):
                 # need the up-to-date URL for the "View Live" button.
                 page = Page.objects.get(pk=page.pk)
 
+            elif not page.live and not is_submitting:
+                # If we are not publishing, but the page is not live, we
+                # want the database record to contain the most recent revision.
+                page.save()
+
             if is_publishing:
                 if page.go_live_at and page.go_live_at > timezone.now():
                     # Page has been scheduled for publishing in the future
