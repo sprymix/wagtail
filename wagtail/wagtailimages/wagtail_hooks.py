@@ -47,9 +47,9 @@ def editor_js():
         static('wagtailimages/js/vendor/jquery.Jcrop.min.js'),
         static('wagtailimages/js/vendor/load-image.min.js'),
         static('wagtailimages/js/vendor/canvas-to-blob.min.js'),
-        static('wagtailimages/js/vendor/jquery.iframe-transport.js'),
-        static('wagtailimages/js/vendor/jquery.fileupload.js'),
-        static('wagtailimages/js/vendor/jquery.fileupload-process.js'),
+        static('wagtailadmin/js/vendor/jquery.iframe-transport.js'),
+        static('wagtailadmin/js/vendor/jquery.fileupload.js'),
+        static('wagtailadmin/js/vendor/jquery.fileupload-process.js'),
         static('wagtailimages/js/vendor/jquery.fileupload-image.js'),
         static('wagtailimages/js/vendor/jquery.fileupload-validate.js'),
     ]
