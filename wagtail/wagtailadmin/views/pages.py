@@ -196,6 +196,8 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
                           parent_page=parent_page)
 
         if form.is_valid():
+            page = form.save(commit=False)
+
             is_publishing = bool(request.POST.get('action-publish')) and parent_page_perms.can_publish_subpage()
             is_submitting = bool(request.POST.get('action-submit'))
 
