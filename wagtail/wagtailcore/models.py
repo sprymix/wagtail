@@ -15,6 +15,7 @@ from django.http import Http404
 from django.core.cache import cache
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.base import BaseHandler
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group, Permission
@@ -707,6 +708,21 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
             logger.info("Page submitted for moderation: \"%s\" id=%d revision_id=%d", self.title, self.id, revision.id)
 
         return revision
+
+    def update_latest_revision(self, fields=None):
+        revision = self.get_latest_revision()
+
+        if fields:
+            new_json = self.specific.serializable_data()
+            cur_json = json.loads(revision.content_json)
+            for field in fields:
+                cur_json[field] = new_json[field]
+
+            revision.content_json = json.dumps(cur_json, cls=DjangoJSONEncoder)
+        else:
+            revision.content_json = self.to_json()
+
+        revision.save()
 
     def get_latest_revision(self):
         return self.revisions.order_by('-created_at', '-id').first()
