@@ -36,7 +36,7 @@
             <ul>
                 <li class="actions">
                     <div class="dropdown dropup dropdown-button match-width {% if is_revision %}warning{% endif %}">
-                        <button type="submit" class="action-save button-longrunning stay {% if is_revision %}warning{% endif %}" tabindex="3" data-clicked-text="{% trans 'Saving...' %}" {% if page.locked %}disabled {% endif %}><span class="icon icon-spinner"></span><em>{% if page.locked %}{% trans 'Page locked' %}{% else %}{% if is_revision %}{% trans 'Replace current draft' %}{% else %}{% trans 'Save draft and continue editing...' %}{% endif %}{% endif %}</em></button>
+                        <button type="submit" class="action-save button-longrunning {% if is_revision %}warning{% endif %}" tabindex="3" data-clicked-text="{% trans 'Saving...' %}" {% if page.locked %}disabled {% endif %}><span class="icon icon-spinner"></span><em>{% if page.locked %}{% trans 'Page locked' %}{% else %}{% if is_revision %}{% trans 'Replace current draft' %}{% else %}{% trans 'Save draft and continue editing...' %}{% endif %}{% endif %}</em></button>
 
                         {% if not page.locked %}
                             <div class="dropdown-toggle icon icon-arrow-up"></div>
@@ -62,7 +62,7 @@
                                     <li><input type="submit" name="action-submit" value="{% trans 'Submit for moderation' %}" class="button" /></li>
                                 {% endif %}
 
-                                <li><input type="submit" value="{% trans 'Save draft' %}" class="leave button" /></li>
+                                <li><input type="submit" name="action-save-and-leave" value="{% trans 'Save draft' %}" class="button" /></li>
                             </ul>
                         {% endif %}
                     </div>

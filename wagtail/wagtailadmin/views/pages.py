@@ -200,6 +200,7 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
 
             is_publishing = bool(request.POST.get('action-publish')) and parent_page_perms.can_publish_subpage()
             is_submitting = bool(request.POST.get('action-submit'))
+            is_save_and_leave = bool(request.POST.get('action-save-and-leave'))
 
             if not is_publishing:
                 page.live = False
@@ -248,10 +249,10 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
 
             # check whether we need to stay on this page or go to the parent
             #
-            if request.GET.get('stay') == '1':
-                return redirect('wagtailadmin_pages:edit', page.id)
-            else:
+            if is_publishing or is_submitting or is_save_and_leave:
                 return redirect('wagtailadmin_explore', page.get_parent().id)
+            else:
+                return redirect('wagtailadmin_pages:edit', page.id)
         else:
             messages.error(request, _("The page could not be created due to validation errors"))
             edit_handler = edit_handler_class(instance=page, form=form)
@@ -298,6 +299,7 @@ def edit(request, page_id):
             is_submitting = bool(request.POST.get('action-submit'))
             is_unarchiving = bool(request.POST.get('action-unarchive'))
             is_reverting = bool(request.POST.get('revision'))
+            is_save_and_leave = bool(request.POST.get('action-save-and-leave'))
 
             # If a revision ID was passed in the form, get that revision so its
             # date can be referenced in notification messages
@@ -429,15 +431,17 @@ def edit(request, page_id):
 
             # check whether we need to stay on this page or go to the parent
             #
-            if request.GET.get('stay') == '1':
-                form = form_class(instance=page)
-                edit_handler = edit_handler_class(instance=page, form=form)
-            else:
+            if is_publishing or is_submitting or is_save_and_leave:
                 parent = page.get_parent()
                 if parent:
                     return redirect('wagtailadmin_explore', parent.id)
                 else:
                     return redirect('wagtailadmin_explore', page.id)
+
+            else:
+                form = form_class(instance=page)
+                edit_handler = edit_handler_class(instance=page, form=form)
+
         else:
             if page.locked:
                 messages.error(request, _("The page could not be saved as it is locked"))
