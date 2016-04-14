@@ -301,6 +301,19 @@ def edit(request, page_id):
             is_reverting = bool(request.POST.get('revision'))
             is_save_and_leave = bool(request.POST.get('action-save-and-leave'))
 
+            if not page.live and not is_submitting:
+                # If we are not publishing, but the page is not live, we
+                # want the database record to contain the most recent revision.
+                #
+                # It is important to commit the version AFTER having
+                # performed a save without commit.  This ensures that
+                # transient objects managed by modelcluster are now properly
+                # instantiated and synchronized with the changes.  Skipping
+                # this step results in duplication of transient objects when
+                # committing.
+                #
+                page = form.save()
+
             # If a revision ID was passed in the form, get that revision so its
             # date can be referenced in notification messages
             if is_reverting:
@@ -318,11 +331,6 @@ def edit(request, page_id):
                 # Need to reload the page because the URL may have changed, and we
                 # need the up-to-date URL for the "View Live" button.
                 page = Page.objects.get(pk=page.pk)
-
-            elif not page.live and not is_submitting:
-                # If we are not publishing, but the page is not live, we
-                # want the database record to contain the most recent revision.
-                page.save()
 
             if is_publishing:
                 if page.go_live_at and page.go_live_at > timezone.now():
