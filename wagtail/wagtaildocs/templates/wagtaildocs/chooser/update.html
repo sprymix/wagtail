@@ -1,0 +1,20 @@
+{% load i18n %}
+
+<form class="doc-select"
+      action="{% url 'wagtaildocs:document_chosen' doc.id %}"
+      method="POST" enctype="multipart/form-data">
+    <ul class="fields">
+        {% csrf_token %}
+        {% for field in form.visible_fields %}
+            {% include "wagtailadmin/shared/field_as_li.html" %}
+        {% endfor %}
+        {% for field in form.hidden_fields %}
+             <div style="display:none;">{{ field }}</div>
+        {% endfor %}
+        <li>
+            <input type="submit" value="{% trans 'Proceed' %}" />
+            <a href="{% url 'wagtaildocs:delete_multiple' doc.id %}" class="delete button button-secondary no">{% trans "Delete" %}</a>
+        </li>
+    </ul>
+</form>
+<script type="text/javascript">add_select_doc_widget();</script>

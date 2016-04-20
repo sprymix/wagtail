@@ -1,7 +1,10 @@
 import json
+import uuid
 
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.template.loader import render_to_string
 
 from wagtail.utils.pagination import paginate
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
@@ -85,6 +88,7 @@ def chooser(request):
         'searchform': searchform,
         'collections': collections,
         'is_searching': False,
+        'uploadid': uuid.uuid4(),
     })
 
 
@@ -103,20 +107,28 @@ def chooser_upload(request):
     DocumentForm = get_document_form(Document)
 
     if request.POST:
-        document = Document(uploaded_by_user=request.user)
-        form = DocumentForm(request.POST, request.FILES, instance=document)
+        if not request.is_ajax():
+            return HttpResponseBadRequest("Cannot POST to this view without AJAX")
 
-        if form.is_valid():
-            form.save()
+        if not request.FILES:
+            return HttpResponseBadRequest("Must upload a file")
 
-            # Reindex the document to make sure all tags are indexed
-            for backend in get_search_backends():
-                backend.add(document)
+        # Save it
+        document = Document(uploaded_by_user=request.user, title=request.FILES['files[]'].name, file=request.FILES['files[]'])
+        document.save()
 
-            return render_modal_workflow(
-                request, None, 'wagtaildocs/chooser/document_chosen.js',
-                {'document_json': get_document_json(document)}
-            )
+        # Success! Send back an edit form for this image to the user
+        form = DocumentForm(instance=document, prefix='doc-%d' % document.id)
+
+        return JsonResponse({
+            'success': True,
+            'doc_id': int(document.id),
+            'form': render_to_string('wagtaildocs/chooser/update.html', {
+                'doc': document,
+                'form': form,
+            }, request=request),
+        })
+
     else:
         form = DocumentForm()
 

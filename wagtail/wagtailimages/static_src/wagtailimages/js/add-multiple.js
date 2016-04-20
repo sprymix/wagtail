@@ -20,7 +20,7 @@ $(function() {
         options = options || {};
         var oneFileUploaded = false,
             oneFileOnly = options.oneFileOnly;
-        var dropZone = $('.drop-zone');
+        var dropZone = $('.drop-zone', main_el);
 
         function _oneFileOnlyPicked() {
             if (oneFileUploaded) {
