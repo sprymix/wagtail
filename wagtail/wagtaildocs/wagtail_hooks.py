@@ -46,6 +46,10 @@ def editor_js():
     js_files = [
         static('wagtaildocs/js/hallo-plugins/hallo-wagtaildoclink.js'),
         static('wagtaildocs/js/document-chooser.js'),
+        static('wagtaildocs/js/add-multiple.js'),
+        static('wagtailadmin/js/vendor/jquery.iframe-transport.js'),
+        static('wagtailadmin/js/vendor/jquery.fileupload.js'),
+        static('wagtailadmin/js/vendor/jquery.fileupload-process.js'),
     ]
     js_includes = format_html_join(
         '\n', '<script src="{0}"></script>',
