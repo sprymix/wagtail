@@ -14,7 +14,7 @@ from wagtail.wagtailcore.models import Collection
 from wagtail.wagtailsearch.backends import get_search_backends
 
 from wagtail.wagtaildocs.models import get_document_model
-from wagtail.wagtaildocs.forms import get_document_form
+from wagtail.wagtaildocs.forms import get_document_form, get_document_multi_form
 from wagtail.wagtaildocs.permissions import permission_policy
 
 
@@ -93,11 +93,29 @@ def chooser(request):
 
 
 def document_chosen(request, document_id):
-    document = get_object_or_404(get_document_model(), id=document_id)
+    doc = get_object_or_404(get_document_model(), id=document_id)
+    Document = get_document_model()
+    DocumentMultiForm = get_document_multi_form(Document)
+
+    # handle some updated data if this is a POST
+    if request.POST:
+        if not request.is_ajax():
+            return HttpResponseBadRequest("Cannot POST to this view without AJAX")
+
+        form = DocumentMultiForm(
+            request.POST, request.FILES, instance=doc, prefix='doc-' + document_id, user=request.user
+        )
+
+        if form.is_valid():
+            form.save()
+
+        # Reindex the doc to make sure all tags are indexed
+        for backend in get_search_backends():
+            backend.add(doc)
 
     return render_modal_workflow(
         request, None, 'wagtaildocs/chooser/document_chosen.js',
-        {'document_json': get_document_json(document)}
+        {'document_json': get_document_json(doc)}
     )
 
 
@@ -105,6 +123,7 @@ def document_chosen(request, document_id):
 def chooser_upload(request):
     Document = get_document_model()
     DocumentForm = get_document_form(Document)
+    DocumentMultiForm = get_document_multi_form(Document)
 
     if request.POST:
         if not request.is_ajax():
@@ -118,7 +137,7 @@ def chooser_upload(request):
         document.save()
 
         # Success! Send back an edit form for this image to the user
-        form = DocumentForm(instance=document, prefix='doc-%d' % document.id)
+        form = DocumentMultiForm(instance=document, prefix='doc-%d' % document.id, user=request.user)
 
         return JsonResponse({
             'success': True,
