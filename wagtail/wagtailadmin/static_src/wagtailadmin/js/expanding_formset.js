@@ -4,6 +4,7 @@ function buildExpandingFormset(prefix, opts) {
     }
 
     var addButton = $('#' + prefix + '-ADD');
+    var multiButton = $('#' + prefix + '-ADD-MULTI');
     var formContainer = $('#' + prefix + '-FORMS');
     var totalFormsInput = $('#' + prefix + '-TOTAL_FORMS');
     var formCount = parseInt(totalFormsInput.val(), 10);
@@ -21,7 +22,7 @@ function buildExpandingFormset(prefix, opts) {
         emptyFormTemplate = emptyFormTemplate.textContent;
     }
 
-    addButton.click(function() {
+    opts.doAdd = function() {
         if (addButton.hasClass('disabled')) return false;
         var newFormHtml = emptyFormTemplate
             .replace(/__prefix__/g, formCount)
@@ -32,5 +33,15 @@ function buildExpandingFormset(prefix, opts) {
 
         formCount++;
         totalFormsInput.val(formCount);
-    });
+
+        return newFormHtml;
+    };
+    addButton.click(opts.doAdd);
+
+    if (opts.onMultiAdd) {
+      multiButton.click(function() {
+        if (addButton.hasClass('disabled')) return false;
+        opts.onMultiAdd(opts.doAdd);
+      });
+    }
 }

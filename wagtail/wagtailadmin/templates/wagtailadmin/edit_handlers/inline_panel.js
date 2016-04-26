@@ -3,7 +3,10 @@
         formsetPrefix: "id_{{ self.formset.prefix }}",
         emptyChildFormPrefix: "{{ self.empty_child.form.prefix }}",
         canOrder: {% if can_order %}true{% else %}false{% endif %},
-        maxForms: {{ self.formset.max_num }}
+        maxForms: {{ self.formset.max_num }},
+        {% if onMultiAdd %}
+        onMultiAdd: {{ onMultiAdd }}
+        {% endif %}
     });
 
     {% for child in self.children %}
@@ -12,4 +15,5 @@
     panel.setHasContent();
     panel.updateMoveButtonDisabledStates();
     panel.updateAddButtonState();
+    panel.updateMultiAddButtonState();
 })();
