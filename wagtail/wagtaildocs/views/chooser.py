@@ -14,7 +14,7 @@ from wagtail.wagtailcore.models import Collection
 from wagtail.wagtailsearch.backends import get_search_backends
 
 from wagtail.wagtaildocs.models import get_document_model
-from wagtail.wagtaildocs.forms import get_document_form
+from wagtail.wagtaildocs.forms import get_document_form, get_document_multi_form
 from wagtail.wagtaildocs.permissions import permission_policy
 
 
@@ -105,6 +105,7 @@ def document_chosen(request, document_id):
 def chooser_upload(request):
     Document = get_document_model()
     DocumentForm = get_document_form(Document)
+    DocumentMultiForm = get_document_multi_form(Document)
 
     if request.POST:
         if not request.is_ajax():
@@ -118,7 +119,7 @@ def chooser_upload(request):
         document.save()
 
         # Success! Send back an edit form for this image to the user
-        form = DocumentForm(instance=document, prefix='doc-%d' % document.id)
+        form = DocumentMultiForm(instance=document, prefix='doc-%d' % document.id, user=request.user)
 
         return JsonResponse({
             'success': True,
