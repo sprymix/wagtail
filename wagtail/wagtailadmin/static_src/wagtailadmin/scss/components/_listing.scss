@@ -564,6 +564,10 @@ table.listing {
                     }
                 }
 
+                .selected .image {
+                    background-color: $color-teal;
+                }
+
                 &:hover {
                     background-color: #fdfdfd;
 

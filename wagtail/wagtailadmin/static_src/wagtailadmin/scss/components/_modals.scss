@@ -149,3 +149,18 @@ $zindex-modal-background: 500;
         }
     }
 }
+
+// multiselect
+.modal-content {
+    .multiselect-picks {
+        @include clearfix();
+
+        &.hidden {
+            display: none;
+        }
+
+        ul > li {
+            padding-right: 1em;
+        }
+    }
+}

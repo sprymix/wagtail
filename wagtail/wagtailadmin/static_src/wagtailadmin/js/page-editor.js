@@ -241,6 +241,19 @@ function InlinePanel(opts) {
         }
     };
 
+    self.updateMultiAddButtonState = function() {
+        if (opts.onMultiAdd && opts.maxForms) {
+            var forms = self.formsUl.children('li:visible');
+            var addButton = $('#' + opts.formsetPrefix + '-ADD-MULTI');
+
+            if (forms.length >= opts.maxForms) {
+                addButton.addClass('disabled');
+            } else {
+                addButton.removeClass('disabled');
+            }
+        }
+    };
+
     self.animateSwap = function(item1, item2) {
         var parent = self.formsUl;
         var children = parent.children('li:visible');
@@ -285,7 +298,8 @@ function InlinePanel(opts) {
             self.updateAddButtonState();
 
             if (opts.onAdd) opts.onAdd();
-        }
+        },
+        onMultiAdd: opts.onMultiAdd
     });
 
     return self;
