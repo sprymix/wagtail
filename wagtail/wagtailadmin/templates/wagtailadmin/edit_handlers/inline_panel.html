@@ -27,12 +27,12 @@
         </script>
 
         <p class="add">
-            <a class="button bicolor icon icon-plus" id="id_{{ self.formset.prefix }}-ADD" value="Add">
-                {% blocktrans with heading=self.heading|lower %}Add {{ heading }}{% endblocktrans %}</a>
-
             {% if self.multiselect %}
                 <a class="button bicolor icon icon-plus" id="id_{{ self.formset.prefix }}-ADD-MULTI" value="MultiAdd">
                     {% blocktrans with heading=self.heading|lower %}Add Multiple {{ heading }}{% endblocktrans %}</a>
+            {% else %}
+                <a class="button bicolor icon icon-plus" id="id_{{ self.formset.prefix }}-ADD" value="Add">
+                    {% blocktrans with heading=self.heading|lower %}Add {{ heading }}{% endblocktrans %}</a>
             {% endif %}
         </p>
     </div>
