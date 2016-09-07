@@ -60,6 +60,7 @@ function ModalWorkflow(opts) {
         if (response.html) {
             // if the response is html
             self.body.html(response.html);
+            initCollapsibleBlocks(self.body);
             container.modal('show');
         }
 
