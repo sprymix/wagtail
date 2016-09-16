@@ -593,7 +593,7 @@ button {
     }
 
     // Object controls
-    .controls {
+    .controls, .controls-2 {
         position: absolute;
         z-index: 1;
         right: 1em;
@@ -613,6 +613,10 @@ button {
             display: none;
             visibility: hidden;
         }
+    }
+
+    .controls-2 {
+        top: 3.5rem;
     }
 
 }

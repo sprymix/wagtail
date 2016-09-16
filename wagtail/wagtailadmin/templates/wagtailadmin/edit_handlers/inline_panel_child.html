@@ -7,5 +7,11 @@
         {% endif %}
         <li><button type="button" class="icon text-replace white icon-bin hover-no" id="{{ child.form.DELETE.id_for_label }}-button" title="{% trans 'Delete' %}">{% trans "Delete" %}</button></li>
     </ul>
+    {% if can_order %}
+        <ul class="controls-2">
+            <li><button type="button" class="icon text-replace white icon-collapse-up inline-child-move-top" id="{{ child.form.prefix }}-move-top" title="{% trans 'Move to top' %}">{% trans "Move to top" %}</button></li>
+            <li><button type="button" class="icon text-replace white icon-collapse-down inline-child-move-bottom" id="{{ child.form.prefix }}-move-bottom" title="{% trans 'Move to bottom' %}">{% trans "Move to bottom" %}</button></li>
+        </ul>
+    {% endif %}
     {{ child.render_form_content }}
 </li>

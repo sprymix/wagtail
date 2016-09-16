@@ -200,6 +200,58 @@ function InlinePanel(opts) {
 
                 self.updateMoveButtonDisabledStates();
             });
+
+            $('#' + prefix + '-move-top').click(function() {
+                var currentChild = $('#' + childId);
+                var currentChildOrderElem = currentChild.find('input[name$="-ORDER"]');
+                var currentChildOrder = currentChildOrderElem.val();
+
+                var topChild = currentChild.parent().children(':first-child');
+                if (!topChild.length) return;
+
+                var topChildOrderElem = topChild.find('input[name$="-ORDER"]');
+                var topChildOrder = topChildOrderElem.val();
+
+                self.animateMove(currentChild, 'top');
+
+                currentChild.insertBefore(topChild);
+
+                currentChild.parent().children('li:visible')
+                            .find('input[name$="-ORDER"]')
+                            .each(function(index, el) {
+                                $(el).val(index + 1);
+                            });
+
+                currentChildOrderElem.val(topChildOrder);
+
+                self.updateMoveButtonDisabledStates();
+            });
+
+            $('#' + prefix + '-move-bottom').click(function() {
+                var currentChild = $('#' + childId);
+                var currentChildOrderElem = currentChild.find('input[name$="-ORDER"]');
+                var currentChildOrder = currentChildOrderElem.val();
+
+                var bottomChild = currentChild.parent().children(':last-child');
+                if (!bottomChild.length) return;
+
+                var bottomChildOrderElem = bottomChild.find('input[name$="-ORDER"]');
+                var bottomChildOrder = bottomChildOrderElem.val();
+
+                self.animateMove(currentChild, 'bottom');
+
+                currentChild.insertAfter(bottomChild);
+
+                currentChild.parent().children('li:visible')
+                            .find('input[name$="-ORDER"]')
+                            .each(function(index, el) {
+                                $(el).val(index + 1);
+                            });
+
+                currentChildOrderElem.val(bottomChildOrder);
+
+                self.updateMoveButtonDisabledStates();
+            });
         }
 
         /* Hide container on page load if it is marked as deleted. Remove the error
@@ -224,6 +276,8 @@ function InlinePanel(opts) {
             forms.each(function(i) {
                 $('ul.controls .inline-child-move-up', this).toggleClass('disabled', i === 0).toggleClass('enabled', i !== 0);
                 $('ul.controls .inline-child-move-down', this).toggleClass('disabled', i === forms.length - 1).toggleClass('enabled', i != forms.length - 1);
+                $('ul.controls-2 .inline-child-move-top', this).toggleClass('disabled', i === 0).toggleClass('enabled', i !== 0);
+                $('ul.controls-2 .inline-child-move-bottom', this).toggleClass('disabled', i === forms.length - 1).toggleClass('enabled', i != forms.length - 1);
             });
         }
     };
@@ -277,6 +331,35 @@ function InlinePanel(opts) {
 
         item2.animate({
             top:item1.position().top
+        }, 200, function() {
+            parent.removeClass('moving').removeAttr('style');
+            children.removeClass('moving').removeAttr('style');
+        });
+    };
+
+    self.animateMove = function(item, where) {
+        var parent = self.formsUl;
+        var children = parent.children('li:visible');
+        var target;
+
+        if (where == 'top') {
+            target = children.find(':first-child');
+        } else {
+            target = children.find(':last-child');
+        }
+
+        // Apply moving class to container (ul.multiple) so it can assist absolute positioning of it's children
+        // Also set it's relatively calculated height to be an absolute one, to prevent the container collapsing while its children go absolute
+        parent.addClass('moving').css('height', parent.height());
+
+        children.each(function() {
+            // console.log($(this));
+            $(this).css('top', $(this).position().top);
+        }).addClass('moving');
+
+        // animate swapping around
+        item.animate({
+            top:target.position().top
         }, 200, function() {
             parent.removeClass('moving').removeAttr('style');
             children.removeClass('moving').removeAttr('style');
