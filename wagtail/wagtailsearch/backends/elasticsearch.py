@@ -330,14 +330,15 @@ class ElasticSearchQuery(BaseSearchQuery):
             return inner_query
 
     def get_sort(self):
-        # Ordering by relevance is the default in Elasticsearch
-        if self.order_by_relevance:
-            return
-
         # Get queryset and make sure its ordered
         if self.queryset.ordered:
             order_by_fields = self.queryset.query.order_by
             sort = []
+
+            if self.order_by_relevance:
+                sort.append({
+                    '_score': 'desc'
+                })
 
             for order_by_field in order_by_fields:
                 reverse = False
@@ -357,6 +358,10 @@ class ElasticSearchQuery(BaseSearchQuery):
             return sort
 
         else:
+            # Ordering by relevance is the default in Elasticsearch
+            if self.order_by_relevance:
+                return
+
             # Order by pk field
             return ['pk']
 
