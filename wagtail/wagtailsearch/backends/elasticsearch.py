@@ -306,19 +306,40 @@ class ElasticSearchQuery(BaseSearchQuery):
 
         return filters
 
+    def _process_script_functions(self, ff):
+        result = []
+
+        for f in ff:
+            t, data = next(iter(f.items()))
+            if t == 'script_score':
+                if (isinstance(data['script'], dict) and
+                        data['script']['params']):
+
+                    data = data.copy()
+                    data['script'] = data['script'].copy()
+                    params = {}
+                    for pn, pv in data['script']['params'].items():
+                        if callable(pv):
+                            pv = pv()
+                        params[pn] = pv
+                    data['script']['params'] = params
+            result.append({t: data})
+
+        return result
+
     def get_query(self):
         inner_query = self.get_inner_query()
         filters = self.get_filters()
 
         if len(filters) == 1:
-            return {
+            query = {
                 'filtered': {
                     'query': inner_query,
                     'filter': filters[0],
                 }
             }
         elif len(filters) > 1:
-            return {
+            query = {
                 'filtered': {
                     'query': inner_query,
                     'filter': {
@@ -327,7 +348,27 @@ class ElasticSearchQuery(BaseSearchQuery):
                 }
             }
         else:
-            return inner_query
+            query = inner_query
+
+        sf = getattr(self.queryset.model, 'es_search_score_functions', None)
+        if sf:
+            sf = self._process_script_functions(sf)
+
+            if len(sf) > 1:
+                query = {
+                    'function_score': {
+                        'query': query,
+                        'functions': sf
+                    }
+                }
+            else:
+                _query = query
+                query = {
+                    'function_score': sf[0].copy()
+                }
+                query['function_score']['query'] = _query
+
+        return query
 
     def get_sort(self):
         # Get queryset and make sure its ordered

@@ -1,6 +1,6 @@
-__version__ = '1.4.100.33'
+__version__ = '1.4.100.34'
 # Required for npm package for frontend
-__semver__ = '1.4.100.33'
+__semver__ = '1.4.100.34'
 default_app_config = 'wagtail.wagtailcore.apps.WagtailCoreAppConfig'
 
 
