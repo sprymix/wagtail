@@ -390,11 +390,12 @@ class ElasticSearchQuery(BaseSearchQuery):
                     field_name = order_by_field[1:]
 
                 field = self._get_filterable_field(field_name)
-                field_index_name = field.get_index_name(self.queryset.model)
+                if field:
+                    field_index_name = field.get_index_name(self.queryset.model)
 
-                sort.append({
-                    field_index_name: 'desc' if reverse else 'asc'
-                })
+                    sort.append({
+                        field_index_name: 'desc' if reverse else 'asc'
+                    })
 
             return sort
 
