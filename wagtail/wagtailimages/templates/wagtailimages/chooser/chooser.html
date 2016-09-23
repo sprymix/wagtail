@@ -48,6 +48,14 @@
                         </div>
                         {% csrf_token %}
                     </form>
+
+                    <form class="import-form" action="{% url 'wagtailimages:chooser_import_youtube' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}"
+                    method="POST">
+                        <div>OR</div>
+                        <input type="text" name="youtubeurl" placeholder="Youtube Video URL" />
+                        <input type="submit" value="Import Youtube Video Thumbnail" />
+                        {% csrf_token %}
+                    </form>
                 </div>
 
                 <div class="progress progress-secondary">
@@ -75,6 +83,33 @@
             $(function() {
                 add_file_upload_widget($('#{{ uploadid }}'),
                                        window.fileupload_opts);
+
+                $('#{{ uploadid }} .import-form').submit(function(e) {
+                    var main_el = $('#{{ uploadid }}');
+                    var li = $($('.upload-list-item', main_el).html()).addClass('upload-uploading');
+                    var dropZone = $('.drop-zone', main_el);
+                    $('.upload-list', main_el).append(li);
+
+                    $.ajax({
+                        type: 'POST',
+                        url: $(e.target).attr('action'),
+                        data: $(e.target).serialize(),
+                        success: (function(li) {
+                            return function(data) {
+                                if (data.success) {
+                                    dropZone.hide(400);
+                                    li.find('.preview .thumb').each(function(index, el) {
+                                        $(el).addClass('hasthumb');
+                                        $(el).append('<img src="' + data.thumbnail + '" />');
+                                    });
+
+                                    li.find('.right').append(data.form);
+                                }
+                            }
+                        })(li)
+                    });
+                    e.preventDefault();
+                });
             });
 
             window.tagit_opts = {

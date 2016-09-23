@@ -1,7 +1,11 @@
 import json
 import uuid
 import urllib
+import urlparse
 
+import urllib3
+
+from django.core.files import uploadedfile
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render
 
@@ -224,6 +228,69 @@ def chooser_upload(request):
     return JsonResponse({
         'success': True,
         'image_id': int(image.id),
+        'form': render_to_string('wagtailimages/chooser/update.html', {
+            'image': image,
+            'form': form,
+            'will_select_format': will_select_format,
+            'will_select_rendition': will_select_rendition,
+            'additional_params': get_cropper_params(request),
+        }, request=request),
+    })
+
+
+IMG_URL = 'https://img.youtube.com/vi/{vid}/maxresdefault.jpg'
+http = urllib3.PoolManager()
+
+def _fetch_youtube_image(video_id):
+    url = IMG_URL.format(vid=video_id)
+    req = http.urlopen('GET', url, preload_content=False)
+    ct = req.getheader('Content-Type')
+    f = uploadedfile.SimpleUploadedFile(
+        'youtube-{}'.format(video_id), req.read(), ct)
+    return f
+
+
+@require_POST
+@permission_checker.require('add')
+def chooser_import_youtube(request):
+    Image = get_image_model()
+    ImageForm = get_image_form(Image, hide_file=True)
+
+    if not request.is_ajax():
+        return HttpResponseBadRequest("Cannot POST to this view without AJAX")
+
+    youtube_url = request.POST.get('youtubeurl')
+
+    if not youtube_url:
+        return HttpResponseBadRequest("Must specify Youtube URL")
+
+    parsed = urlparse.urlsplit(youtube_url)
+    if not parsed.query:
+        return HttpResponseBadRequest("Invalid Youtube URL")
+
+    params = urlparse.parse_qs(parsed.query)
+    vid = params.get('v')
+    if not vid:
+        return HttpResponseBadRequest("Invalid Youtube URL")
+
+    file = _fetch_youtube_image(vid[0])
+
+    # Save it
+    image = Image(uploaded_by_user=request.user,
+                  title=file.name, file=file)
+    image.save()
+
+    # Success! Send back an edit form for this image to the user
+    form = ImageForm(instance=image, prefix='image-%d' % image.id)
+
+    # Keep follow-up settings
+    will_select_format = request.GET.get('select_format')
+    will_select_rendition = request.GET.get('select_rendition')
+
+    return JsonResponse({
+        'success': True,
+        'image_id': int(image.id),
+        'thumbnail': image.get_rendition('forcefit-500x500').url,
         'form': render_to_string('wagtailimages/chooser/update.html', {
             'image': image,
             'form': form,
