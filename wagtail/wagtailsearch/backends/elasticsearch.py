@@ -65,6 +65,7 @@ class ElasticSearchMapping(object):
 
                 if field.partial_match:
                     mapping['analyzer'] = 'edgengram_analyzer'
+                    mapping['search_analyzer'] = 'standard'
 
                 mapping['include_in_all'] = True
 
