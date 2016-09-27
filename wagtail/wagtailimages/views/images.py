@@ -5,6 +5,8 @@ from django.utils.translation import ugettext as _
 from django.views.decorators.vary import vary_on_headers
 from django.core.urlresolvers import reverse, NoReverseMatch
 from django.http import HttpResponse, JsonResponse
+from django.db.models import deletion
+from django.db import router
 
 from wagtail.utils.pagination import paginate
 from wagtail.wagtailcore.models import Site, Collection
@@ -13,7 +15,7 @@ from wagtail.wagtailadmin import messages
 from wagtail.wagtailadmin.utils import PermissionPolicyChecker, permission_denied
 from wagtail.wagtailsearch.backends import get_search_backends
 
-from wagtail.wagtailimages.models import get_image_model, Filter
+from wagtail.wagtailimages.models import get_image_model, Filter, AbstractRendition
 from wagtail.wagtailimages.forms import get_image_form, URLGeneratorForm
 from wagtail.wagtailimages.permissions import permission_policy
 from wagtail.wagtailimages.utils import generate_signature
@@ -228,9 +230,28 @@ def delete(request, image_id):
         return permission_denied(request)
 
     if request.POST:
-        image.delete()
-        messages.success(request, _("Image '{0}' deleted.").format(image.title))
-        return redirect('wagtailimages:index')
+        using = router.db_for_write(image.__class__, instance=image)
+        collector = deletion.Collector(using=using)
+        collector.collect([image], keep_parents=True)
+        collector.sort()
+
+        dependants = {
+            m._meta: ii for m, ii in collector.data.items()
+            if not issubclass(m, (AbstractRendition, image.__class__))
+            and not getattr(m, 'exclude_from_search_index', False)
+        }
+
+        if dependants:
+            return render(
+                request, "wagtailimages/images/cannot_delete.html", {
+                    'image': image,
+                    'dependants': dependants
+                })
+        else:
+            image.delete()
+            messages.success(
+                request, _("Image '{0}' deleted.").format(image.title))
+            return redirect('wagtailimages:index')
 
     return render(request, "wagtailimages/images/confirm_delete.html", {
         'image': image,
