@@ -177,11 +177,21 @@ $(function() {
     if (window.headerSearch) {
         var searchCurrentIndex = 0;
         var searchNextIndex = 0;
+        var form = $(window.headerSearch.termInput).closest('form');
+        var inputs = form.find(':input:not([type=submit])');
 
-        $(window.headerSearch.termInput).on('input', function() {
-            clearTimeout($.data(this, 'timer'));
-            var wait = setTimeout(search, 200);
-            $(this).data('timer', wait);
+        inputs.each(function() {
+            var evname = 'input';
+
+            if ($(this).attr('type') == 'checkbox') {
+                evname = 'change';
+            }
+
+            $(this).on(evname, function() {
+                clearTimeout($.data(this, 'timer'));
+                var wait = setTimeout(search, 200);
+                $(this).data('timer', wait);
+            });
         });
 
         // auto focus on search box
@@ -193,14 +203,15 @@ $(function() {
             $(window.headerSearch.termInput).parent().addClass(workingClasses);
             searchNextIndex++;
             var index = searchNextIndex;
+            var args = form.serialize();
             $.ajax({
                 url: window.headerSearch.url,
-                data: {q: $(window.headerSearch.termInput).val()},
+                data: args,
                 success: function(data, status) {
                     if (index > searchCurrentIndex) {
                         searchCurrentIndex = index;
                         $(window.headerSearch.targetOutput).html(data).slideDown(800);
-                        window.history.pushState(null, 'Search results', '?q=' + $(window.headerSearch.termInput).val());
+                        window.history.pushState(null, 'Search results', '?' + args);
                     }
                 },
 
