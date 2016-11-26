@@ -32,6 +32,14 @@ function makeRichTextEditable(id, plugins) {
         removeStylingPending = false;
     }
 
+    /* Workaround for faulty change-detection in hallo */
+    function setModified() {
+        var hallo = richText.data('IKS-hallo');
+        if (hallo) {
+            hallo.setModified();
+        }
+    }
+
     var closestObj = input.closest('.object');
 
     richText.hallo({
@@ -44,8 +52,11 @@ function makeRichTextEditable(id, plugins) {
             setTimeout(removeStyling, 100);
             removeStylingPending = true;
         }
-    }).bind('paste', function(event, data) {
-        setTimeout(removeStyling, 1);
+    }).bind('paste drop', function(event, data) {
+        setTimeout(function() {
+            removeStyling();
+            setModified();
+        }, 1);
     /* Animate the fields open when you click into them. */
     }).bind('halloactivated', function(event, data) {
         $(event.target).addClass('expanded', 200, function(e) {
@@ -519,7 +530,9 @@ $(function() {
         }
     });
 
+    var preview_b = $('form#page-edit-form .actions.preview .action-preview');
+
     /* Set up behaviour of preview button */
-    $('.action-preview').click(createPreviewButtonHandler(
+    preview_b.click(createPreviewButtonHandler(
                                 $('#page-edit-form'), $('.action-preview')));
 });
