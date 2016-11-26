@@ -39,7 +39,7 @@ def chooser(request):
 
     if permission_policy.user_has_permission(request.user, 'add'):
         DocumentForm = get_document_form(Document)
-        uploadform = DocumentForm()
+        uploadform = DocumentForm(user=request.user)
     else:
         uploadform = None
 
@@ -147,9 +147,8 @@ def chooser_upload(request):
                 'form': form,
             }, request=request),
         })
-
     else:
-        form = DocumentForm()
+        form = DocumentForm(user=request.user)
 
     documents = Document.objects.order_by('title')
 

@@ -115,7 +115,7 @@ def chooser(request):
 
     if permission_policy.user_has_permission(request.user, 'add'):
         ImageForm = get_image_form(Image)
-        uploadform = ImageForm()
+        uploadform = ImageForm(user=request.user)
     else:
         uploadform = None
 
@@ -219,7 +219,8 @@ def chooser_upload(request):
     image.save()
 
     # Success! Send back an edit form for this image to the user
-    form = ImageForm(instance=image, prefix='image-%d' % image.id)
+    form = ImageForm(instance=image, prefix='image-%d' % image.id,
+                     user=request.user)
 
     # Keep follow-up settings
     will_select_format = request.GET.get('select_format')
@@ -281,7 +282,8 @@ def chooser_import_youtube(request):
     image.save()
 
     # Success! Send back an edit form for this image to the user
-    form = ImageForm(instance=image, prefix='image-%d' % image.id)
+    form = ImageForm(instance=image, prefix='image-%d' % image.id,
+                     user=request.user)
 
     # Keep follow-up settings
     will_select_format = request.GET.get('select_format')
@@ -316,7 +318,7 @@ def chooser_select(request, image_id):
         raise PermissionDenied
 
     form = ImageForm(request.POST, request.FILES, instance=image,
-                     prefix='image-' + image_id)
+                     prefix='image-' + image_id, user=request.user)
 
     if form.is_valid():
         form.save()

@@ -587,27 +587,6 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
                 )
             )
 
-        from wagtail.wagtailadmin.forms import WagtailAdminPageForm
-        if not issubclass(cls.base_form_class, WagtailAdminPageForm):
-            errors.append(checks.Error(
-                "{}.base_form_class does not extend WagtailAdminPageForm".format(
-                    cls.__name__),
-                hint="Ensure that {}.{} extends WagtailAdminPageForm".format(
-                    cls.base_form_class.__module__,
-                    cls.base_form_class.__name__),
-                obj=cls,
-                id='wagtailcore.E002'))
-
-        edit_handler = cls.get_edit_handler()
-        if not issubclass(edit_handler.get_form_class(cls), WagtailAdminPageForm):
-            errors.append(checks.Error(
-                "{cls}.get_edit_handler().get_form_class({cls}) does not extend WagtailAdminPageForm".format(
-                    cls=cls.__name__),
-                hint="Ensure that the EditHandler for {cls} creates a subclass of WagtailAdminPageForm".format(
-                    cls=cls.__name__),
-                obj=cls,
-                id='wagtailcore.E003'))
-
         return errors
 
     def _update_descendant_url_paths(self, old_url_path, new_url_path):
@@ -1265,6 +1244,10 @@ class Page(six.with_metaclass(PageBase, MP_Node, ClusterableModel, index.Indexed
             # whatever we find in ALLOWED_HOSTS
             try:
                 hostname = settings.ALLOWED_HOSTS[0]
+                if hostname == '*':
+                    # '*' is a valid value to find in ALLOWED_HOSTS[0], but it's not a valid domain name.
+                    # So we pretend it isn't there.
+                    raise IndexError
             except IndexError:
                 hostname = 'localhost'
             path = '/'
