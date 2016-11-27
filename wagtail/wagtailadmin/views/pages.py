@@ -20,7 +20,7 @@ from wagtail.wagtailadmin.forms import CopyForm, SearchForm
 from wagtail.wagtailadmin.navigation import get_navigation_menu_items
 from wagtail.wagtailadmin.utils import send_notification
 from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Page, PageRevision
+from wagtail.wagtailcore.models import Page, PageRevision, UserPagePermissionsProxy
 
 
 def get_valid_next_url_from_request(request):
@@ -195,6 +195,14 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
     if page_class not in parent_page.creatable_subpage_models():
         raise PermissionDenied
 
+    if not page_class.can_create_at(parent_page):
+        raise PermissionDenied
+
+    for fn in hooks.get_hooks('before_create_page'):
+        result = fn(request, parent_page, page_class)
+        if hasattr(result, 'status_code'):
+            return result
+
     page = page_class(owner=request.user)
     edit_handler_class = page_class.get_edit_handler()
     form_class = edit_handler_class.get_form_class(page_class)
@@ -305,6 +313,11 @@ def edit(request, page_id):
     page_perms = page.permissions_for_user(request.user)
     if not page_perms.can_edit():
         raise PermissionDenied
+
+    for fn in hooks.get_hooks('before_edit_page'):
+        result = fn(request, page)
+        if hasattr(result, 'status_code'):
+            return result
 
     edit_handler_class = page_class.get_edit_handler()
     form_class = edit_handler_class.get_form_class(page_class)
@@ -519,6 +532,11 @@ def delete(request, page_id):
     if not page.permissions_for_user(request.user).can_delete():
         raise PermissionDenied
 
+    for fn in hooks.get_hooks('before_delete_page'):
+        result = fn(request, page)
+        if hasattr(result, 'status_code'):
+            return result
+
     next_url = get_valid_next_url_from_request(request)
 
     if request.method == 'POST':
@@ -704,13 +722,22 @@ def preview_loading(request):
 def unpublish(request, page_id):
     page = get_object_or_404(Page, id=page_id).specific
 
-    if not page.permissions_for_user(request.user).can_unpublish():
+    user_perms = UserPagePermissionsProxy(request.user)
+    if not user_perms.for_page(page).can_unpublish():
         raise PermissionDenied
 
     next_url = get_valid_next_url_from_request(request)
 
     if request.method == 'POST':
+        include_descendants = request.POST.get("include_descendants", False)
+
         page.unpublish()
+
+        if include_descendants:
+            live_descendant_pages = page.get_descendants().live().specific()
+            for live_descendant_page in live_descendant_pages:
+                if user_perms.for_page(live_descendant_page).can_unpublish():
+                    live_descendant_page.unpublish()
 
         messages.success(request, _("Page '{0}' unpublished.").format(page.title), buttons=[
             messages.button(reverse('wagtailadmin_pages:edit', args=(page.id,)), _('Edit'))
@@ -723,6 +750,7 @@ def unpublish(request, page_id):
     return render(request, 'wagtailadmin/pages/confirm_unpublish.html', {
         'page': page,
         'next': next_url,
+        'live_descendant_count': page.get_descendants().live().count(),
     })
 
 
@@ -751,6 +779,9 @@ def move_choose_destination(request, page_to_move_id, viewed_page_id=None):
         )
 
         child_pages.append(target)
+
+    # Pagination
+    paginator, child_pages = paginate(request, child_pages, per_page=50)
 
     return render(request, 'wagtailadmin/pages/move_choose_destination.html', {
         'page_to_move': page_to_move,

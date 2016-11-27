@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+from bs4 import BeautifulSoup
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
@@ -398,7 +400,7 @@ class TestUserProfileCreation(TestCase, WagtailTestUtils):
     def test_user_created_without_profile(self):
         self.assertEqual(UserProfile.objects.filter(user=self.test_user).count(), 0)
         with self.assertRaises(UserProfile.DoesNotExist):
-            self.test_user.userprofile
+            self.test_user.wagtail_userprofile
 
     def test_user_profile_created_when_method_called(self):
         self.assertIsInstance(UserProfile.get_for_user(self.test_user), UserProfile)
@@ -748,6 +750,21 @@ class TestGroupEditView(TestCase, WagtailTestUtils):
                 permission__content_type__app_label='wagtaildocs'
             ).count(),
             0
+        )
+
+    def test_group_edit_loads_with_django_permissions_shown(self):
+        # the checkbox for self.existing_permission should be ticked
+        response = self.get()
+
+        # Use BeautifulSoup to search for a checkbox element with name="permissions", checked="checked",
+        # value=<existing_permission.id>. Can't use assertContains here because the id attribute is unpredictable
+        soup = BeautifulSoup(response.content, 'html5lib')
+
+        self.assertTrue(
+            soup.find(
+                'input',
+                {'name': 'permissions', 'type': 'checkbox', 'checked': 'checked', 'value': self.existing_permission.id}
+            )
         )
 
     def test_group_edit_loads_with_page_permissions_shown(self):

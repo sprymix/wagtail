@@ -68,6 +68,9 @@ class FieldBlock(Block):
     def value_from_datadict(self, data, files, prefix):
         return self.value_from_form(self.field.widget.value_from_datadict(data, files, prefix))
 
+    def value_omitted_from_data(self, data, files, prefix):
+        return self.field.widget.value_omitted_from_data(data, files, prefix)
+
     def clean(self, value):
         # We need an annoying value_for_form -> value_from_form round trip here to account for
         # the possibility that the form field is set up to validate a different value type to
@@ -370,10 +373,10 @@ class ChoiceBlock(FieldBlock):
                 # This is an optgroup, so look inside the group for options
                 for k2, v2 in v:
                     if value == k2 or text_value == force_text(k2):
-                        return [k, v2]
+                        return [force_text(k), force_text(v2)]
             else:
                 if value == k or text_value == force_text(k):
-                    return [v]
+                    return [force_text(v)]
         return []  # Value was not found in the list of choices
 
     class Meta:

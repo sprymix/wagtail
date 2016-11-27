@@ -1,6 +1,69 @@
 Changelog
 =========
 
+1.7 (20.10.2016)
+~~~~~~~~~~~~~~~~
+
+ * Elasticsearch 2 support (Karl Hobley)
+ * Added parameters to image tag to specify file type and JPEG compression level (Karl Hobley)
+ * Added support for AWS CloudFront in frontend cache invalidation module (Rob Moorman)
+ * Unpublishing a page now gives the option to unpublish subpages too (Jordi Joan)
+ * The ``|embed`` filter has been converted into a templatetag ``{% embed %}`` (Janneke Janssen)
+ * The `wagtailforms` module now provides a `FormSubmissionPanel` for displaying details of form submissions (João Luiz Lorencetti)
+ * The Wagtail version number can now be obtained as a tuple using `from wagtail import VERSION` (Tim Heap)
+ * `send_mail` logic has been moved from `AbstractEmailForm.process_form_submission` into `AbstractEmailForm.send_mail`. Now it's easier to override this logic (Tim Leguijt)
+ * Added `before_create_page`, `before_edit_page`, `before_delete_page` hooks (Karl Hobley)
+ * Updated font sizes and colours to improve legibility of admin menu and buttons (Stein Strindhaug)
+ * Added pagination to "choose destination" view when moving pages (Nick Smith, Žan Anderle)
+ * Added ability to annotate search results with score (Karl Hobley)
+ * Added ability to limit access to form submissions (Mikalai Radchuk)
+ * Added the ability to configure the number of days search logs are kept for (Stephen Rice)
+ * `SnippetChooserBlock` now supports passing the model name as a string (Nick Smith)
+ * Redesigned account settings / logout area in the sidebar for better clarity (Janneke Janssen)
+ * Pillow's image optimisation is now applied when saving JPEG images (Karl Hobley)
+ * Fix: Migrations for wagtailcore and project template are now reversible (Benjamin Bach)
+ * Fix: Migrations no longer depend on wagtailcore and taggit's `__latest__` migration, logically preventing those apps from receiving new migrations (Matt Westcott)
+ * Fix: The default image format label text ('Full width', 'Left-aligned', 'Right-aligned') is now localised (Mikalai Radchuk)
+ * Fix: Text on the front-end 'password required' form is now marked for translation (Janneke Janssen)
+ * Fix: Text on the page view restriction form is now marked for translation (Luiz Boaretto)
+ * Fix: Fixed toggle behaviour of userbar on mobile (Robert Rollins)
+ * Fix: Image rendition / document file deletion now happens on a post_delete signal, so that files are not lost if the deletion does not proceed (Janneke Janssen)
+ * Fix: "Your recent edits" list on dashboard no longer leaves out pages that another user has subsequently edited (Michael Cordover, Kees Hink, João Luiz Lorencetti)
+ * Fix: `InlinePanel` now accepts a `classname` parameter as per the documentation (emg36, Matt Westcott)
+ * Fix: Disabled use of escape key to revert content of rich text fields, which could cause accidental data loss (Matt Westcott)
+ * Fix: Setting `USE_THOUSAND_SEPARATOR = True` no longer breaks the rendering of numbers in JS code for InlinePanel (Mattias Loverot, Matt Westcott)
+ * Fix: Images / documents pagination now preserves GET parameters (Bojan Mihelac)
+ * Fix: Wagtail's UserProfile model now sets a related_name of ``wagtail_userprofile`` to avoid naming collisions with other user profile models (Matt Westcott)
+ * Fix: Non-text content is now preserved when adding or editing a link within rich text (Matt Westcott)
+ * Fix: Fixed preview when `SECURE_SSL_REDIRECT = True` (Aymeric Augustin)
+ * Fix: Prevent hang when truncating an image filename without an extension (Ricky Robinett)
+
+
+1.6.3 (30.09.2016)
+~~~~~~~~~~~~~~~~~~
+
+ * Fix: Restore compatibility with django-debug-toolbar 1.5 (Matt Westcott)
+ * Fix: Edits to StreamFields are no longer ignored in page edits on Django >=1.10.1 when a default value exists (Matt Westcott)
+
+
+1.6.2 (02.09.2016)
+~~~~~~~~~~~~~~~~~~
+
+ * Fix: Initial values of checkboxes on group permission edit form now are visible on Django 1.10 (Matt Westcott)
+
+
+1.6.1 (26.08.2016)
+~~~~~~~~~~~~~~~~~~
+
+ * Added ``WAGTAIL_ALLOW_UNICODE_SLUGS`` setting to make Unicode support optional in page slugs (Matt Westcott)
+ * Fix: Wagtail's middleware classes are now compatible with Django 1.10's new-style middleware (Karl Hobley)
+ * Fix: The `Pages.can_create_at` method is now checked in the create page view (Mikalai Radchuk)
+ * Fix: Fixed regression on Django 1.10.1 causing Page subclasses to fail to use PageManager (Matt Westcott)
+ * Fix: ChoiceBlocks with lazy translations as option labels no longer break Elasticsearch indexing (Matt Westcott)
+ * Fix: The page editor no longer fails to load JavaScript files with ``ManifestStaticFilesStorage`` (Matt Westcott)
+ * Fix: Django 1.10 enables client-side validation for all forms by default, but it fails to handle all the nuances of how forms are used in Wagtail. The client-side validation has been disabled for the Wagtail UI (Matt Westcott)
+
+
 1.6 (15.08.2016)
 ~~~~~~~~~~~~~~~~
 

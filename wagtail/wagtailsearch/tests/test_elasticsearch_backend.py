@@ -50,7 +50,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
 
     def test_partial_search(self):
         # Reset the index
-        self.backend.reset_index()
+        self.reset_index()
         self.backend.add_type(models.SearchTest)
         self.backend.add_type(models.SearchTestChild)
 
@@ -62,7 +62,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         self.backend.add(obj)
 
         # Refresh the index
-        self.backend.refresh_index()
+        self.refresh_index()
 
         # Search and check
         results = self.backend.search("HelloW", models.SearchTest.objects.all())
@@ -72,7 +72,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
 
     def test_child_partial_search(self):
         # Reset the index
-        self.backend.reset_index()
+        self.reset_index()
         self.backend.add_type(models.SearchTest)
         self.backend.add_type(models.SearchTestChild)
 
@@ -84,7 +84,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         self.backend.add(obj)
 
         # Refresh the index
-        self.backend.refresh_index()
+        self.refresh_index()
 
         # Search and check
         results = self.backend.search("HelloW", models.SearchTest.objects.all())
@@ -94,7 +94,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
 
     def test_ascii_folding(self):
         # Reset the index
-        self.backend.reset_index()
+        self.reset_index()
         self.backend.add_type(models.SearchTest)
         self.backend.add_type(models.SearchTestChild)
 
@@ -106,7 +106,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         self.backend.add(obj)
 
         # Refresh the index
-        self.backend.refresh_index()
+        self.refresh_index()
 
         # Search and check
         results = self.backend.search("Hello", models.SearchTest.objects.all())
@@ -120,7 +120,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         have it also as their query analyser
         """
         # Reset the index
-        self.backend.reset_index()
+        self.reset_index()
         self.backend.add_type(models.SearchTest)
         self.backend.add_type(models.SearchTestChild)
 
@@ -132,7 +132,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         self.backend.add(obj)
 
         # Refresh the index
-        self.backend.refresh_index()
+        self.refresh_index()
 
         # Test search for "Hello"
         results = self.backend.search("Hello", models.SearchTest.objects.all())
@@ -154,7 +154,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         See: https://github.com/torchbox/wagtail/issues/937
         """
         # Reset the index
-        self.backend.reset_index()
+        self.reset_index()
         self.backend.add_type(models.SearchTest)
         self.backend.add_type(models.SearchTestChild)
 
@@ -166,7 +166,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         self.backend.add(obj)
 
         # Refresh the index
-        self.backend.refresh_index()
+        self.refresh_index()
 
         # Test search for "Hello-World"
         results = self.backend.search("Hello-World", models.SearchTest.objects.all())
@@ -176,7 +176,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
 
     def test_custom_ordering(self):
         # Reset the index
-        self.backend.reset_index()
+        self.reset_index()
         self.backend.add_type(models.SearchTest)
 
         # Add some test data
@@ -196,7 +196,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         self.backend.add(b)
 
         # Refresh the index
-        self.backend.refresh_index()
+        self.refresh_index()
 
         # Do a search ordered by relevence
         results = self.backend.search("Hello", models.SearchTest.objects.all())
@@ -212,7 +212,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         # Testing for bug #1859
 
         # Reset the index
-        self.backend.reset_index()
+        self.reset_index()
         self.backend.add_type(models.SearchTest)
 
         a = models.SearchTest()
@@ -223,7 +223,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         self.backend.add(a)
 
         # Refresh the index
-        self.backend.refresh_index()
+        self.refresh_index()
 
         # Run query with "and" operator and single field
         results = self.backend.search("Hello World", models.SearchTest, operator='and', fields=['title'])
@@ -231,7 +231,7 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
 
     def test_update_index_command_schema_only(self):
         # Reset the index, this should clear out the index
-        self.backend.reset_index()
+        self.reset_index()
 
         # Give Elasticsearch some time to catch up...
         time.sleep(1)
@@ -249,6 +249,12 @@ class TestElasticsearchSearchBackend(BackendTests, TestCase):
         # Unlike the test_update_index_command test. This should not give any results
         results = self.backend.search(None, models.SearchTest)
         self.assertEqual(set(results), set())
+
+    def test_annotate_score(self):
+        results = self.backend.search("Hello", models.SearchTest).annotate_score('_score')
+
+        for result in results:
+            self.assertIsInstance(result._score, float)
 
 
 class TestElasticsearchSearchQuery(TestCase):
@@ -979,6 +985,7 @@ class TestBackendConfiguration(TestCase):
 
 
 @unittest.skipUnless(os.environ.get('ELASTICSEARCH_URL', False), "ELASTICSEARCH_URL not set")
+@unittest.skipUnless(os.environ.get('ELASTICSEARCH_VERSION', '1') == '1', "ELASTICSEARCH_VERSION not set to 1")
 class TestRebuilder(TestCase):
     def assertDictEqual(self, a, b):
         default = JSONSerializer().default
@@ -1025,6 +1032,7 @@ class TestRebuilder(TestCase):
 
 
 @unittest.skipUnless(os.environ.get('ELASTICSEARCH_URL', False), "ELASTICSEARCH_URL not set")
+@unittest.skipUnless(os.environ.get('ELASTICSEARCH_VERSION', '1') == '1', "ELASTICSEARCH_VERSION not set to 1")
 class TestAtomicRebuilder(TestCase):
     def setUp(self):
         self.backend = get_search_backend('elasticsearch')

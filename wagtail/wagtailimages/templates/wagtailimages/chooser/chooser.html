@@ -1,4 +1,4 @@
-{% load wagtailimages_tags wagtailadmin_tags static %}
+{% load wagtailimages_tags static %}
 {% load i18n %}
 {% trans "Choose an image" as choose_str %}
 {% include "wagtailadmin/shared/header.html" with title=choose_str merged=1 tabbed=1 icon="image" %}
@@ -12,7 +12,7 @@
 
 <div class="tab-content">
     <section id="search" class="{% if not uploadform.errors %}active{% endif %} nice-padding">
-        <form class="image-search search-bar" action="{% url 'wagtailimages:chooser' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}" method="GET" autocomplete="off">
+        <form class="image-search search-bar" action="{% url 'wagtailimages:chooser' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}" method="GET" autocomplete="off" novalidate>
             <ul class="fields">
                 {% for field in searchform %}
                     {% include "wagtailadmin/shared/field_as_li.html" with field=field %}
@@ -41,7 +41,7 @@
                     <p>{% trans "Drag and drop images into this area to upload immediately." %}</p>
 
                     <form action="{% url 'wagtailimages:chooser_upload' %}{% if will_select_format %}?select_format=true{% elif will_select_rendition %}?select_rendition=true{% if additional_params %}&amp;{{ additional_params|iriencode }}{% endif %}{% endif %}"
-                    method="POST" enctype="multipart/form-data" {% novalidate_on_django_1_10 %}>
+                    method="POST" enctype="multipart/form-data" novalidate>
                         <div class="replace-file-input">
                             <button class="button bicolor icon icon-plus">{% trans "Or choose from your computer" %}</button>
                             <input class="fileupload" type="file" name="files[]" />

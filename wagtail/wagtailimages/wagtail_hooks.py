@@ -89,6 +89,8 @@ def register_image_operations():
         ('forcewidth', image_operations.ForceWidthHeightOperation),
         ('forceheight', image_operations.ForceWidthHeightOperation),
         ('forcefit', image_operations.ForceFitOperation),
+        ('jpegquality', image_operations.JPEGQualityOperation),
+        ('format', image_operations.FormatOperation),
     ]
 
 

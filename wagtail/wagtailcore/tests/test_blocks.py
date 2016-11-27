@@ -3,10 +3,13 @@ from __future__ import absolute_import, unicode_literals
 
 import base64
 import collections
+import json
 import unittest
 import warnings
 from decimal import Decimal
 
+# non-standard import name for ugettext_lazy, to prevent strings from being picked up for translation
+import django
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.utils import ErrorList
@@ -14,6 +17,7 @@ from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase
 from django.utils.html import format_html
 from django.utils.safestring import SafeData, mark_safe
+from django.utils.translation import ugettext_lazy as __
 
 from wagtail.tests.testapp.blocks import LinkBlock as CustomLinkBlock
 from wagtail.tests.testapp.blocks import SectionBlock
@@ -608,6 +612,34 @@ class TestChoiceBlock(unittest.TestCase):
         ])
         self.assertEqual(block.get_searchable_content('three'), [])
 
+    def test_searchable_content_with_lazy_translation(self):
+        block = blocks.ChoiceBlock(choices=[
+            ('choice-1', __("Choice 1")),
+            ('choice-2', __("Choice 2")),
+        ])
+        result = block.get_searchable_content("choice-1")
+        # result must survive JSON (de)serialisation, which is not the case for
+        # lazy translation objects
+        result = json.loads(json.dumps(result))
+        self.assertEqual(result, ["Choice 1"])
+
+    def test_optgroup_searchable_content_with_lazy_translation(self):
+        block = blocks.ChoiceBlock(choices=[
+            (__('Section 1'), [
+                ('1-1', __("Block 1")),
+                ('1-2', __("Block 2")),
+            ]),
+            (__('Section 2'), [
+                ('2-1', __("Block 1")),
+                ('2-2', __("Block 2")),
+            ]),
+        ])
+        result = block.get_searchable_content("2-2")
+        # result must survive JSON (de)serialisation, which is not the case for
+        # lazy translation objects
+        result = json.loads(json.dumps(result))
+        self.assertEqual(result, ["Section 2", "Block 2"])
+
 
 class TestRawHTMLBlock(unittest.TestCase):
     def test_get_default_with_fallback_value(self):
@@ -660,6 +692,13 @@ class TestRawHTMLBlock(unittest.TestCase):
         result = block.value_from_datadict({'rawhtml': '<blink>BÖÖM</blink>'}, {}, prefix='rawhtml')
         self.assertEqual(result, '<blink>BÖÖM</blink>')
         self.assertIsInstance(result, SafeData)
+
+    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
+    def test_value_omitted_from_data(self):
+        block = blocks.RawHTMLBlock()
+        self.assertFalse(block.value_omitted_from_data({'rawhtml': 'ohai'}, {}, 'rawhtml'))
+        self.assertFalse(block.value_omitted_from_data({'rawhtml': ''}, {}, 'rawhtml'))
+        self.assertTrue(block.value_omitted_from_data({'nothing-here': 'nope'}, {}, 'rawhtml'))
 
     def test_clean_required_field(self):
         block = blocks.RawHTMLBlock()
@@ -1065,6 +1104,17 @@ class TestStructBlock(SimpleTestCase):
         self.assertTrue(isinstance(struct_val, blocks.StructValue))
         self.assertTrue(isinstance(struct_val.bound_blocks['link'].block, blocks.URLBlock))
 
+    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
+    def test_value_omitted_from_data(self):
+        block = blocks.StructBlock([
+            ('title', blocks.CharBlock()),
+            ('link', blocks.URLBlock()),
+        ])
+
+        # overall value is considered present in the form if any sub-field is present
+        self.assertFalse(block.value_omitted_from_data({'mylink-title': 'Torchbox'}, {}, 'mylink'))
+        self.assertTrue(block.value_omitted_from_data({'nothing-here': 'nope'}, {}, 'mylink'))
+
     def test_default_is_returned_as_structvalue(self):
         """When returning the default value of a StructBlock (e.g. because it's
         a child of another StructBlock, and the outer value is missing that key)
@@ -1376,6 +1426,18 @@ class TestListBlock(unittest.TestCase):
         ])
 
         self.assertEqual(content, ["Wagtail", "Django"])
+
+    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
+    def test_value_omitted_from_data(self):
+        block = blocks.ListBlock(blocks.CharBlock())
+
+        # overall value is considered present in the form if the 'count' field is present
+        self.assertFalse(block.value_omitted_from_data({'mylist-count': '0'}, {}, 'mylist'))
+        self.assertFalse(block.value_omitted_from_data({
+            'mylist-count': '1',
+            'mylist-0-value': 'hello', 'mylist-0-deleted': '', 'mylist-0-order': '0'
+        }, {}, 'mylist'))
+        self.assertTrue(block.value_omitted_from_data({'nothing-here': 'nope'}, {}, 'mylist'))
 
     def test_ordering_in_form_submission_uses_order_field(self):
         block = blocks.ListBlock(blocks.CharBlock())
@@ -1752,6 +1814,21 @@ class TestStreamBlock(SimpleTestCase):
             ),
             html
         )
+
+    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
+    def test_value_omitted_from_data(self):
+        block = blocks.StreamBlock([
+            ('heading', blocks.CharBlock()),
+        ])
+
+        # overall value is considered present in the form if the 'count' field is present
+        self.assertFalse(block.value_omitted_from_data({'mystream-count': '0'}, {}, 'mystream'))
+        self.assertFalse(block.value_omitted_from_data({
+            'mystream-count': '1',
+            'mystream-0-type': 'heading', 'mystream-0-value': 'hello',
+            'mystream-0-deleted': '', 'mystream-0-order': '0'
+        }, {}, 'mystream'))
+        self.assertTrue(block.value_omitted_from_data({'nothing-here': 'nope'}, {}, 'mystream'))
 
     def test_validation_errors(self):
         class ValidatedBlock(blocks.StreamBlock):

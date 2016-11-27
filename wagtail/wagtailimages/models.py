@@ -1,18 +1,22 @@
 from __future__ import absolute_import, unicode_literals
 
 import hashlib
+import inspect
 import os.path
+import warnings
 from collections import OrderedDict
 from contextlib import contextmanager
 
 import django
 from django.conf import settings
+from django.core import checks
 from django.core.exceptions import ImproperlyConfigured
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models.signals import pre_delete, pre_save
+from django.db.models.signals import post_delete, pre_save
+from django.db.utils import DatabaseError
 from django.dispatch.dispatcher import receiver
 from django.forms.widgets import flatatt
 from django.utils.encoding import python_2_unicode_compatible
@@ -24,7 +28,7 @@ from taggit.managers import TaggableManager
 from unidecode import unidecode
 from willow.image import Image as WillowImage
 
-from wagtail.utils.deprecation import SearchFieldsShouldBeAList
+from wagtail.utils.deprecation import RemovedInWagtail19Warning
 from wagtail.wagtailadmin.utils import get_object_usage
 from wagtail.wagtailcore import hooks
 from wagtail.wagtailcore.models import CollectionMember
@@ -211,10 +215,14 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
 
         # Truncate filename so it fits in the 100 character limit
         # https://code.djangoproject.com/ticket/9893
-        while len(os.path.join(folder_name, filename)) >= 95:
-            prefix, dot, extension = filename.rpartition('.')
-            filename = prefix[:-1] + dot + extension
-        return os.path.join(folder_name, filename)
+        full_path = os.path.join(folder_name, filename)
+        if len(full_path) >= 95:
+            chars_to_trim = len(full_path) - 94
+            prefix, extension = os.path.splitext(filename)
+            filename = prefix[:-chars_to_trim] + extension
+            full_path = os.path.join(folder_name, filename)
+
+        return full_path
 
     def get_usage(self):
         return get_object_usage(self)
@@ -224,14 +232,14 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
         return reverse('wagtailimages:image_usage',
                        args=(self.id,))
 
-    search_fields = SearchFieldsShouldBeAList(CollectionMember.search_fields + [
+    search_fields = CollectionMember.search_fields + [
         index.SearchField('title', partial_match=True, boost=10),
         index.RelatedFields('tags', [
             index.SearchField('name', partial_match=True, boost=10),
         ]),
         index.FilterField('uploaded_by_user'),
         index.FilterField('show_in_catalogue'),
-    ], name='search_fields on AbstractImage subclasses')
+    ]
 
     def __str__(self):
         return self.title
@@ -408,8 +416,8 @@ def image_feature_detection(sender, instance, **kwargs):
             instance.set_focal_point(instance.get_suggested_focal_point())
 
 
-# Receive the pre_delete signal and delete the file associated with the model instance.
-@receiver(pre_delete, sender=Image)
+# Receive the post_delete signal and delete the file associated with the model instance.
+@receiver(post_delete, sender=Image)
 def image_delete(sender, instance, **kwargs):
     # Pass false so FileField doesn't save the model.
     instance.file.delete(False)
@@ -469,28 +477,59 @@ class Filter(models.Model):
             # Fix orientation of image
             willow = willow.auto_orient()
 
+            env = {
+                'original-format': original_format,
+            }
             for operation in self.operations:
-                willow = operation.run(willow, image) or willow
+                # Check that the operation can take the "env" argument
+                try:
+                    inspect.getcallargs(operation.run, willow, image, env)
+                    accepts_env = True
+                except TypeError:
+                    # Check that the paramters fit the old style, so we don't
+                    # raise a warning if there is a coding error
+                    inspect.getcallargs(operation.run, willow, image)
+                    accepts_env = False
+                    warnings.warn("ImageOperation run methods should take 4 "
+                                  "arguments. %d.run only takes 3.",
+                                  RemovedInWagtail19Warning)
 
-            if original_format == 'jpeg':
+                # Call operation
+                if accepts_env:
+                    willow = operation.run(willow, image, env) or willow
+                else:
+                    willow = operation.run(willow, image) or willow
+
+            # Find the output format to use
+            if 'output-format' in env:
+                # Developer specified an output format
+                output_format = env['output-format']
+            else:
+                # Default to outputting in original format
+                output_format = original_format
+
+                # Convert BMP files to PNG
+                if original_format == 'bmp':
+                    output_format = 'png'
+
+                # Convert unanimated GIFs to PNG as well
+                if original_format == 'gif' and not willow.has_animation():
+                    output_format = 'png'
+
+            if output_format == 'jpeg':
                 # Allow changing of JPEG compression quality
-                if hasattr(settings, 'WAGTAILIMAGES_JPEG_QUALITY'):
+                if 'jpeg-quality' in env:
+                    quality = env['jpeg-quality']
+                elif hasattr(settings, 'WAGTAILIMAGES_JPEG_QUALITY'):
                     quality = settings.WAGTAILIMAGES_JPEG_QUALITY
                 else:
                     quality = 85
 
-                return willow.save_as_jpeg(output, quality=quality)
-            elif original_format == 'gif':
-                # Convert image to PNG if it's not animated
-                if not willow.has_animation():
-                    return willow.save_as_png(output)
-                else:
-                    return willow.save_as_gif(output)
-            elif original_format == 'bmp':
-                # Convert to PNG
+                return willow.save_as_jpeg(output, quality=quality, progressive=True, optimize=True)
+            elif output_format == 'png':
                 return willow.save_as_png(output)
-            else:
-                return willow.save(original_format, output)
+            elif output_format == 'gif':
+                return willow.save_as_gif(output)
 
     def get_cache_key(self, image):
         return hashlib.sha1(self.spec).hexdigest()[:8] + self.get_vary_key(image)
@@ -527,7 +566,8 @@ class Filter(models.Model):
 
 
 class AbstractRendition(models.Model):
-    filter = models.ForeignKey(Filter, related_name='+')
+    filter = models.ForeignKey(Filter, related_name='+', null=True, blank=True)
+    filter_spec = models.CharField(max_length=255, db_index=True, blank=True, default='')
     file = models.ImageField(upload_to=get_rendition_upload_to, width_field='width', height_field='height')
     width = models.IntegerField(editable=False)
     height = models.IntegerField(editable=False)
@@ -574,6 +614,42 @@ class AbstractRendition(models.Model):
         filename = self.file.field.storage.get_valid_name(filename)
         return os.path.join(folder_name, filename)
 
+    def save(self, *args, **kwargs):
+        # populate the `filter_spec` field with the spec string of the filter. In Wagtail 1.8
+        # Filter will be dropped as a model, and lookups will be done based on this string instead
+        self.filter_spec = self.filter.spec
+        return super(AbstractRendition, self).save(*args, **kwargs)
+
+    @classmethod
+    def check(cls, **kwargs):
+        errors = super(AbstractRendition, cls).check(**kwargs)
+
+        # If a filter_spec column exists on this model, and contains null entries, warn that
+        # a data migration needs to be performed to populate it
+
+        try:
+            null_filter_spec_exists = cls.objects.filter(filter_spec='').exists()
+        except DatabaseError:
+            # The database is not in a state where the above lookup makes sense;
+            # this is entirely expected, because system checks are performed before running
+            # migrations. We're only interested in the specific case where the column exists
+            # in the db and contains nulls.
+            null_filter_spec_exists = False
+
+        if null_filter_spec_exists:
+            errors.append(
+                checks.Warning(
+                    "Custom image model %r needs a data migration to populate filter_src" % cls,
+                    hint="The database representation of image filters has been changed, and a data "
+                    "migration needs to be put in place before upgrading to Wagtail 1.8, in order to "
+                    "avoid data loss. See http://docs.wagtail.io/en/latest/releases/1.7.html#filter-spec-migration",
+                    obj=cls,
+                    id='wagtailimages.W001',
+                )
+            )
+
+        return errors
+
     class Meta:
         abstract = True
 
@@ -585,6 +661,13 @@ class Rendition(AbstractRendition):
         unique_together = (
             ('image', 'filter', 'focal_point_key'),
         )
+
+
+# Receive the post_delete signal and delete the file associated with the model instance.
+@receiver(post_delete, sender=Rendition)
+def rendition_delete(sender, instance, **kwargs):
+    # Pass false so FileField doesn't save the model.
+    instance.file.delete(False)
 
 
 class UserRendition(AbstractRendition, WillowImageWrapper):
@@ -599,9 +682,9 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
         # we need to construct a new filter combining what we've been passed
         # and the filter used to get THIS rendition
         if not hasattr(filter, 'run'):
-            filter = '|'.join([self.filter.spec, filter])
+            filter = '|'.join([self.filter_spec, filter])
         else:
-            filter = '|'.join([self.filter.spec, filter.spec])
+            filter = '|'.join([self.filter_spec, filter.spec])
 
         filter, created = Filter.objects.get_or_create(spec=filter)
 
@@ -645,15 +728,8 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
         return False
 
 
-# Receive the pre_delete signal and delete the file associated with the model instance.
-@receiver(pre_delete, sender=Rendition)
-def rendition_delete(sender, instance, **kwargs):
-    # Pass false so FileField doesn't save the model.
-    instance.file.delete(False)
-
-
-# Receive the pre_delete signal and delete the file associated with the model instance.
-@receiver(pre_delete, sender=UserRendition)
+# Receive the post_delete signal and delete the file associated with the model instance.
+@receiver(post_delete, sender=UserRendition)
 def user_rendition_delete(sender, instance, **kwargs):
     # Pass false so FileField doesn't save the model.
     instance.file.delete(False)

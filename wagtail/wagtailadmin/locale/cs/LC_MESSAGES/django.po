@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-08-01 13:25+0000\n"
-"PO-Revision-Date: 2016-08-01 13:28+0000\n"
+"POT-Creation-Date: 2016-10-05 16:37+0100\n"
+"PO-Revision-Date: 2016-10-05 15:39+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Czech (http://www.transifex.com/torchbox/wagtail/language/"
 "cs/)\n"
@@ -26,6 +26,9 @@ msgstr "Naplánovat publikaci"
 
 msgid "Common page configuration"
 msgstr "Nastavení stránky"
+
+msgid "Content"
+msgstr "Obsah"
 
 msgid "Settings"
 msgstr "Nastavení"
@@ -246,6 +249,9 @@ msgstr "Vložit odkaz"
 msgid "Add an external link"
 msgstr "Vložit externí odkaz"
 
+msgid "Name"
+msgstr "Jméno"
+
 msgid "Yes, delete"
 msgstr "Ano, smazat"
 
@@ -425,6 +431,12 @@ msgstr[2] ""
 "\n"
 "Tímto dojde též ke smazání %(descendant_count)s podstránek."
 
+msgid "Yes, delete it"
+msgstr "Ano, smazat"
+
+msgid "No, don't delete it"
+msgstr "Ne, nemazat"
+
 #, python-format
 msgid "Move %(title)s"
 msgstr "Přesunout %(title)s"
@@ -495,8 +507,14 @@ msgstr "Publikovat"
 msgid "Submit for moderation"
 msgstr "Odeslat ke schválení"
 
+msgid "This page has unsaved changes."
+msgstr "Na této stránce jsou neuložené změny."
+
 msgid "Page locked"
 msgstr "Stránka uzamčena"
+
+msgid "Publish this revision"
+msgstr "Publikovat tuto revizi"
 
 #, python-format
 msgid "Last modified: %(last_mod)s"
@@ -505,6 +523,9 @@ msgstr "Naposledy upraveno: %(last_mod)s"
 #, python-format
 msgid "by %(modified_by)s"
 msgstr "uživatelem %(modified_by)s"
+
+msgid "Revisions"
+msgstr "Revize"
 
 #, python-format
 msgid "Exploring %(title)s"
@@ -579,6 +600,9 @@ msgstr "Zvolte novou nadřazenou stránku pro %(title)s"
 msgid "Select a new parent page for <span>%(title)s</span>"
 msgstr "Zvolte novou nadřazenou stránku pro <span>%(title)s</span>"
 
+msgid "Current draft"
+msgstr "Současný koncept"
+
 #, python-format
 msgid ""
 "\n"
@@ -609,8 +633,14 @@ msgstr "Zadejte hledaný výraz"
 msgid "No pages use"
 msgstr "Žádné stránky typu"
 
+msgid "Collection"
+msgstr "Kolekce"
+
 msgid "Home"
 msgstr "Domů"
+
+msgid "All collections"
+msgstr "Všechny kolekce"
 
 msgid "January"
 msgstr "leden"
@@ -698,6 +728,18 @@ msgstr "Vaše heslo bylo úspěšně změněno."
 msgid "Your preferences have been updated successfully!"
 msgstr "Vaše nastavení bylo uloženo."
 
+msgid "You have been successfully logged out."
+msgstr "Právě jste se úspěšně odhlásili."
+
+msgid "Add a collection"
+msgstr "Přidat kolekci"
+
+msgid "Add collection"
+msgstr "Přidat kolekci"
+
+msgid "Delete collection"
+msgstr "Smazat kolekci"
+
 msgid "View live"
 msgstr "Zobrazit publikovanou verzi"
 
@@ -760,8 +802,26 @@ msgstr "Stránka '{0}' je nyní uzamčena."
 msgid "Page '{0}' is now unlocked."
 msgstr "Stránka '{0}' je nyní odemčena."
 
+msgid "Pages"
+msgstr "Stránky"
+
 msgid "Add child page"
 msgstr "Přidat podstránku"
+
+msgid "More"
+msgstr "Více"
+
+msgid "Move this page"
+msgstr "Přesunout tuto stránku"
+
+msgid "Delete this page"
+msgstr "Smazat tuto stránku"
+
+msgid "Unpublish this page"
+msgstr "Zrušit publikaci této stránky"
+
+msgid "View this page's revision history"
+msgstr "Zobrazit revize této stránky"
 
 msgid "Choose an item"
 msgstr "Zvolit položku"
@@ -771,6 +831,9 @@ msgstr "Zvolit jinou položku"
 
 msgid "Clear choice"
 msgstr "Zrušit výběr"
+
+msgid "Edit this item"
+msgstr "Upravit tuto položku"
 
 msgid "Choose another page"
 msgstr "Zvolit jinou stránku"

@@ -1,4 +1,4 @@
-{% load i18n wagtailadmin_tags %}
+{% load i18n %}
 {% trans "Choose a document" as  choose_str %}
 {% include "wagtailadmin/shared/header.html" with title=choose_str tabbed=1 merged=1 icon="doc-full-inverse" %}
 
@@ -12,7 +12,7 @@
 
 <div class="tab-content">
     <section id="search" class="{% if not uploadform.errors %}active {% endif %}nice-padding">
-        <form class="document-search search-bar" action="{% url 'wagtaildocs:chooser' %}" method="GET">
+        <form class="document-search search-bar" action="{% url 'wagtaildocs:chooser' %}" method="GET" novalidate>
             <ul class="fields">
                 {% for field in searchform %}
                     {% include "wagtailadmin/shared/field_as_li.html" with field=field %}
@@ -33,7 +33,7 @@
                     <p>{% trans "Drag and drop documents into this area to upload immediately." %}</p>
                     <p>{{ help_text }}
 
-                    <form class="document-upload" action="{% url 'wagtaildocs:chooser_upload' %}" method="POST" enctype="multipart/form-data" {% novalidate_on_django_1_10 %}>
+                    <form class="document-upload" action="{% url 'wagtaildocs:chooser_upload' %}" method="POST" enctype="multipart/form-data" novalidate>
                         <div class="replace-file-input">
                             <button class="button bicolor icon icon-plus">{% trans "Or choose from your computer" %}</button>
                             <input class="fileupload" type="file" name="files[]" />

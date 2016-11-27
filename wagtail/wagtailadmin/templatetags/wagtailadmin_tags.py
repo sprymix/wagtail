@@ -2,15 +2,17 @@ from __future__ import absolute_import, unicode_literals
 
 import itertools
 
+
 import django
 from django import template
 from django.conf import settings
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.messages.constants import DEFAULT_TAGS as MESSAGE_TAGS
 from django.template.defaultfilters import stringfilter
+from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
-from wagtail.utils.pagination import DEFAULT_PAGE_KEY
+from wagtail.utils.pagination import DEFAULT_PAGE_KEY, replace_page_in_query
 from wagtail.wagtailadmin.menu import admin_menu
 from wagtail.wagtailadmin.navigation import get_navigation_menu_items
 from wagtail.wagtailadmin.search import admin_search_areas
@@ -76,6 +78,14 @@ def ellipsistrim(value, max_length):
             truncd_val = truncd_val[:truncd_val.rfind(" ")]
         return truncd_val + "..."
     return value
+
+
+@register.filter
+def no_thousand_separator(num):
+    """
+    Prevent USE_THOUSAND_SEPARATOR from automatically inserting a thousand separator on this value
+    """
+    return str(num)
 
 
 @register.filter
@@ -158,6 +168,15 @@ def usage_count_enabled():
 @assignment_tag
 def base_url_setting():
     return getattr(settings, 'BASE_URL', None)
+
+
+@assignment_tag
+def allow_unicode_slugs():
+    if django.VERSION < (1, 9):
+        # Unicode slugs are unsupported on Django 1.8
+        return False
+    else:
+        return getattr(settings, 'WAGTAIL_ALLOW_UNICODE_SLUGS', True)
 
 
 class EscapeScriptNode(template.Node):
@@ -315,14 +334,8 @@ def message_tags(message):
 
 
 @register.simple_tag
-def novalidate_on_django_1_10():
+def replace_page_param(query, page_number, page_key='p'):
     """
-    Django 1.10 has a bug that breaks client-side validation on forms that include
-    prefilled file upload fields. This is due to be fixed in Django 1.10.1; as a
-    workaround, we apply this tag to disable client-side validation (using the
-    'novalidate' attribute) on all forms with enctype="multipart/form-data".
+    Replaces ``page_key`` from query string with ``page_number``.
     """
-    if django.VERSION >= (1, 10, 0) and django.VERSION < (1, 10, 1):
-        return 'novalidate'
-    else:
-        return ''
+    return conditional_escape(replace_page_in_query(query, page_number, page_key))

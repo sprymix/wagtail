@@ -2,7 +2,7 @@
 
 import sys
 
-from wagtail.wagtailcore import __version__
+from wagtail import __version__
 from wagtail.utils.setup import assets, sdist, check_bdist_egg
 
 try:
@@ -27,10 +27,10 @@ install_requires = [
     "django-treebeard>=3.0,<5.0",
     "djangorestframework>=3.1.3",
     "Pillow>=2.6.1",
-    "beautifulsoup4>=4.4.1",
-    "html5lib==0.999999",
+    "beautifulsoup4>=4.5.1",
+    "html5lib>=0.999,<1",
     "Unidecode>=0.04.14",
-    "Willow>=0.3b4,<0.4",
+    "Willow>=0.4,<0.5",
 ]
 
 # Testing dependencies
@@ -40,8 +40,9 @@ testing_extras = [
     'python-dateutil>=2.2',
     'pytz>=2014.7',
     'Pillow>=2.7.0',
-    'elasticsearch>=1.0.0',
+    'elasticsearch>=1.0.0,<3.0',
     'Jinja2>=2.8,<3.0',
+    'boto3>=1.1,<1.2',
 
     # For coverage and PEP8 linting
     'coverage>=3.7.0',

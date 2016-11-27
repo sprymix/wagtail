@@ -26,7 +26,7 @@ class Operation(object):
     def construct(self, *args):
         raise NotImplementedError
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         raise NotImplementedError
 
 
@@ -34,7 +34,7 @@ class DoNothingOperation(Operation):
     def construct(self):
         pass
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         pass
 
 
@@ -63,7 +63,7 @@ class FillOperation(Operation):
         if self.crop_closeness > 1:
             self.crop_closeness = 1
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         image_width, image_height = willow.get_size()
         focal_point = image.get_focal_point()
 
@@ -151,7 +151,7 @@ class MinMaxOperation(Operation):
         self.width = int(width_str)
         self.height = int(height_str)
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         image_width, image_height = willow.get_size()
 
         horz_scale = self.width / image_width
@@ -191,7 +191,7 @@ class WidthHeightOperation(Operation):
         self.size = int(size)
         self.force = force
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         image_width, image_height = willow.get_size()
 
         if self.method == 'width':
@@ -229,7 +229,7 @@ class CropRectangleOperation(Operation):
         (r0, r1), (r2, r3) = [x.split(',') for x in rect.split(':')]
         self.rect = (int(r0), int(r1), int(r2), int(r3))
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         return willow.crop(self.rect)
 
 
@@ -247,7 +247,7 @@ class ForceFitOperation(Operation):
         self.width = int(width_str)
         self.height = int(height_str)
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         (original_width, original_height) = willow.get_size()
         (target_width, target_height) = self.width, self.height
 
@@ -260,3 +260,25 @@ class ForceFitOperation(Operation):
             final_size = (int(original_width * scale_h), target_height)
 
         return willow.resize(final_size)
+
+
+class JPEGQualityOperation(Operation):
+    def construct(self, quality):
+        self.quality = int(quality)
+
+        if self.quality > 100:
+            raise ValueError("JPEG quality must not be higher than 100")
+
+    def run(self, willow, image, env):
+        env['jpeg-quality'] = self.quality
+
+
+class FormatOperation(Operation):
+    def construct(self, fmt):
+        self.format = fmt
+
+        if self.format not in ['jpeg', 'png', 'gif']:
+            raise ValueError("Format must be either 'jpeg', 'png' or 'gif'")
+
+    def run(self, willow, image, env):
+        env['output-format'] = self.format

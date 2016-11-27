@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import json
+
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 
@@ -10,7 +12,7 @@ from wagtail.wagtailcore.models import Page
 from wagtail.wagtailcore.utils import resolve_model_string
 
 
-def shared_context(request, extra_context={}):
+def shared_context(request, extra_context=None):
     context = {
         # parent_page ID is passed as a GET parameter on the external_link and email_link views
         # so that it's remembered when browsing from 'Internal link' to another link type
@@ -20,7 +22,8 @@ def shared_context(request, extra_context={}):
         'allow_external_link': request.GET.get('allow_external_link'),
         'allow_email_link': request.GET.get('allow_email_link'),
     }
-    context.update(extra_context)
+    if extra_context:
+        context.update(extra_context)
     return context
 
 
@@ -148,25 +151,37 @@ def search(request, parent_page_id=None):
 
 
 def external_link(request):
-    link_text = request.GET.get('link_text', '')
-    link_url = request.GET.get('link_url', '')
+    initial_data = {
+        'url': request.GET.get('link_url', ''),
+        'link_text': request.GET.get('link_text', ''),
+    }
 
     if request.method == 'POST':
-        form = ExternalLinkChooserForm(request.POST)
+        form = ExternalLinkChooserForm(request.POST, initial=initial_data)
 
         if form.is_valid():
+            result = {
+                'url': form.cleaned_data['url'],
+                'title': form.cleaned_data['link_text'].strip() or form.cleaned_data['url'],
+                # If the user has explicitly entered / edited something in the link_text field,
+                # always use that text. If not, we should favour keeping the existing link/selection
+                # text, where applicable.
+                # (Normally this will match the link_text passed in the URL here anyhow,
+                # but that won't account for non-text content such as images.)
+                'prefer_this_title_as_link_text': ('link_text' in form.changed_data),
+                'omniture_data': form.cleaned_data['omniture_data'],
+                'new_window': form.cleaned_data['new_window'],
+            }
+
             return render_modal_workflow(
                 request,
                 None, 'wagtailadmin/chooser/external_link_chosen.js',
                 {
-                    'url': form.cleaned_data['url'],
-                    'link_text': form.cleaned_data['link_text'].strip() or form.cleaned_data['url'],
-                    'new_window': form.cleaned_data['new_window'],
-                    'omniture_data': form.cleaned_data['omniture_data'],
+                    'result_json': json.dumps(result),
                 }
             )
     else:
-        form = ExternalLinkChooserForm(initial={'url': link_url, 'link_text': link_text})
+        form = ExternalLinkChooserForm(initial=initial_data)
 
     return render_modal_workflow(
         request,
@@ -178,23 +193,32 @@ def external_link(request):
 
 
 def email_link(request):
-    link_text = request.GET.get('link_text', '')
-    link_url = request.GET.get('link_url', '')
+    initial_data = {
+        'link_text': request.GET.get('link_text', ''),
+        'email_address': request.GET.get('link_url', ''),
+    }
 
     if request.method == 'POST':
-        form = EmailLinkChooserForm(request.POST)
+        form = EmailLinkChooserForm(request.POST, initial=initial_data)
 
         if form.is_valid():
+            result = {
+                'url': 'mailto:' + form.cleaned_data['email_address'],
+                'title': form.cleaned_data['link_text'].strip() or form.cleaned_data['email_address'],
+                # If the user has explicitly entered / edited something in the link_text field,
+                # always use that text. If not, we should favour keeping the existing link/selection
+                # text, where applicable.
+                'prefer_this_title_as_link_text': ('link_text' in form.changed_data),
+            }
             return render_modal_workflow(
                 request,
                 None, 'wagtailadmin/chooser/external_link_chosen.js',
                 {
-                    'url': 'mailto:' + form.cleaned_data['email_address'],
-                    'link_text': form.cleaned_data['link_text'].strip() or form.cleaned_data['email_address']
+                    'result_json': json.dumps(result),
                 }
             )
     else:
-        form = EmailLinkChooserForm(initial={'email_address': link_url, 'link_text': link_text})
+        form = EmailLinkChooserForm(initial=initial_data)
 
     return render_modal_workflow(
         request,
