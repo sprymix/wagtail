@@ -41,6 +41,9 @@ class PageLinkHandler(object):
 
             if for_editor:
                 editor_attrs = 'data-linktype="page" data-id="%d" ' % page.id
+                parent_page = page.get_parent()
+                if parent_page:
+                    editor_attrs += 'data-parent-id="%d" ' % parent_page.id
             else:
                 editor_attrs = ''
 
@@ -190,5 +193,12 @@ class RichText(object):
     def __init__(self, source):
         self.source = (source or '')
 
+    def __html__(self):
+        return '<div class="rich-text">' + expand_db_html(self.source) + '</div>'
+
     def __str__(self):
-        return mark_safe('<div class="rich-text">' + expand_db_html(self.source) + '</div>')
+        return mark_safe(self.__html__())
+
+    def __bool__(self):
+        return bool(self.source)
+    __nonzero__ = __bool__

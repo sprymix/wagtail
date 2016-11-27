@@ -230,6 +230,16 @@ Images
 This setting lets you provide your own image model for use in Wagtail, which might extend the built-in ``AbstractImage`` class or replace it entirely.
 
 
+Maximum Upload size for Images
+------------------------------
+
+.. code-block:: python
+
+    WAGTAILIMAGES_MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # i.e. 20MB
+
+This setting lets you override the maximum upload size for images (in bytes). If omitted, Wagtail will fall back to using its 10MB default value.
+
+
 Password Management
 -------------------
 
@@ -322,6 +332,18 @@ a custom user model is being used and extra fields are required in the user crea
 
 A list of the extra custom fields to be appended to the default list.
 
+Usage for images, documents and snippets
+----------------------------------------
+
+.. code-block:: python
+
+    WAGTAIL_USAGE_COUNT_ENABLED = True
+
+When enabled Wagtail shows where a particular image, document or snippet is being used on your site (disabled by default). A link will appear on the edit page showing you which pages they have been used on.
+
+.. note::
+
+    The usage count only applies to direct (database) references. Using documents, images and snippets within StreamFields or rich text fields will not be taken into account.
 
 URL Patterns
 ~~~~~~~~~~~~

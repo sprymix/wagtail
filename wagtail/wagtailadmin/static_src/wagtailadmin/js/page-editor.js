@@ -357,9 +357,9 @@ function InlinePanel(opts) {
 
 function cleanForSlug(val, useURLify) {
     if (URLify != undefined && useURLify !== false) { // Check to be sure that URLify function exists, and that we want to use it.
-        return URLify(val);
+        return URLify(val, 255, true);
     } else { // If not just do the "replace"
-        return val.replace(/\s/g, '-').replace(/[^A-Za-z0-9\-\_]/g, '').toLowerCase();
+        return val.replace(/\s/g, '-').replace(/[&\/\\#,+()$~%.'":`@\^!*?<>{}]/g, '').toLowerCase();
     }
 }
 
@@ -433,13 +433,11 @@ function initCollapsibleBlocks(root) {
 
 function initKeyboardShortcuts() {
     Mousetrap.bind(['mod+p'], function(e) {
-        disableDirtyFormCheck();
         $('.action-preview').trigger('click');
         return false;
     });
 
     Mousetrap.bind(['mod+s'], function(e) {
-        disableDirtyFormCheck();
         $('.action-save').trigger('click');
         return false;
     });

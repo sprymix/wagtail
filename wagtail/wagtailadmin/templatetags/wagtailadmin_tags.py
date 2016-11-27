@@ -12,10 +12,10 @@ from django.utils.safestring import mark_safe
 
 from wagtail.utils.pagination import DEFAULT_PAGE_KEY
 from wagtail.wagtailadmin.menu import admin_menu
+from wagtail.wagtailadmin.navigation import get_navigation_menu_items
 from wagtail.wagtailadmin.search import admin_search_areas
 from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import (
-    PageViewRestriction, UserPagePermissionsProxy, get_navigation_menu_items)
+from wagtail.wagtailcore.models import PageViewRestriction, UserPagePermissionsProxy
 from wagtail.wagtailcore.utils import cautious_slugify as _cautious_slugify
 from wagtail.wagtailcore.utils import camelcase_to_underscore, escape_script
 
@@ -29,10 +29,10 @@ else:
     assignment_tag = register.assignment_tag
 
 
-@register.inclusion_tag('wagtailadmin/shared/explorer_nav.html')
-def explorer_nav():
+@register.inclusion_tag('wagtailadmin/shared/explorer_nav.html', takes_context=True)
+def explorer_nav(context):
     return {
-        'nodes': get_navigation_menu_items()
+        'nodes': get_navigation_menu_items(context['request'].user)
     }
 
 
@@ -310,5 +310,19 @@ def message_tags(message):
         return message.extra_tags
     elif level_tag:
         return level_tag
+    else:
+        return ''
+
+
+@register.simple_tag
+def novalidate_on_django_1_10():
+    """
+    Django 1.10 has a bug that breaks client-side validation on forms that include
+    prefilled file upload fields. This is due to be fixed in Django 1.10.1; as a
+    workaround, we apply this tag to disable client-side validation (using the
+    'novalidate' attribute) on all forms with enctype="multipart/form-data".
+    """
+    if django.VERSION >= (1, 10, 0) and django.VERSION < (1, 10, 1):
+        return 'novalidate'
     else:
         return ''

@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import json
 import logging
 from collections import defaultdict
+from django import VERSION as DJANGO_VERSION
 
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
@@ -256,7 +257,7 @@ class PageBase(models.base.ModelBase):
     def __init__(cls, name, bases, dct):
         super(PageBase, cls).__init__(name, bases, dct)
 
-        if cls._deferred:
+        if DJANGO_VERSION < (1, 10) and getattr(cls, '_deferred', False):
             # this is an internal class built for Django's deferred-attribute mechanism;
             # don't proceed with all this page type registration stuff
             return
@@ -301,11 +302,20 @@ class Page(six.with_metaclass(PageBase, MP_Node, index.Indexed, ClusterableModel
         max_length=200, null=True, blank=True,
         help_text=_('Title for internal use.')
     )
-    slug = models.SlugField(
-        verbose_name=_('slug'),
-        max_length=255,
-        help_text=_("The name of the page as it will appear in URLs e.g http://domain.com/blog/[my-slug]/")
-    )
+    # use django 1.9+ SlugField with unicode support
+    if DJANGO_VERSION >= (1, 9):
+        slug = models.SlugField(
+            verbose_name=_('slug'),
+            allow_unicode=True,
+            max_length=255,
+            help_text=_("The name of the page as it will appear in URLs e.g http://domain.com/blog/[my-slug]/")
+        )
+    else:
+        slug = models.SlugField(
+            verbose_name=_('slug'),
+            max_length=255,
+            help_text=_("The name of the page as it will appear in URLs e.g http://domain.com/blog/[my-slug]/")
+        )
     content_type = models.ForeignKey(
         'contenttypes.ContentType',
         verbose_name=_('content type'),
@@ -460,7 +470,10 @@ class Page(six.with_metaclass(PageBase, MP_Node, index.Indexed, ClusterableModel
 
         if not self.slug:
             # Try to auto-populate slug from title
-            base_slug = slugify(self.title)
+            if DJANGO_VERSION >= (1, 9):
+                base_slug = slugify(self.title, allow_unicode=True)
+            else:
+                base_slug = slugify(self.title)
 
             # only proceed if we get a non-empty base slug back from slugify
             if base_slug:
@@ -617,6 +630,12 @@ class Page(six.with_metaclass(PageBase, MP_Node, index.Indexed, ClusterableModel
             update_statement = """
                 UPDATE wagtailcore_page
                 SET url_path= CONCAT(%s, substring(url_path, %s))
+                WHERE path LIKE %s AND id <> %s
+            """
+        elif connection.vendor in ('mssql', 'microsoft'):
+            update_statement = """
+                UPDATE wagtailcore_page
+                SET url_path= CONCAT(%s, (SUBSTRING(url_path, 0, %s)))
                 WHERE path LIKE %s AND id <> %s
             """
         else:
@@ -1199,12 +1218,15 @@ class Page(six.with_metaclass(PageBase, MP_Node, index.Indexed, ClusterableModel
         user_perms = UserPagePermissionsProxy(user)
         return user_perms.for_page(self)
 
-    def dummy_request(self):
+    def dummy_request(self, original_request=None, **meta):
         """
         Construct a HttpRequest object that is, as far as possible, representative of ones that would
         receive this page as a response. Used for previewing / moderation and any other place where we
         want to display a view of this page in the admin interface without going through the regular
         page routing logic.
+
+        If you pass in a real request object as original_request, additional information (e.g. client IP, cookies)
+        will be included in the dummy request.
         """
         url = self.full_url
         if url:
@@ -1226,14 +1248,30 @@ class Page(six.with_metaclass(PageBase, MP_Node, index.Indexed, ClusterableModel
             path = '/'
             port = 80
 
-        request = WSGIRequest({
+        dummy_values = {
             'REQUEST_METHOD': 'GET',
             'PATH_INFO': path,
             'SERVER_NAME': hostname,
             'SERVER_PORT': port,
             'HTTP_HOST': hostname,
             'wsgi.input': StringIO(),
-        })
+        }
+
+        # Add important values from the original request object, if it was provided.
+        if original_request:
+            if original_request.META.get('REMOTE_ADDR'):
+                dummy_values['REMOTE_ADDR'] = original_request.META['REMOTE_ADDR']
+            if original_request.META.get('HTTP_X_FORWARDED_FOR'):
+                dummy_values['HTTP_X_FORWARDED_FOR'] = original_request.META['HTTP_X_FORWARDED_FOR']
+            if original_request.META.get('HTTP_COOKIE'):
+                dummy_values['HTTP_COOKIE'] = original_request.META['HTTP_COOKIE']
+            if original_request.META.get('HTTP_USER_AGENT'):
+                dummy_values['HTTP_USER_AGENT'] = original_request.META['HTTP_USER_AGENT']
+
+        # Add additional custom metadata sent by the caller.
+        dummy_values.update(**meta)
+
+        request = WSGIRequest(dummy_values)
 
         # Apply middleware to the request - see http://www.mellowmorning.com/2011/04/18/mock-django-request-for-testing/
         handler = BaseHandler()
@@ -1354,47 +1392,6 @@ class Page(six.with_metaclass(PageBase, MP_Node, index.Indexed, ClusterableModel
     class Meta:
         verbose_name = _('page')
         verbose_name_plural = _('pages')
-
-
-def get_navigation_menu_items():
-    # Get all pages that appear in the navigation menu: ones which have children,
-    # or are at the top-level (this rule required so that an empty site out-of-the-box has a working menu)
-    pages = Page.objects.filter(Q(depth=2) | Q(numchild__gt=0)).order_by('path')
-
-    # Turn this into a tree structure:
-    #     tree_node = (page, children)
-    #     where 'children' is a list of tree_nodes.
-    # Algorithm:
-    # Maintain a list that tells us, for each depth level, the last page we saw at that depth level.
-    # Since our page list is ordered by path, we know that whenever we see a page
-    # at depth d, its parent must be the last page we saw at depth (d-1), and so we can
-    # find it in that list.
-
-    depth_list = [(None, [])]  # a dummy node for depth=0, since one doesn't exist in the DB
-
-    for page in pages:
-        # create a node for this page
-        node = (page, [])
-        # retrieve the parent from depth_list
-        parent_page, parent_childlist = depth_list[page.depth - 1]
-        # insert this new node in the parent's child list
-        parent_childlist.append(node)
-
-        # add the new node to depth_list
-        try:
-            depth_list[page.depth] = node
-        except IndexError:
-            # an exception here means that this node is one level deeper than any we've seen so far
-            depth_list.append(node)
-
-    # in Wagtail, the convention is to have one root node in the db (depth=1); the menu proper
-    # begins with the children of that node (depth=2).
-    try:
-        root, root_children = depth_list[1]
-        return root_children
-    except IndexError:
-        # what, we don't even have a root node? Fine, just return an empty list...
-        return []
 
 
 @receiver(pre_delete, sender=Page)
@@ -1573,6 +1570,7 @@ PAGE_PERMISSION_TYPE_CHOICES = [
 ]
 
 
+@python_2_unicode_compatible
 class GroupPagePermission(models.Model):
     group = models.ForeignKey(Group, verbose_name=_('group'), related_name='page_permissions', on_delete=models.CASCADE)
     page = models.ForeignKey('Page', verbose_name=_('page'), related_name='group_permissions', on_delete=models.CASCADE)
@@ -1586,6 +1584,13 @@ class GroupPagePermission(models.Model):
         unique_together = ('group', 'page', 'permission_type')
         verbose_name = _('group page permission')
         verbose_name_plural = _('group page permissions')
+
+    def __str__(self):
+        return "Group %d ('%s') has permission '%s' on page %d ('%s')" % (
+            self.group.id, self.group,
+            self.permission_type,
+            self.page.id, self.page
+        )
 
 
 class UserPagePermissionsProxy(object):

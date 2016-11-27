@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.core.exceptions import ImproperlyConfigured
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
@@ -366,49 +365,11 @@ class TestSnippetChooserPanel(TestCase, WagtailTestUtils):
         self.assertIn('createSnippetChooser("id_advert", "tests/advert");',
                       self.snippet_chooser_panel.render_as_field())
 
-    def test_target_model_from_string(self):
-        # RemovedInWagtail16Warning: snippet_type argument
-        with self.ignore_deprecation_warnings():
-            result = SnippetChooserPanel(
-                'advert',
-                'tests.advert'
-            ).bind_to_model(SnippetChooserModel).target_model()
-            self.assertIs(result, Advert)
-
-    def test_target_model_from_model(self):
-        # RemovedInWagtail16Warning: snippet_type argument
-        with self.ignore_deprecation_warnings():
-            result = SnippetChooserPanel(
-                'advert',
-                Advert
-            ).bind_to_model(SnippetChooserModel).target_model()
-            self.assertIs(result, Advert)
-
     def test_target_model_autodetected(self):
         result = SnippetChooserPanel(
             'advert'
         ).bind_to_model(SnippetChooserModel).target_model()
         self.assertEqual(result, Advert)
-
-    def test_target_model_malformed_type(self):
-        # RemovedInWagtail16Warning: snippet_type argument
-        with self.ignore_deprecation_warnings():
-            result = SnippetChooserPanel(
-                'advert',
-                'snowman'
-            ).bind_to_model(SnippetChooserModel)
-            self.assertRaises(ImproperlyConfigured,
-                              result.target_model)
-
-    def test_target_model_nonexistent_type(self):
-        # RemovedInWagtail16Warning: snippet_type argument
-        with self.ignore_deprecation_warnings():
-            result = SnippetChooserPanel(
-                'advert',
-                'snowman.lorry'
-            ).bind_to_model(SnippetChooserModel)
-            self.assertRaises(ImproperlyConfigured,
-                              result.target_model)
 
 
 class TestSnippetRegistering(TestCase):
@@ -690,3 +651,15 @@ class TestSnippetEditHandlers(TestCase, WagtailTestUtils):
         form_class = edit_handler_class.get_form_class(FancySnippet)
         self.assertTrue(issubclass(form_class, WagtailAdminModelForm))
         self.assertTrue(issubclass(form_class, FancySnippetForm))
+
+
+class TestInlinePanelMedia(TestCase, WagtailTestUtils):
+    """
+    Test that form media required by InlinePanels is correctly pulled in to the edit page
+    """
+    def test_inline_panel_media(self):
+        self.login()
+
+        response = self.client.get(reverse('wagtailsnippets:add', args=('snippetstests', 'multisectionrichtextsnippet')))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'wagtailadmin/js/hallo-bootstrap.js')

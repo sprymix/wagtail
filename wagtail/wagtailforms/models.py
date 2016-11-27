@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import json
-import re
+import os
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
@@ -17,7 +17,7 @@ from wagtail.wagtailadmin.edit_handlers import FieldPanel
 from wagtail.wagtailadmin.utils import send_mail
 from wagtail.wagtailcore.models import Orderable, Page, UserPagePermissionsProxy, get_page_models
 
-from .forms import FormBuilder
+from .forms import FormBuilder, WagtailAdminFormPageForm
 
 FORM_FIELD_CHOICES = (
     ('singleline', _('Single line text')),
@@ -32,9 +32,6 @@ FORM_FIELD_CHOICES = (
     ('date', _('Date')),
     ('datetime', _('Date/time')),
 )
-
-
-HTML_EXTENSION_RE = re.compile(r"(.*)\.html")
 
 
 @python_2_unicode_compatible
@@ -68,9 +65,8 @@ class AbstractFormField(Orderable):
     )
     field_type = models.CharField(verbose_name=_('field type'), max_length=16, choices=FORM_FIELD_CHOICES)
     required = models.BooleanField(verbose_name=_('required'), default=True)
-    choices = models.CharField(
+    choices = models.TextField(
         verbose_name=_('choices'),
-        max_length=512,
         blank=True,
         help_text=_('Comma separated list of choices. Only applicable in checkboxes, radio and dropdown.')
     )
@@ -135,11 +131,13 @@ class AbstractForm(Page):
 
     form_builder = FormBuilder
 
+    base_form_class = WagtailAdminFormPageForm
+
     def __init__(self, *args, **kwargs):
         super(AbstractForm, self).__init__(*args, **kwargs)
         if not hasattr(self, 'landing_page_template'):
-            template_wo_ext = re.match(HTML_EXTENSION_RE, self.template).group(1)
-            self.landing_page_template = template_wo_ext + '_landing.html'
+            name, ext = os.path.splitext(self.template)
+            self.landing_page_template = name + '_landing' + ext
 
     class Meta:
         abstract = True
@@ -212,7 +210,7 @@ class AbstractEmailForm(AbstractForm):
 
     to_address = models.CharField(
         verbose_name=_('to address'), max_length=255, blank=True,
-        help_text=_("Optional - form submissions will be emailed to this address")
+        help_text=_("Optional - form submissions will be emailed to these addresses. Separate multiple addresses by comma.")
     )
     from_address = models.CharField(verbose_name=_('from address'), max_length=255, blank=True)
     subject = models.CharField(verbose_name=_('subject'), max_length=255, blank=True)
@@ -221,8 +219,9 @@ class AbstractEmailForm(AbstractForm):
         super(AbstractEmailForm, self).process_form_submission(form)
 
         if self.to_address:
+            addresses = [x.strip() for x in self.to_address.split(',')]
             content = '\n'.join([x[1].label + ': ' + text_type(form.data.get(x[0])) for x in form.fields.items()])
-            send_mail(self.subject, content, [self.to_address], self.from_address,)
+            send_mail(self.subject, content, addresses, self.from_address,)
 
     class Meta:
         abstract = True

@@ -17,9 +17,10 @@ from django.views.decorators.vary import vary_on_headers
 from wagtail.utils.pagination import paginate
 from wagtail.wagtailadmin import messages, signals
 from wagtail.wagtailadmin.forms import CopyForm, SearchForm
+from wagtail.wagtailadmin.navigation import get_navigation_menu_items
 from wagtail.wagtailadmin.utils import send_notification
 from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Page, PageRevision, get_navigation_menu_items
+from wagtail.wagtailcore.models import Page, PageRevision
 
 
 def get_valid_next_url_from_request(request):
@@ -31,7 +32,7 @@ def get_valid_next_url_from_request(request):
 
 def explorer_nav(request):
     return render(request, 'wagtailadmin/shared/explorer_nav.html', {
-        'nodes': get_navigation_menu_items(),
+        'nodes': get_navigation_menu_items(request.user),
     })
 
 
@@ -274,10 +275,12 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
         else:
             messages.error(request, _("The page could not be created due to validation errors"))
             edit_handler = edit_handler_class(instance=page, form=form)
+            has_unsaved_changes = True
     else:
         signals.init_new_page.send(sender=create, page=page, parent=parent_page)
         form = form_class(instance=page)
         edit_handler = edit_handler_class(instance=page, form=form)
+        has_unsaved_changes = False
 
     return render(request, 'wagtailadmin/pages/create.html', {
         'content_type': content_type,
@@ -287,6 +290,7 @@ def create(request, content_type_app_name, content_type_model_name, parent_page_
         'preview_modes': page.preview_modes,
         'form': form,
         'next': next_url,
+        'has_unsaved_changes': has_unsaved_changes,
     })
 
 
@@ -351,7 +355,7 @@ def edit(request, page_id):
                 revision.publish()
                 # Need to reload the page because the URL may have changed, and we
                 # need the up-to-date URL for the "View Live" button.
-                page = Page.objects.get(pk=page.pk)
+                page = page.specific_class.objects.get(pk=page.pk)
 
             if is_publishing:
                 if page.go_live_at and page.go_live_at > timezone.now():
@@ -488,9 +492,11 @@ def edit(request, page_id):
                     if formset.errors
                 ])
             )
+            has_unsaved_changes = True
     else:
         form = form_class(instance=page)
         edit_handler = edit_handler_class(instance=page, form=form)
+        has_unsaved_changes = False
 
     # Check for revisions still undergoing moderation and warn
     if latest_revision and latest_revision.submitted_for_moderation:
@@ -504,6 +510,7 @@ def edit(request, page_id):
         'preview_modes': page.preview_modes,
         'form': form,
         'next': next_url,
+        'has_unsaved_changes': has_unsaved_changes,
     })
 
 
@@ -562,7 +569,7 @@ def archive(request, page_id):
 
 def view_draft(request, page_id):
     page = get_object_or_404(Page, id=page_id).specific.get_latest_revision_as_page()
-    return page.serve_preview(page.dummy_request(), page.default_preview_mode)
+    return page.serve_preview(page.dummy_request(request), page.default_preview_mode)
 
 
 def preview_on_edit(request, page_id):
@@ -582,7 +589,7 @@ def preview_on_edit(request, page_id):
         page.full_clean()
 
         preview_mode = request.GET.get('mode', page.default_preview_mode)
-        response = page.serve_preview(page.dummy_request(), preview_mode)
+        response = page.serve_preview(page.dummy_request(request), preview_mode)
         response['X-Wagtail-Preview'] = 'ok'
         return response
 
@@ -594,6 +601,7 @@ def preview_on_edit(request, page_id):
             'edit_handler': edit_handler,
             'preview_modes': page.preview_modes,
             'form': form,
+            'has_unsaved_changes': True,
         })
         response['X-Wagtail-Preview'] = 'error'
         return response
@@ -642,7 +650,7 @@ def preview_on_create(request, content_type_app_name, content_type_model_name, p
         page.path = Page._get_children_path_interval(parent_page.path)[1]
 
         preview_mode = request.GET.get('mode', page.default_preview_mode)
-        response = page.serve_preview(page.dummy_request(), preview_mode)
+        response = page.serve_preview(page.dummy_request(request), preview_mode)
         response['X-Wagtail-Preview'] = 'ok'
         return response
 
@@ -656,6 +664,7 @@ def preview_on_create(request, content_type_app_name, content_type_model_name, p
             'edit_handler': edit_handler,
             'preview_modes': page.preview_modes,
             'form': form,
+            'has_unsaved_changes': True,
         })
         response['X-Wagtail-Preview'] = 'error'
         return response
@@ -1079,4 +1088,4 @@ def revisions_view(request, page_id, revision_id):
     revision = get_object_or_404(page.revisions, id=revision_id)
     revision_page = revision.as_page_object()
 
-    return revision_page.serve_preview(page.dummy_request(), page.default_preview_mode)
+    return revision_page.serve_preview(page.dummy_request(request), page.default_preview_mode)

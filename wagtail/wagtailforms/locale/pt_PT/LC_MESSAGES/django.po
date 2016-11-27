@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-05-18 21:37+0000\n"
-"PO-Revision-Date: 2016-05-11 20:34+0000\n"
+"POT-Creation-Date: 2016-08-01 13:25+0000\n"
+"PO-Revision-Date: 2016-08-01 13:29+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Portuguese (Portugal) (http://www.transifex.com/torchbox/"
 "wagtail/language/pt_PT/)\n"
@@ -96,11 +96,6 @@ msgstr "texto de ajuda"
 msgid "to address"
 msgstr "endereço do destinatário"
 
-msgid "Optional - form submissions will be emailed to this address"
-msgstr ""
-"Opcional - os formulários recebidos serão enviados por e-mail para este "
-"endereço"
-
 msgid "from address"
 msgstr "endereço do remetente"
 
@@ -155,6 +150,9 @@ msgstr "Data de Envio"
 
 msgid "Actions"
 msgstr "Ações"
+
+msgid "delete"
+msgstr "apagar"
 
 msgid "No form pages have been created."
 msgstr "Não existem páginas de formulário."

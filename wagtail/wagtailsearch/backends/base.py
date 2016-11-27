@@ -183,12 +183,16 @@ class BaseSearchResults(object):
         return '<SearchResults %r>' % data
 
 
-class BaseSearch(object):
+class BaseSearchBackend(object):
     query_class = None
     results_class = None
+    rebuilder_class = None
 
     def __init__(self, params):
         pass
+
+    def get_index_for_model(self, model):
+        return None
 
     def get_rebuilder(self):
         return None
@@ -229,6 +233,17 @@ class BaseSearch(object):
         # Check that theres still a query string after the clean up
         if query_string == "":
             return []
+
+        # Only fields that are indexed as a SearchField can be passed in fields
+        if fields:
+            allowed_fields = {field.field_name for field in model.get_searchable_search_fields()}
+
+            for field_name in fields:
+                if field_name not in allowed_fields:
+                    raise FieldError(
+                        'Cannot search with field "' + field_name + '". Please add index.SearchField(\'' +
+                        field_name + '\') to ' + model.__name__ + '.search_fields.'
+                    )
 
         # Apply filters to queryset
         if filters:

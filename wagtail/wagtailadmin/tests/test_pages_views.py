@@ -2,9 +2,11 @@ from __future__ import absolute_import, unicode_literals
 
 import datetime
 import logging
+import os
 
 import django
 import mock
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.messages import constants as message_constants
@@ -17,6 +19,7 @@ from django.utils import formats, timezone
 from django.utils.dateparse import parse_date
 
 from wagtail.tests.testapp.models import (
+    EVENT_AUDIENCE_CHOICES,
     Advert, AdvertPlacement, BusinessChild, BusinessIndex, BusinessSubIndex, EventPage,
     EventPageCarouselItem, FilePage, SimplePage, SingleEventPage, StandardChild, StandardIndex,
     TaggedPage)
@@ -552,6 +555,9 @@ class TestPageCreation(TestCase, WagtailTestUtils):
         self.assertFormError(response, 'form', 'go_live_at', "Go live date/time must be before expiry date/time")
         self.assertFormError(response, 'form', 'expire_at', "Go live date/time must be before expiry date/time")
 
+        # form should be marked as having unsaved changes for the purposes of the dirty-forms warning
+        self.assertContains(response, "alwaysDirty: true")
+
     def test_create_simplepage_scheduled_expire_in_the_past(self):
         post_data = {
             'title': "New page!",
@@ -567,6 +573,9 @@ class TestPageCreation(TestCase, WagtailTestUtils):
 
         # Check that a form error was raised
         self.assertFormError(response, 'form', 'expire_at', "Expiry date/time must be in the future")
+
+        # form should be marked as having unsaved changes for the purposes of the dirty-forms warning
+        self.assertContains(response, "alwaysDirty: true")
 
     def test_create_simplepage_post_publish(self):
         # Connect a mock signal handler to page_published signal
@@ -694,6 +703,9 @@ class TestPageCreation(TestCase, WagtailTestUtils):
 
         # Check that a form error was raised
         self.assertFormError(response, 'form', 'slug', "This slug is already in use")
+
+        # form should be marked as having unsaved changes for the purposes of the dirty-forms warning
+        self.assertContains(response, "alwaysDirty: true")
 
     def test_create_nonexistantparent(self):
         response = self.client.get(reverse('wagtailadmin_pages:add', args=('tests', 'simplepage', 100000)))
@@ -870,6 +882,73 @@ class TestPageEdit(TestCase, WagtailTestUtils):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'enctype="multipart/form-data"')
 
+    def test_upload_file_publish(self):
+        """
+        Check that file uploads work when directly publishing
+        """
+        file_upload = ContentFile(b"A new file", name='published-file.txt')
+        post_data = {
+            'title': 'New file',
+            'slug': 'new-file',
+            'file_field': file_upload,
+            'action-publish': "Publish",
+        }
+        response = self.client.post(reverse('wagtailadmin_pages:edit', args=[self.file_page.id]), post_data)
+
+        # Should be redirected to explorer
+        self.assertRedirects(response, reverse('wagtailadmin_explore', args=[self.root_page.id]))
+
+        # Check the new file exists
+        file_page = FilePage.objects.get()
+
+        # In Django < 1.10 the file_field.name starts with ./ whereas in 1.10 it is the basename;
+        # we test against os.path.basename(file_page.file_field.name) so that both possibilities
+        # are handled. os.path.basename can be removed when support for Django <= 1.9 is dropped.
+
+        # (hello, future person grepping for the string `if DJANGO_VERSION < (1, 10)`)
+
+        self.assertEqual(os.path.basename(file_page.file_field.name),
+                         os.path.basename(file_upload.name))
+        self.assertTrue(os.path.exists(file_page.file_field.path))
+        self.assertEqual(file_page.file_field.read(), b"A new file")
+
+    def test_upload_file_draft(self):
+        """
+        Check that file uploads work when saving a draft
+        """
+        file_upload = ContentFile(b"A new file", name='draft-file.txt')
+        post_data = {
+            'title': 'New file',
+            'slug': 'new-file',
+            'file_field': file_upload,
+        }
+        response = self.client.post(reverse('wagtailadmin_pages:edit', args=[self.file_page.id]), post_data)
+
+        # Should be redirected to edit page
+        self.assertRedirects(response, reverse('wagtailadmin_pages:edit', args=[self.file_page.id]))
+
+        # Check the file was uploaded
+        file_path = os.path.join(settings.MEDIA_ROOT, file_upload.name)
+        self.assertTrue(os.path.exists(file_path))
+        with open(file_path, 'rb') as saved_file:
+            self.assertEqual(saved_file.read(), b"A new file")
+
+        # Publish the draft just created
+        FilePage.objects.get().get_latest_revision().publish()
+
+        # In Django < 1.10 the file_field.name starts with ./ whereas in 1.10 it is the basename;
+        # we test against os.path.basename(file_page.file_field.name) so that both possibilities
+        # are handled. os.path.basename can be removed when support for Django <= 1.9 is dropped.
+
+        # (hello, future person grepping for the string `if DJANGO_VERSION < (1, 10)`)
+
+        # Get the file page, check the file is set
+        file_page = FilePage.objects.get()
+        self.assertEqual(os.path.basename(file_page.file_field.name),
+                         os.path.basename(file_upload.name))
+        self.assertTrue(os.path.exists(file_page.file_field.path))
+        self.assertEqual(file_page.file_field.read(), b"A new file")
+
     def test_page_edit_bad_permissions(self):
         # Remove privileges from user
         self.user.is_superuser = False
@@ -973,6 +1052,9 @@ class TestPageEdit(TestCase, WagtailTestUtils):
         self.assertFormError(response, 'form', 'go_live_at', "Go live date/time must be before expiry date/time")
         self.assertFormError(response, 'form', 'expire_at', "Go live date/time must be before expiry date/time")
 
+        # form should be marked as having unsaved changes for the purposes of the dirty-forms warning
+        self.assertContains(response, "alwaysDirty: true")
+
     def test_edit_scheduled_expire_in_the_past(self):
         post_data = {
             'title': "I've been edited!",
@@ -986,6 +1068,9 @@ class TestPageEdit(TestCase, WagtailTestUtils):
 
         # Check that a form error was raised
         self.assertFormError(response, 'form', 'expire_at', "Expiry date/time must be in the future")
+
+        # form should be marked as having unsaved changes for the purposes of the dirty-forms warning
+        self.assertContains(response, "alwaysDirty: true")
 
     def test_page_edit_post_publish(self):
         # Connect a mock signal handler to page_published signal
@@ -2778,6 +2863,27 @@ class TestChildRelationsOnSuperclass(TestCase, WagtailTestUtils):
         self.assertEqual(page.advert_placements.count(), 1)
         self.assertEqual(page.advert_placements.first().advert.text, 'test_advert')
 
+    def test_post_create_form_with_validation_error_in_formset(self):
+        post_data = {
+            'title': "New index!",
+            'slug': 'new-index',
+            'advert_placements-TOTAL_FORMS': '1',
+            'advert_placements-INITIAL_FORMS': '0',
+            'advert_placements-MAX_NUM_FORMS': '1000',
+            'advert_placements-0-advert': '1',
+            'advert_placements-0-colour': '',  # should fail as colour is a required field
+            'advert_placements-0-id': '',
+        }
+        response = self.client.post(
+            reverse('wagtailadmin_pages:add', args=('tests', 'standardindex', self.root_page.id)), post_data
+        )
+
+        # Should remain on the edit page with a validation error
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        # form should be marked as having unsaved changes
+        self.assertContains(response, "alwaysDirty: true")
+
     def test_get_edit_form(self):
         response = self.client.get(reverse('wagtailadmin_pages:edit', args=(self.index_page.id, )))
         self.assertEqual(response.status_code, 200)
@@ -2814,6 +2920,26 @@ class TestChildRelationsOnSuperclass(TestCase, WagtailTestUtils):
         self.assertEqual(page.advert_placements.count(), 2)
         self.assertEqual(page.advert_placements.all()[0].advert.text, 'test_advert')
         self.assertEqual(page.advert_placements.all()[1].advert.text, 'test_advert')
+
+    def test_post_edit_form_with_validation_error_in_formset(self):
+        post_data = {
+            'title': "My lovely index",
+            'slug': 'my-lovely-index',
+            'advert_placements-TOTAL_FORMS': '1',
+            'advert_placements-INITIAL_FORMS': '1',
+            'advert_placements-MAX_NUM_FORMS': '1000',
+            'advert_placements-0-advert': '1',
+            'advert_placements-0-colour': '',
+            'advert_placements-0-id': self.index_page.advert_placements.first().id,
+            'action-publish': "Publish",
+        }
+        response = self.client.post(reverse('wagtailadmin_pages:edit', args=(self.index_page.id, )), post_data)
+
+        # Should remain on the edit page with a validation error
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        # form should be marked as having unsaved changes
+        self.assertContains(response, "alwaysDirty: true")
 
 
 class TestRevisions(TestCase, WagtailTestUtils):
@@ -2956,3 +3082,90 @@ class TestIssue2599(TestCase, WagtailTestUtils):
         self.assertEqual(response.context['self'].depth, homepage.depth + 1)
         self.assertTrue(response.context['self'].path.startswith(homepage.path))
         self.assertEqual(response.context['self'].get_parent(), homepage)
+
+
+class TestIssue2492(TestCase, WagtailTestUtils):
+    """
+    The publication submission message generation was performed using
+    the Page class, as opposed to the specific_class for that Page.
+    This test ensures that the specific_class url method is called
+    when the 'view live' message button is created.
+    """
+    def setUp(self):
+        self.root_page = Page.objects.get(id=2)
+        child_page = SingleEventPage(
+            title="Test Event", slug="test-event", location="test location",
+            cost="10", date_from=datetime.datetime.now(),
+            audience=EVENT_AUDIENCE_CHOICES[0][0])
+        self.root_page.add_child(instance=child_page)
+        child_page.save_revision().publish()
+        self.child_page = SingleEventPage.objects.get(id=child_page.id)
+        self.user = self.login()
+
+    def test_page_edit_post_publish_url(self):
+        post_data = {
+            'action-publish': "Publish",
+            'title': self.child_page.title,
+            'date_from': self.child_page.date_from,
+            'slug': self.child_page.slug,
+            'audience': self.child_page.audience,
+            'location': self.child_page.location,
+            'cost': self.child_page.cost,
+            'carousel_items-TOTAL_FORMS': 0,
+            'carousel_items-INITIAL_FORMS': 0,
+            'carousel_items-MIN_NUM_FORMS': 0,
+            'carousel_items-MAX_NUM_FORMS': 0,
+            'speakers-TOTAL_FORMS': 0,
+            'speakers-INITIAL_FORMS': 0,
+            'speakers-MIN_NUM_FORMS': 0,
+            'speakers-MAX_NUM_FORMS': 0,
+            'related_links-TOTAL_FORMS': 0,
+            'related_links-INITIAL_FORMS': 0,
+            'related_links-MIN_NUM_FORMS': 0,
+            'related_links-MAX_NUM_FORMS': 0,
+        }
+        response = self.client.post(
+            reverse('wagtailadmin_pages:edit', args=(self.child_page.id, )),
+            post_data, follow=True)
+
+        # Grab a fresh copy's URL
+        new_url = SingleEventPage.objects.get(id=self.child_page.id).url
+
+        # The "View Live" button should have the custom URL.
+        for message in response.context['messages']:
+            self.assertIn('"{}"'.format(new_url), message.message)
+            break
+
+
+class TestInlinePanelMedia(TestCase, WagtailTestUtils):
+    """
+    Test that form media required by InlinePanels is correctly pulled in to the edit page
+    """
+    def test_inline_panel_media(self):
+        homepage = Page.objects.get(id=2)
+        self.login()
+
+        # simplepage does not need hallo...
+        response = self.client.get(reverse('wagtailadmin_pages:add', args=('tests', 'simplepage', homepage.id)))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'wagtailadmin/js/hallo-bootstrap.js')
+
+        # but sectionedrichtextpage does
+        response = self.client.get(reverse('wagtailadmin_pages:add', args=('tests', 'sectionedrichtextpage', homepage.id)))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'wagtailadmin/js/hallo-bootstrap.js')
+
+
+class TestInlineStreamField(TestCase, WagtailTestUtils):
+    """
+    Test that streamfields inside an inline child work
+    """
+    def test_inline_streamfield(self):
+        homepage = Page.objects.get(id=2)
+        self.login()
+
+        response = self.client.get(reverse('wagtailadmin_pages:add', args=('tests', 'inlinestreampage', homepage.id)))
+        self.assertEqual(response.status_code, 200)
+
+        # response should include HTML declarations for streamfield child blocks
+        self.assertContains(response, '<li id="__PREFIX__-container" class="sequence-member blockname-rich_text">')

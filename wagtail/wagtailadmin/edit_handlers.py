@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import math
+import re
 import warnings
 
 import django
@@ -361,6 +363,14 @@ class FieldRowPanel(object):
         self.classname = classname
 
     def bind_to_model(self, model):
+        col_count = " col" + str(int(math.floor(12 / len(self.children))))
+
+        # If child panel doesn't have a col# class then append default based on
+        # number of columns
+        for child in self.children:
+            if not re.search(r'\bcol\d+\b', child.classname):
+                child.classname += col_count
+
         return type(str('_FieldRowPanel'), (BaseFieldRowPanel,), {
             'model': model,
             'children': [child.bind_to_model(model) for child in self.children],
@@ -635,6 +645,10 @@ class BaseInlinePanel(EditHandler):
                 'validate_max': cls.max_num is not None
             }
         }
+
+    @classmethod
+    def html_declarations(cls):
+        return cls.get_child_edit_handler_class().html_declarations()
 
     def __init__(self, instance=None, form=None, parent_instance=None):
         super(BaseInlinePanel, self).__init__(instance=instance, form=form,

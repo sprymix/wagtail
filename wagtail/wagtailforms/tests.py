@@ -8,7 +8,7 @@ from django.core import mail
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-from wagtail.tests.testapp.models import FormField, FormPage
+from wagtail.tests.testapp.models import FormField, FormPage, JadeFormPage
 from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailcore.models import Page
 from wagtail.wagtailforms.forms import FormBuilder
@@ -157,6 +157,39 @@ class TestFormSubmission(TestCase):
         # Check that the checkbox was serialised in the email correctly
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Your choices: None", mail.outbox[0].body)
+
+
+class TestFormSubmissionWithMultipleRecipients(TestCase):
+    def setUp(self):
+        # Create a form page
+        self.form_page = make_form_page(to_address='to@email.com, another@email.com')
+
+    def test_post_valid_form(self):
+        response = self.client.post('/contact-us/', {
+            'your-email': 'bob@example.com',
+            'your-message': 'hello world',
+            'your-choices': {'foo': '', 'bar': '', 'baz': ''}
+        })
+
+        # Check response
+        self.assertContains(response, "Thank you for your feedback.")
+        self.assertTemplateNotUsed(response, 'tests/form_page.html')
+        self.assertTemplateUsed(response, 'tests/form_page_landing.html')
+
+        # check that variables defined in get_context are passed through to the template (#1429)
+        self.assertContains(response, "<p>hello world</p>")
+
+        # Check that one email was sent, but to two recipients
+        self.assertEqual(len(mail.outbox), 1)
+
+        self.assertEqual(mail.outbox[0].subject, "The subject")
+        self.assertIn("Your message: hello world", mail.outbox[0].body)
+        self.assertEqual(mail.outbox[0].from_email, 'from@email.com')
+        self.assertEqual(set(mail.outbox[0].to), {'to@email.com', 'another@email.com'})
+
+        # Check that form submission was saved correctly
+        form_page = Page.objects.get(url_path='/home/contact-us/')
+        self.assertTrue(FormSubmission.objects.filter(page=form_page, form_data__contains='hello world').exists())
 
 
 class TestFormBuilder(TestCase):
@@ -678,3 +711,51 @@ class TestIssue798(TestCase):
 
         # Check that form submission was saved correctly
         self.assertTrue(FormSubmission.objects.filter(page=self.form_page, form_data__contains='7.3').exists())
+
+
+class TestIssue585(TestCase):
+    fixtures = ['test.json']
+
+    def setUp(self):
+
+        self.assertTrue(self.client.login(username='superuser', password='password'))
+        # Find root page
+        self.root_page = Page.objects.get(id=2)
+
+    def test_adding_duplicate_form_labels(self):
+        post_data = {
+            'title': "Form page!",
+            'content': "Some content",
+            'slug': 'contact-us',
+            'form_fields-TOTAL_FORMS': '3',
+            'form_fields-INITIAL_FORMS': '3',
+            'form_fields-MIN_NUM_FORMS': '0',
+            'form_fields-MAX_NUM_FORMS': '1000',
+            'form_fields-0-id': '',
+            'form_fields-0-label': 'foo',
+            'form_fields-0-field_type': 'singleline',
+            'form_fields-1-id': '',
+            'form_fields-1-label': 'foo',
+            'form_fields-1-field_type': 'singleline',
+            'form_fields-2-id': '',
+            'form_fields-2-label': 'bar',
+            'form_fields-2-field_type': 'singleline',
+        }
+        response = self.client.post(
+            reverse('wagtailadmin_pages:add', args=('tests', 'formpage', self.root_page.id)), post_data
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(
+            response,
+            text="There is another field with the label foo, please change one of them.",
+        )
+
+
+class TestNonHtmlExtension(TestCase):
+    fixtures = ['test.json']
+
+    def test_non_html_extension(self):
+        form_page = JadeFormPage(title="test")
+        self.assertEqual(form_page.landing_page_template, "tests/form_page_landing.jade")

@@ -22,6 +22,7 @@ from wagtail.wagtailadmin.forms import SearchForm
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.utils import PermissionPolicyChecker
 from wagtail.wagtailadmin.utils import permission_required
+from wagtail.wagtailadmin.utils import popular_tags_for_model
 from wagtail.wagtailcore.models import Collection
 from wagtail.wagtailimages.formats import get_image_format
 from wagtail.wagtailimages.forms import ImageInsertionForm, get_image_form
@@ -178,7 +179,7 @@ def chooser(request):
         'query_string': q,
         'will_select_format': will_select_format,
         'will_select_rendition': will_select_rendition,
-        'popular_tags': Image.popular_tags(),
+        'popular_tags': popular_tags_for_model(Image),
         'collections': collections,
         'uploadid': uuid.uuid4(),
         'post_processing_spec': request.GET.get('pps'),

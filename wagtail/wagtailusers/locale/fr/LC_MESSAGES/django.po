@@ -3,7 +3,9 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Axel Haustant, 2016
 # Bertrand Bordage <bordage.bertrand@gmail.com>, 2015-2016
+# Léo <leo@naeka.fr>, 2016
 # nahuel, 2014
 # nahuel, 2014
 # pierre marfoure <pierre@onoffdesign.com>, 2016
@@ -12,9 +14,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-05-18 21:37+0000\n"
-"PO-Revision-Date: 2016-03-17 13:35+0000\n"
-"Last-Translator: Bertrand Bordage <bordage.bertrand@gmail.com>\n"
+"POT-Creation-Date: 2016-08-01 13:25+0000\n"
+"PO-Revision-Date: 2016-08-11 13:56+0000\n"
+"Last-Translator: Axel Haustant\n"
 "Language-Team: French (http://www.transifex.com/torchbox/wagtail/language/"
 "fr/)\n"
 "MIME-Version: 1.0\n"
@@ -73,7 +75,7 @@ msgid "You cannot have multiple permission records for the same page."
 msgstr "Vous ne pouvez avoir plusieurs permissions pour la même page."
 
 msgid "submitted notifications"
-msgstr "Notifications proposées"
+msgstr "notifications proposées"
 
 msgid "Receive notification when a page is submitted for moderation"
 msgstr "Recevoir une notification quand une page est soumise pour modération"
@@ -86,14 +88,14 @@ msgstr ""
 "Recevoir une notification quand vos modifications de page sont approuvées"
 
 msgid "rejected notifications"
-msgstr "Notifications rejetées"
+msgstr "notifications rejetées"
 
 msgid "Receive notification when your page edit is rejected"
 msgstr ""
 "Recevoir une notification quand vos modifications de page sont rejetées"
 
 msgid "user profile"
-msgstr "Compte utilisateur"
+msgstr "compte utilisateur"
 
 msgid "Delete group"
 msgstr "Supprimer le groupe"
@@ -114,7 +116,7 @@ msgstr ""
 "tous les utilisateurs membres."
 
 msgid "Are you sure you want to delete this group?"
-msgstr "Êtes-vous sûr de vouloir supprimer ce groupe ?"
+msgstr "Êtes-vous sûr(e) de vouloir supprimer ce groupe ?"
 
 msgid "Yes, delete"
 msgstr "Oui, supprimer"
@@ -166,8 +168,14 @@ msgid ""
 "There are no groups configured. Why not <a href="
 "\"%(wagtailusers_create_group_url)s\">add some</a>?"
 msgstr ""
-"Il n'y a pas de groupe configuré. Pourquoi ne pas en <a href="
-"\"%(wagtailusers_create_group_url)s\">ajouter un</a> ?"
+"Il n'y a pas de groupe configuré. Pourquoi ne pas <a href="
+"\"%(wagtailusers_create_group_url)s\">en ajouter un</a> ?"
+
+msgid "Delete user"
+msgstr "Supprimer l'utilisateur"
+
+msgid "Are you sure you want to delete this user?"
+msgstr "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"
 
 msgid "Add user"
 msgstr "Ajouter l'utilisateur"
@@ -230,8 +238,8 @@ msgid ""
 "There are no users configured. Why not <a href=\"%(wagtailusers_create_url)s"
 "\">add some</a>?"
 msgstr ""
-"Il n'y a pas d'utilisateur configuré. Pourquoi ne pas en <a href="
-"\"%(wagtailusers_create_url)s\">ajouter</a>?"
+"Il n'y a pas d'utilisateur configuré. Pourquoi ne pas <a href="
+"\"%(wagtailusers_create_url)s\">en ajouter</a> ?"
 
 msgid "Search groups"
 msgstr "Rechercher des groupes"
@@ -274,5 +282,15 @@ msgstr "Utilisateur '{0}' mis à jour."
 msgid "The user could not be saved due to errors."
 msgstr "L'utilisateur ne peut être enregistré du fait d'erreurs."
 
+#, python-brace-format
+msgid "User '{0}' deleted."
+msgstr "Utilisateur '{0}' supprimé."
+
 msgid "Groups"
 msgstr "Groupes"
+
+msgid "Edit this user"
+msgstr "Modifier cet utilisateur"
+
+msgid "Delete this user"
+msgstr "Supprimer cet utilisateur"
