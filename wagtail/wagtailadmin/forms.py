@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import copy
 from itertools import groupby
@@ -19,7 +19,7 @@ from modelcluster.forms import ClusterForm, ClusterFormMetaclass
 from taggit.managers import TaggableManager
 
 from wagtail.wagtailadmin import widgets
-from wagtail.wagtailcore.models import Page, Collection, GroupCollectionPermission
+from wagtail.wagtailcore.models import Collection, GroupCollectionPermission, Page
 
 
 class URLOrAbsolutePathValidator(validators.URLValidator):
@@ -55,6 +55,7 @@ class SearchForm(forms.Form):
 
 class ExternalLinkChooserForm(forms.Form):
     url = URLOrAbsolutePathField(required=True, label=ugettext_lazy("URL"))
+    link_text = forms.CharField(required=False)
     new_window = forms.BooleanField(required=False, initial=False,
         help_text=_('Whether this link should be openend in a new window'))
     omniture_data = forms.CharField(required=False,
@@ -71,10 +72,6 @@ class ExternalLinkChooserWithLinkTextForm(forms.Form):
 
 
 class EmailLinkChooserForm(forms.Form):
-    email_address = forms.EmailField(required=True)
-
-
-class EmailLinkChooserWithLinkTextForm(forms.Form):
     email_address = forms.EmailField(required=True)
     link_text = forms.CharField(required=False)
 

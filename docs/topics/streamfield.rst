@@ -500,9 +500,9 @@ This gives us a block that behaves as an ordinary text field, but wraps its outp
 .. code-block:: html+django
 
     {% for block in page.body %}
-      {% if block.block_type == 'heading' %}
-        {{ block }}  {# This block will output its own <h1>...</h1> tags. #}
-      {% endif %}
+        {% if block.block_type == 'heading' %}
+            {{ block }}  {# This block will output its own <h1>...</h1> tags. #}
+        {% endif %}
     {% endfor %}
 
 This is a powerful feature, but it involves some complexity behind the scenes to make it work. Effectively, HeadingBlock has a double identity - logically it represents a plain Python string value, but in circumstances such as this it needs to yield a 'magic' object that knows its own custom HTML representation. This 'magic' object is an instance of ``BoundBlock`` - an object that represents the pairing of a value and its block definition. (Django developers may recognise this as the same principle behind ``BoundField`` in Django's forms framework.)

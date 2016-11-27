@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 import string
 import re
 
@@ -5,6 +7,7 @@ import re
 MAX_QUERY_STRING_LENGTH = 255
 
 re_punctuation = re.compile('[' + string.punctuation + ']')
+
 
 def normalise_query_string(query_string):
     # Truncate query string

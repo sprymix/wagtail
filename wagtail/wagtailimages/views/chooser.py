@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 import json
 import uuid
 import urllib
@@ -16,20 +18,19 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 from wagtail.utils.pagination import paginate
-from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
+from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.utils import PermissionPolicyChecker
 from wagtail.wagtailadmin.utils import permission_required
 from wagtail.wagtailcore.models import Collection
-from wagtail.wagtailsearch.backends import get_search_backends
-
-from wagtail.wagtailimages.models import get_image_model
-from wagtail.wagtailimages.forms import get_image_form, ImageInsertionForm, \
-                                        ImageCropperForm
 from wagtail.wagtailimages.formats import get_image_format
+from wagtail.wagtailimages.forms import ImageInsertionForm, get_image_form
+from wagtail.wagtailimages.forms import ImageCropperForm
+from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.permissions import permission_policy
 from wagtail.wagtailimages.fields import ALLOWED_EXTENSIONS
 
+from wagtail.wagtailsearch import index as search_index
 
 permission_checker = PermissionPolicyChecker(permission_policy)
 
@@ -242,6 +243,7 @@ def chooser_upload(request):
 IMG_URL = 'https://img.youtube.com/vi/{vid}/maxresdefault.jpg'
 http = urllib3.PoolManager()
 
+
 def _fetch_youtube_image(video_id):
     url = IMG_URL.format(vid=video_id)
     req = http.urlopen('GET', url, preload_content=False)
@@ -324,8 +326,7 @@ def chooser_select(request, image_id):
         form.save()
 
         # Reindex the image to make sure all tags are indexed
-        for backend in get_search_backends():
-            backend.add(image)
+        search_index.insert_or_update_object(image)
 
         # several possibilities starting from here, based on the GET params
         #
@@ -371,7 +372,7 @@ def chooser_select(request, image_id):
 def chooser_select_format(request, image_id):
     image = get_object_or_404(get_image_model(), id=image_id)
 
-    if request.POST:
+    if request.method == 'POST':
         form = ImageInsertionForm(request.POST, initial={'alt_text': image.default_alt_text})
         if form.is_valid():
 

@@ -1,33 +1,27 @@
-import mock
+from __future__ import absolute_import, unicode_literals
 
+import warnings
 from datetime import date
 
+import mock
 from django import forms
 from django.core import checks
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 
-from wagtail.wagtailadmin.edit_handlers import (
-    get_form_for_model,
-    extract_panel_definitions_from_model_class,
-    FieldPanel,
-    RichTextFieldPanel,
-    TabbedInterface,
-    ObjectList,
-    PageChooserPanel,
-    InlinePanel,
-)
-
-from wagtail.wagtailadmin.forms import WagtailAdminModelForm, WagtailAdminPageForm
-from wagtail.wagtailadmin.widgets import AdminPageChooser, AdminDateInput, AdminAutoHeightTextInput
-from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
-from wagtail.wagtailcore.models import Page, Site
-from wagtail.wagtailcore.fields import RichTextArea
 from wagtail.tests.testapp.forms import ValidatedPageForm
 from wagtail.tests.testapp.models import (
-    PageChooserModel, EventPageChooserModel, EventPage, EventPageSpeaker,
-    SimplePage, ValidatedPage)
+    EventPage, EventPageChooserModel, EventPageSpeaker, PageChooserModel, SimplePage, ValidatedPage)
 from wagtail.tests.utils import WagtailTestUtils
+from wagtail.utils.deprecation import RemovedInWagtail17Warning
+from wagtail.wagtailadmin.edit_handlers import (
+    FieldPanel, InlinePanel, ObjectList, PageChooserPanel, RichTextFieldPanel, TabbedInterface,
+    extract_panel_definitions_from_model_class, get_form_for_model)
+from wagtail.wagtailadmin.forms import WagtailAdminModelForm, WagtailAdminPageForm
+from wagtail.wagtailadmin.rich_text import HalloRichTextArea
+from wagtail.wagtailadmin.widgets import AdminAutoHeightTextInput, AdminDateInput, AdminPageChooser
+from wagtail.wagtailcore.models import Page, Site
+from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 
 
 class TestGetFormForModel(TestCase):
@@ -64,7 +58,7 @@ class TestGetFormForModel(TestCase):
         # RichTextField - they should retain their default widgets
         EventPageForm = get_form_for_model(EventPage, form_class=WagtailAdminPageForm)
         event_form = EventPageForm()
-        self.assertEqual(type(event_form.fields['body'].widget), RichTextArea)
+        self.assertEqual(type(event_form.fields['body'].widget), HalloRichTextArea)
 
     def test_get_form_for_model_with_specific_fields(self):
         EventPageForm = get_form_for_model(
@@ -565,27 +559,44 @@ class TestPageChooserPanel(TestCase):
                           result.target_models)
 
     def test_target_content_type(self):
-        result = PageChooserPanel(
-            'barbecue',
-            'wagtailcore.site'
-        ).bind_to_model(PageChooserModel).target_content_type()[0]
-        self.assertEqual(result.name, 'site')
+        with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter('always')
+
+            result = PageChooserPanel(
+                'barbecue',
+                'wagtailcore.site'
+            ).bind_to_model(PageChooserModel).target_content_type()[0]
+            self.assertEqual(result.name, 'site')
+
+            self.assertEqual(len(ws), 1)
+            self.assertIs(ws[0].category, RemovedInWagtail17Warning)
 
     def test_target_content_type_malformed_type(self):
-        result = PageChooserPanel(
-            'barbecue',
-            'snowman'
-        ).bind_to_model(PageChooserModel)
-        self.assertRaises(ImproperlyConfigured,
-                          result.target_content_type)
+        with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter('always')
+
+            result = PageChooserPanel(
+                'barbecue',
+                'snowman'
+            ).bind_to_model(PageChooserModel)
+            self.assertRaises(ImproperlyConfigured,
+                              result.target_content_type)
+
+            self.assertEqual(len(ws), 1)
+            self.assertIs(ws[0].category, RemovedInWagtail17Warning)
 
     def test_target_content_type_nonexistent_type(self):
-        result = PageChooserPanel(
-            'barbecue',
-            'snowman.lorry'
-        ).bind_to_model(PageChooserModel)
-        self.assertRaises(ImproperlyConfigured,
-                          result.target_content_type)
+        with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter('always')
+
+            result = PageChooserPanel(
+                'barbecue',
+                'snowman.lorry'
+            ).bind_to_model(PageChooserModel)
+            self.assertRaises(ImproperlyConfigured,
+                              result.target_content_type)
+            self.assertEqual(len(ws), 1)
+            self.assertIs(ws[0].category, RemovedInWagtail17Warning)
 
 
 class TestInlinePanel(TestCase, WagtailTestUtils):

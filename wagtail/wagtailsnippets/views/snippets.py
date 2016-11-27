@@ -1,5 +1,7 @@
-from django.core.urlresolvers import reverse
+from __future__ import absolute_import, unicode_literals
+
 from django.apps import apps
+from django.core.urlresolvers import reverse
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import capfirst
@@ -14,8 +16,7 @@ from wagtail.wagtailadmin.utils import permission_denied
 from wagtail.wagtailsearch.backends import get_search_backend
 from wagtail.wagtailsearch.index import class_is_indexed
 from wagtail.wagtailsnippets.models import get_snippet_models
-from wagtail.wagtailsnippets.permissions import (
-    get_permission_name, user_can_edit_snippet_type)
+from wagtail.wagtailsnippets.permissions import get_permission_name, user_can_edit_snippet_type
 
 
 # == Helper functions ==
@@ -131,7 +132,7 @@ def create(request, app_label, model_name,
     edit_handler_class = get_snippet_edit_handler(model)
     form_class = edit_handler_class.get_form_class(model)
 
-    if request.POST:
+    if request.method == 'POST':
         form = form_class(request.POST, request.FILES, instance=instance)
 
         if form.is_valid():
@@ -160,6 +161,7 @@ def create(request, app_label, model_name,
     return render(request, template, {
         'model_opts': model._meta,
         'edit_handler': edit_handler,
+        'form': form,
     })
 
 
@@ -176,7 +178,7 @@ def edit(request, app_label, model_name, id,
     edit_handler_class = get_snippet_edit_handler(model)
     form_class = edit_handler_class.get_form_class(model)
 
-    if request.POST:
+    if request.method == 'POST':
         form = form_class(request.POST, request.FILES, instance=instance)
 
         if form.is_valid():
@@ -205,7 +207,8 @@ def edit(request, app_label, model_name, id,
     return render(request, template, {
         'model_opts': model._meta,
         'instance': instance,
-        'edit_handler': edit_handler
+        'edit_handler': edit_handler,
+        'form': form,
     })
 
 
@@ -220,7 +223,7 @@ def delete(request, app_label, model_name, id,
 
     instance = get_object_or_404(model, id=id)
 
-    if request.POST:
+    if request.method == 'POST':
         instance.delete()
         messages.success(
             request,

@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-11 13:57+0100\n"
-"PO-Revision-Date: 2016-04-11 13:00+0000\n"
-"Last-Translator: Karl Hobley <karl@torchbox.com>\n"
+"POT-Creation-Date: 2016-05-18 21:37+0000\n"
+"PO-Revision-Date: 2016-05-11 20:33+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Slovenian (http://www.transifex.com/torchbox/wagtail/language/"
 "sl/)\n"
 "MIME-Version: 1.0\n"
@@ -206,9 +206,6 @@ msgstr "Preverite vašo e-pošto."
 
 msgid "A link to reset your password has been emailed to you."
 msgstr "Povezava za ponastavitev gesla je bila poslana na vaš e-naslov."
-
-msgid "Please follow the link below to reset your password"
-msgstr "Sledite spodnji povezavi za ponastavitev vašega gesla."
 
 msgid "Password reset"
 msgstr "Geslo ponastavljeno"
@@ -874,6 +871,9 @@ msgstr "Vaše geslo je bil uspešno spremenjeno!"
 msgid "Your preferences have been updated successfully!"
 msgstr "Vaše nastavitve so bile uspešno posodobljenje!"
 
+msgid "Collections"
+msgstr "Zbirke"
+
 #, python-brace-format
 msgid "Page '{0}' created and scheduled for publishing."
 msgstr "Stran '{0}' ustvarjena in načrtovana za objavo."
@@ -976,15 +976,8 @@ msgstr "Stran '{0}' je sedaj zaklenjena."
 msgid "Page '{0}' is now unlocked."
 msgstr "Stran '{0}' je sedaj odklenjena."
 
-#, python-format
-msgid "You are viewing a previous revision of this page from <b>%s</b> by %s"
-msgstr "Gledate prejšnjo različico strani iz <b>%s</b>, avtorja %s"
-
 msgid "Pages"
 msgstr "Strani"
-
-msgid "Collections"
-msgstr "Zbirke"
 
 msgid "Add child page"
 msgstr "Dodaj podrejeno stran"

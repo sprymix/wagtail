@@ -1,9 +1,11 @@
+from __future__ import absolute_import, unicode_literals
+
 from django import template
 from django.utils.safestring import mark_safe
 
-from wagtail.wagtailcore.models import Page
-from wagtail.wagtailcore.rich_text import expand_db_html, RichText
 from wagtail.wagtailcore import __version__
+from wagtail.wagtailcore.models import Page
+from wagtail.wagtailcore.rich_text import RichText, expand_db_html
 
 register = template.Library()
 
@@ -44,8 +46,3 @@ def richtext(value):
         html = expand_db_html(value)
 
     return mark_safe('<div class="rich-text">' + html + '</div>')
-
-
-@register.simple_tag(takes_context=True)
-def pageactionbutton(context, button, page):
-    return button.render_html(page)

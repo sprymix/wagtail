@@ -1,22 +1,20 @@
 # -*- coding: utf-8 -*
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
+import base64
 import unittest
 
 from django import forms
-from django.forms.utils import ErrorList
 from django.core.exceptions import ValidationError
-from django.test import TestCase, SimpleTestCase
-from django.utils.safestring import mark_safe, SafeData
+from django.forms.utils import ErrorList
+from django.test import SimpleTestCase, TestCase
 from django.utils.html import format_html
-
-from wagtail.wagtailcore import blocks
-from wagtail.wagtailcore.rich_text import RichText
-from wagtail.wagtailcore.models import Page
+from django.utils.safestring import SafeData, mark_safe
 
 from wagtail.tests.testapp.blocks import SectionBlock
-
-import base64
+from wagtail.wagtailcore import blocks
+from wagtail.wagtailcore.models import Page
+from wagtail.wagtailcore.rich_text import RichText
 
 
 class FooStreamBlock(blocks.StreamBlock):
@@ -121,6 +119,31 @@ class TestFieldBlock(unittest.TestCase):
 
         value_from_form = block.value_from_datadict({'title': 'hello world'}, {}, 'title')
         self.assertEqual('hello world', value_from_form)
+
+    def test_widget_media(self):
+        class CalendarWidget(forms.TextInput):
+            @property
+            def media(self):
+                return forms.Media(
+                    css={'all': ('pretty.css',)},
+                    js=('animations.js', 'actions.js')
+                )
+
+        class CalenderBlock(blocks.FieldBlock):
+            def __init__(self, required=True, help_text=None, max_length=None, min_length=None, **kwargs):
+                # Set widget to CalenderWidget
+                self.field = forms.CharField(
+                    required=required,
+                    help_text=help_text,
+                    max_length=max_length,
+                    min_length=min_length,
+                    widget=CalendarWidget(),
+                )
+                super(blocks.FieldBlock, self).__init__(**kwargs)
+
+        block = CalenderBlock()
+        self.assertIn('pretty.css', ''.join(block.all_media().render_css()))
+        self.assertIn('animations.js', ''.join(block.all_media().render_js()))
 
 
 class TestRichTextBlock(TestCase):

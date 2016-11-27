@@ -10,9 +10,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-11 13:57+0100\n"
-"PO-Revision-Date: 2016-04-11 13:00+0000\n"
-"Last-Translator: Karl Hobley <karl@torchbox.com>\n"
+"POT-Creation-Date: 2016-05-18 21:37+0000\n"
+"PO-Revision-Date: 2016-05-11 20:33+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Dutch (Netherlands) (http://www.transifex.com/torchbox/"
 "wagtail/language/nl_NL/)\n"
 "MIME-Version: 1.0\n"
@@ -209,9 +209,6 @@ msgstr "Controleer uw e-mail"
 msgid "A link to reset your password has been emailed to you."
 msgstr ""
 "Een link om uw wachtwoord te herstellen is naar uw e-mailadres verstuurd."
-
-msgid "Please follow the link below to reset your password"
-msgstr "Klik op de link hieronder om uw wachtwoord te wijzigen"
 
 msgid "Password reset"
 msgstr "Wachtwoord herstel"
@@ -942,6 +939,9 @@ msgstr "Uw wachtwoord is succesvol gewijzigd!"
 msgid "Your preferences have been updated successfully!"
 msgstr "Uw voorkeuren zijn succesvol aangepast!"
 
+msgid "Collections"
+msgstr "Verzamelingen"
+
 #, python-brace-format
 msgid "Page '{0}' created and scheduled for publishing."
 msgstr "De pagina '{0}' is aangemaakt en ingepland voor publicatie."
@@ -1044,15 +1044,8 @@ msgstr "Pagina '{0}' is nu op slot."
 msgid "Page '{0}' is now unlocked."
 msgstr "Pagina '{0}' is nu geopend."
 
-#, python-format
-msgid "You are viewing a previous revision of this page from <b>%s</b> by %s"
-msgstr "Je bekijkt nu een vorige versie van deze pagina van <b>%s</b> door %s"
-
 msgid "Pages"
 msgstr "Pagina's"
-
-msgid "Collections"
-msgstr "Verzamelingen"
 
 msgid "Add child page"
 msgstr "Voeg onderliggende pagina toe"

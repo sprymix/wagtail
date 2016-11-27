@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 import json
 import uuid
 
@@ -7,16 +9,15 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
 
 from wagtail.utils.pagination import paginate
-from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.forms import SearchForm
+from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
 from wagtail.wagtailadmin.utils import PermissionPolicyChecker
 from wagtail.wagtailcore.models import Collection
-from wagtail.wagtailsearch.backends import get_search_backends
-
+from wagtail.wagtaildocs.forms import get_document_form
+from wagtail.wagtaildocs.forms import get_document_multi_form
 from wagtail.wagtaildocs.models import get_document_model
-from wagtail.wagtaildocs.forms import get_document_form, get_document_multi_form
 from wagtail.wagtaildocs.permissions import permission_policy
-
+from wagtail.wagtailsearch import index as search_index
 
 permission_checker = PermissionPolicyChecker(permission_policy)
 
@@ -110,8 +111,7 @@ def document_chosen(request, document_id):
             form.save()
 
         # Reindex the doc to make sure all tags are indexed
-        for backend in get_search_backends():
-            backend.add(doc)
+        search_index.insert_or_update_object(doc)
 
     return render_modal_workflow(
         request, None, 'wagtaildocs/chooser/document_chosen.js',
@@ -125,7 +125,7 @@ def chooser_upload(request):
     DocumentForm = get_document_form(Document)
     DocumentMultiForm = get_document_multi_form(Document)
 
-    if request.POST:
+    if request.method == 'POST':
         if not request.is_ajax():
             return HttpResponseBadRequest("Cannot POST to this view without AJAX")
 

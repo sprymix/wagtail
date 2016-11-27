@@ -1,8 +1,9 @@
+from __future__ import absolute_import, unicode_literals
+
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
 from wagtail.wagtailsearch import index
-
 from wagtail.wagtailsnippets.models import register_snippet
 
 from .forms import FancySnippetForm
@@ -46,12 +47,12 @@ class RegisterDecorator(models.Model):
 # A snippet model that inherits from index.Indexed can be searched on
 
 @register_snippet
-class SearchableSnippet(models.Model, index.Indexed):
+class SearchableSnippet(index.Indexed, models.Model):
     text = models.CharField(max_length=255)
 
-    search_fields = (
+    search_fields = [
         index.SearchField('text'),
-    )
+    ]
 
     def __str__(self):
         return self.text
@@ -65,3 +66,8 @@ class StandardSnippet(models.Model):
 @register_snippet
 class FancySnippet(models.Model):
     base_form_class = FancySnippetForm
+
+
+@register_snippet
+class FileUploadSnippet(models.Model):
+    file = models.FileField()

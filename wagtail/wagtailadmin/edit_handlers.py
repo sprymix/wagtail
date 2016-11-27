@@ -1,4 +1,6 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
+
+import warnings
 
 import django
 from django import forms
@@ -10,19 +12,18 @@ from django.utils.safestring import mark_safe
 from django.utils.six import text_type
 from django.utils.translation import ugettext_lazy
 
+from wagtail.utils.decorators import cached_classmethod
+from wagtail.utils.deprecation import RemovedInWagtail17Warning
 from wagtail.wagtailadmin import widgets
 from wagtail.wagtailcore.models import Page
-from wagtail.wagtailcore.utils import (
-    camelcase_to_underscore, resolve_model_string)
-
-from wagtail.utils.decorators import cached_classmethod
+from wagtail.wagtailcore.utils import camelcase_to_underscore, resolve_model_string
 
 # DIRECT_FORM_FIELD_OVERRIDES, FORM_FIELD_OVERRIDES are imported for backwards
 # compatibility, as people are likely importing them from here and then
 # appending their own overrides
 from .forms import (  # NOQA
-    DIRECT_FORM_FIELD_OVERRIDES, FORM_FIELD_OVERRIDES, WagtailAdminModelForm,
-    WagtailAdminPageForm, formfield_for_dbfield)
+    DIRECT_FORM_FIELD_OVERRIDES, FORM_FIELD_OVERRIDES, WagtailAdminModelForm, WagtailAdminPageForm,
+    formfield_for_dbfield)
 
 
 def widget_with_script(widget, script):
@@ -566,6 +567,9 @@ class BasePageChooserPanel(BaseChooserPanel):
 
     @cached_classmethod
     def target_content_type(cls):
+        warnings.warn(
+            '{cls}.target_content_type() is deprecated. Use {cls}.target_models() instead'.format(cls=cls.__name__),
+            category=RemovedInWagtail17Warning)
         return list(ContentType.objects.get_for_models(*cls.target_models()).values())
 
 

@@ -1,5 +1,7 @@
-import operator
+from __future__ import absolute_import, unicode_literals
+
 import functools
+import operator
 
 from django.core.management.base import BaseCommand
 from django.db import models

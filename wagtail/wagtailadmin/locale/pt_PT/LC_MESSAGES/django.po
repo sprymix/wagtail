@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-11 13:57+0100\n"
-"PO-Revision-Date: 2016-04-11 13:55+0000\n"
-"Last-Translator: Tiago Henriques <trinosauro@gmail.com>\n"
+"POT-Creation-Date: 2016-05-18 21:37+0000\n"
+"PO-Revision-Date: 2016-05-11 20:33+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Portuguese (Portugal) (http://www.transifex.com/torchbox/"
 "wagtail/language/pt_PT/)\n"
 "MIME-Version: 1.0\n"
@@ -207,9 +207,6 @@ msgstr "Verifique o seu e-mail"
 
 msgid "A link to reset your password has been emailed to you."
 msgstr "Foi enviado para o seu e-mail um link para reinicializar a sua senha."
-
-msgid "Please follow the link below to reset your password"
-msgstr "Por favor clique no link abaixo para reinicializar a sua senha"
 
 msgid "Password reset"
 msgstr "Reinicializar senha"
@@ -640,6 +637,9 @@ msgstr "Última modificação: %(last_mod)s"
 msgid "by %(modified_by)s"
 msgstr "por %(modified_by)s"
 
+msgid "Revisions"
+msgstr "Versões"
+
 #, python-format
 msgid "Exploring %(title)s"
 msgstr "A explorar %(title)s"
@@ -940,6 +940,9 @@ msgstr "A sua senha foi alterada com sucesso!"
 msgid "Your preferences have been updated successfully!"
 msgstr "As suas preferências foram atualizadas com sucesso!"
 
+msgid "Collections"
+msgstr "Coleções"
+
 #, python-brace-format
 msgid "Page '{0}' created and scheduled for publishing."
 msgstr "Página '{0}' criada e agendada para publicação."
@@ -1042,24 +1045,14 @@ msgstr "A página '{0}' foi trancada."
 msgid "Page '{0}' is now unlocked."
 msgstr "A página '{0}' foi destrancada."
 
-#, python-format
-msgid "You are viewing a previous revision of this page from <b>%s</b> by %s"
-msgstr "Está a visualizar uma versão anterior desta página de <b>%s</b> por %s"
-
 msgid "Pages"
 msgstr "Páginas"
-
-msgid "Collections"
-msgstr "Coleções"
 
 msgid "Add child page"
 msgstr "Adicionar página-filha"
 
 msgid "More"
 msgstr "Mais"
-
-msgid "Revisions"
-msgstr "Versões"
 
 msgid "Choose an item"
 msgstr "Escolher um item"

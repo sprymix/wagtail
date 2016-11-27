@@ -1,10 +1,14 @@
-from django.test import TestCase
+from __future__ import absolute_import, unicode_literals
+
+import warnings
+
 from django.contrib.contenttypes.models import ContentType
+from django.test import TestCase
 
+from wagtail.tests.testapp.models import EventPage, SimplePage
+from wagtail.utils.deprecation import RemovedInWagtail17Warning
 from wagtail.wagtailadmin import widgets
-
 from wagtail.wagtailcore.models import Page
-from wagtail.tests.testapp.models import SimplePage, EventPage
 
 
 class TestAdminPageChooserWidget(TestCase):
@@ -67,19 +71,27 @@ class TestAdminPageChooserWidget(TestCase):
         )
 
     def test_render_js_init_with_content_type(self):
-        content_type = ContentType.objects.get_for_model(SimplePage)
-        widget = widgets.AdminPageChooser(content_type=content_type)
+        with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter('always')
+            content_type = ContentType.objects.get_for_model(SimplePage)
+            widget = widgets.AdminPageChooser(content_type=content_type)
 
+            self.assertEqual(len(ws), 1)
+            self.assertIs(ws[0].category, RemovedInWagtail17Warning)
         self.assertEqual(widget.target_models, [SimplePage])
 
     def test_render_js_init_with_multiple_content_types(self):
-        content_types = [
-            # Not using get_for_models as we need deterministic ordering
-            ContentType.objects.get_for_model(SimplePage),
-            ContentType.objects.get_for_model(EventPage),
-        ]
-        widget = widgets.AdminPageChooser(content_type=content_types)
+        with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter('always')
+            content_types = [
+                # Not using get_for_models as we need deterministic ordering
+                ContentType.objects.get_for_model(SimplePage),
+                ContentType.objects.get_for_model(EventPage),
+            ]
+            widget = widgets.AdminPageChooser(content_type=content_types)
 
+            self.assertEqual(len(ws), 1)
+            self.assertIs(ws[0].category, RemovedInWagtail17Warning)
         self.assertEqual(widget.target_models, [SimplePage, EventPage])
 
     def test_render_js_init_with_can_choose_root(self):

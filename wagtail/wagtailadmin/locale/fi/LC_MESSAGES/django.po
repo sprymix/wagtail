@@ -5,14 +5,15 @@
 # Translators:
 # Aarni Koskela, 2016
 # Eetu Häivälä <eetu.haivala@anders.fi>, 2016
+# Juha Yrjölä <juha.yrjola@iki.fi>, 2016
 # Rauli Laine <rauli.laine@iki.fi>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-11 13:57+0100\n"
-"PO-Revision-Date: 2016-04-11 13:00+0000\n"
-"Last-Translator: Karl Hobley <karl@torchbox.com>\n"
+"POT-Creation-Date: 2016-05-18 21:37+0000\n"
+"PO-Revision-Date: 2016-05-12 12:22+0000\n"
+"Last-Translator: Aarni Koskela\n"
 "Language-Team: Finnish (http://www.transifex.com/torchbox/wagtail/language/"
 "fi/)\n"
 "MIME-Version: 1.0\n"
@@ -81,7 +82,7 @@ msgid "New parent page"
 msgstr "Uusi isäntäsivu"
 
 msgid "This copy will be a child of this given parent page."
-msgstr "Kopio luodaan annetun isäntäsivun lapseksi."
+msgstr "Kopio luodaan annetun isäntäsivun alasivuksi."
 
 msgid "Copy subpages"
 msgstr "Kopioi alasivut"
@@ -203,8 +204,11 @@ msgstr "Tarkista sähköpostisi"
 msgid "A link to reset your password has been emailed to you."
 msgstr "Salasananpalautuslinkki on lähetetty sinulle sähköpostitse."
 
-msgid "Please follow the link below to reset your password"
-msgstr "Ole hyvä ja seuraa alla olevaa linkkiä palauttaaksesi salasanasi."
+msgid "Please follow the link below to reset your password:"
+msgstr "Ole hyvä ja seuraa alla olevaa linkkiä nollataksesi salasanasi:"
+
+msgid "Your username (in case you've forgotten):"
+msgstr "Käyttäjätunnuksesi (siltä varalta että olet unohtanut sen):"
 
 msgid "Password reset"
 msgstr "Salasanan palautus"
@@ -628,6 +632,9 @@ msgstr "Viimeisin muokkaus: %(last_mod)s"
 msgid "by %(modified_by)s"
 msgstr "tekijänä %(modified_by)s"
 
+msgid "Revisions"
+msgstr "Versiot"
+
 #, python-format
 msgid "Exploring %(title)s"
 msgstr "Selataan kohdetta %(title)s"
@@ -766,11 +773,17 @@ msgstr "Kohteen %(title)s versiot"
 msgid "Revisions of"
 msgstr "Versiot:"
 
+msgid "Revision date"
+msgstr "Version päivämäärä"
+
 msgid "Current draft"
 msgstr "Nykyinen luonnos"
 
 msgid "Review this revision"
 msgstr "Tarkastele tätä versiota"
+
+msgid "No revisions of this page exist"
+msgstr "Tästä sivusta ei ole versioita"
 
 msgid "No revision of this page exist"
 msgstr "Sivusta ei ole versioita"
@@ -923,6 +936,42 @@ msgstr "Salasanasi on vaihdettu."
 msgid "Your preferences have been updated successfully!"
 msgstr "Asetuksesi on päivitetty."
 
+msgid "You have been successfully logged out."
+msgstr "Olet kirjautunut ulos."
+
+msgid "Collections"
+msgstr "Kokoelmat"
+
+msgid "Add a collection"
+msgstr "Lisää kokoelma"
+
+msgid "Add collection"
+msgstr "Lisää kokoelma"
+
+#, python-brace-format
+msgid "Collection '{0}' created."
+msgstr "Kokoelma '{0}' luotu."
+
+#, python-brace-format
+msgid "Collection '{0}' updated."
+msgstr "Kokoelma '{0}' päivitetty."
+
+msgid "The collection could not be saved due to errors."
+msgstr "Kokoelmaa ei voitu päivittää virheiden takia."
+
+msgid "Delete collection"
+msgstr "Poista kokoelma"
+
+#, python-brace-format
+msgid "Collection '{0}' deleted."
+msgstr "Kokoelma '{0}' poistettu."
+
+msgid "Are you sure you want to delete this collection?"
+msgstr "Haluatko varmasti poistaa tämän kokoelman?"
+
+msgid "Editing"
+msgstr "Muokataan"
+
 #, python-brace-format
 msgid "Page '{0}' created and scheduled for publishing."
 msgstr "Sivu '{0}' luotu ja ajastettu julkaistavaksi."
@@ -940,6 +989,9 @@ msgstr "Sivu '{0}' luotu ja lähetetty tarkastettavaksi."
 
 msgid "View draft"
 msgstr "Näytä luonnos"
+
+msgid "Failed to send notifications to moderators"
+msgstr "Ilmoitusten lähettäminen tarkastajille epäonnistui"
 
 #, python-brace-format
 msgid "Page '{0}' created."
@@ -1013,9 +1065,15 @@ msgstr "Sivu '{0}' ei odota parhaillaan tarkastusta."
 msgid "Page '{0}' published."
 msgstr "Sivu '{0}' julkaistu"
 
+msgid "Failed to send approval notifications"
+msgstr "Hyväksyntäilmoitusten lähettäminen epäonnistui"
+
 #, python-brace-format
 msgid "Page '{0}' rejected for publication."
 msgstr "Sivu '{0}' julkaisu hylättiin."
+
+msgid "Failed to send rejection notifications"
+msgstr "Hylkäysilmoitusten lähetys epäonnistui"
 
 #, python-brace-format
 msgid "Page '{0}' is now locked."
@@ -1026,17 +1084,43 @@ msgid "Page '{0}' is now unlocked."
 msgstr "Sivu '{0}' ei ole enää lukittu."
 
 #, python-format
-msgid "You are viewing a previous revision of this page from <b>%s</b> by %s"
-msgstr "Katselet aiempaa versiota %s sivusta, tekijä %s"
+msgid ""
+"You are viewing a previous revision of this page from <b>%(created_at)s</b> "
+"by %(user)s"
+msgstr ""
+"Katselet tämän sivun aiempaa versiota (luotu <b>%(created_at)s</b>, käyttäjä "
+"%(user)s)"
 
 msgid "Pages"
 msgstr "Sivut"
 
-msgid "Collections"
-msgstr "Kokoelmat"
+msgid "Preview draft"
+msgstr "Esikatsele luonnosta"
 
 msgid "Add child page"
 msgstr "Lisää alasivu"
+
+#, python-brace-format
+msgid "Add a child page to '{0}' "
+msgstr "Lisää alasivu kohteelle '{0}'"
+
+msgid "More"
+msgstr "Lisää"
+
+msgid "View more options"
+msgstr "Näytä lisää vaihtoehtoja"
+
+msgid "Move this page"
+msgstr "Siirrä tämä sivu"
+
+msgid "Delete this page"
+msgstr "Poista tämä sivu"
+
+msgid "Unpublish this page"
+msgstr "Piilota tämä sivu"
+
+msgid "View this page's revision history"
+msgstr "Katso tämän sivun versiohistoria"
 
 msgid "Choose an item"
 msgstr "Valitse vaihtoehto"

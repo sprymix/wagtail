@@ -153,8 +153,12 @@ $(function() {
                         _oneFileOnlyClear();
                     }
 
-                    itemElement.addClass('upload-failure');
+                    var errorMessage = $('.server-error', itemElement);
+                    $('.error-text', errorMessage).text(data.errorThrown);
+                    $('.error-code', errorMessage).text(data.jqXHR.status);
                     $('.right .error_messages', itemElement).append(response.error_message);
+
+                    itemElement.addClass('upload-server-error');
                 }
 
             },

@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 
 from wagtail.wagtailadmin.edit_handlers import BaseChooserPanel
+
 from .widgets import AdminImageChooser, AdminImageRenditionChooser
 
 
