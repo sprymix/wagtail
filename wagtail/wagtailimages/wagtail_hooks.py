@@ -81,6 +81,7 @@ def register_image_operations():
         ('forcewidth', image_operations.ForceWidthHeightOperation),
         ('forceheight', image_operations.ForceWidthHeightOperation),
         ('forcefit', image_operations.ForceFitOperation),
+        ('quantize', image_operations.QuantizeOperation),
     ]
 
 

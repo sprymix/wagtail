@@ -5,6 +5,9 @@ import inspect
 from wagtail.wagtailimages.exceptions import InvalidFilterSpecError
 from wagtail.wagtailimages.rect import Rect
 
+from willow.registry import registry
+from willow.plugins.pillow import PillowImage
+
 
 class Operation(object):
     def __init__(self, method, *args):
@@ -260,3 +263,23 @@ class ForceFitOperation(Operation):
             final_size = (int(original_width * scale_h), target_height)
 
         return willow.resize(final_size)
+
+
+def pillow_quantize(image):
+    from PIL import Image
+
+    quantized_image = image.image.quantize()
+    return PillowImage(quantized_image)
+
+
+registry.register_operation(PillowImage, 'quantize', pillow_quantize)
+
+
+class QuantizeOperation(Operation):
+    """Reduce image color palette to 256 colors."""
+
+    def construct(self, *args):
+        pass
+
+    def run(self, willow, image):
+        return willow.quantize()
