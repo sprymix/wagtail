@@ -266,9 +266,12 @@ class ForceFitOperation(Operation):
 
 
 def pillow_quantize(image):
-    from PIL import Image
+    try:
+        quantized_image = image.image.quantize(method=3)
+    except ValueError:
+        # libimagequant is missing, use the default method
+        quantized_image = image.image.quantize()
 
-    quantized_image = image.image.quantize()
     return PillowImage(quantized_image)
 
 
