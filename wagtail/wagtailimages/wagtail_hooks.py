@@ -91,6 +91,7 @@ def register_image_operations():
         ('forcefit', image_operations.ForceFitOperation),
         ('jpegquality', image_operations.JPEGQualityOperation),
         ('format', image_operations.FormatOperation),
+        ('quantize', image_operations.QuantizeOperation),
     ]
 
 
