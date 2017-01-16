@@ -12,7 +12,7 @@
              <div style="display:none;">{{ field }}</div>
         {% endfor %}
         <li>
-            <input type="submit" value="{% trans 'Proceed' %}" />
+            <input type="submit" value="{% trans 'Proceed' %}" class="button" />
             <a href="{% url 'wagtaildocs:delete_multiple' doc.id %}" class="delete button button-secondary no">{% trans "Delete" %}</a>
         </li>
     </ul>

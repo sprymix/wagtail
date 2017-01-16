@@ -52,12 +52,12 @@
             </li>
 
             <li>
-                <input type="submit" class="crop-button"
+                <input type="submit" class="button crop-button"
                        value="{% trans 'Crop' %}" />
                 {% if not form.force_selection.value %}
-                    <input type="submit" class="skip-button"
+                    <input type="submit" class="button skip-button"
                            value="{% trans 'Whole image' %}" />
-                    <input type="button" class="clear-button"
+                    <input type="button" class="button clear-button"
                            value="{% trans 'Clear selection' %}" />
                 {% endif %}
             </li>

@@ -20,7 +20,7 @@
         {% page_permissions page as page_perms %}
         <form action="{% url 'wagtailadmin_pages:archive' page.id %}" method="POST">
             {% csrf_token %}
-            <input type="submit" value="{% trans 'Archive it' %}" class="serious {% if page.live %}button-secondary{% endif %}">
+            <input type="submit" value="{% trans 'Archive it' %}" class="button serious {% if page.live %}button-secondary{% endif %}">
         </form>
     </div>
 {% endblock %}
