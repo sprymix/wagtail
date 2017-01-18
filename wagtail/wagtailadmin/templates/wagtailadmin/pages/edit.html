@@ -107,6 +107,9 @@
                     <span class="status-tag primary">
                         {{ page.status_string }}
                     </span>
+                    {% if not page.expired and page.approved_schedule %}
+                    <span>{{ page.go_live_at|date:"d M Y H:i" }}</span>
+                    {% endif %}
                 </li>
             </ul>
         </footer>

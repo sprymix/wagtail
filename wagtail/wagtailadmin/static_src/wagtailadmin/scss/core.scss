@@ -143,6 +143,10 @@ footer {
     .actions {
         width: 250px;
         margin-right: $grid-gutter-width/2;
+
+        &.preview {
+            width: auto;
+        }
     }
 
     .meta {
