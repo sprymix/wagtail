@@ -10,12 +10,16 @@ from wagtail.wagtailadmin.search import SearchArea
 from wagtail.wagtailadmin.widgets import Button, ButtonWithDropdownFromHook, PageListingButton
 from wagtail.wagtailcore import hooks
 from wagtail.wagtailcore.permissions import collection_permission_policy
+from wagtail.wagtailcore.permissions import user_can_edit_any_pages
 
 
 class ExplorerMenuItem(MenuItem):
     @property
     def media(self):
         return forms.Media(js=[static('wagtailadmin/js/explorer-menu.js')])
+
+    def is_shown(self, request):
+        return user_can_edit_any_pages(request.user)
 
 
 @hooks.register('register_admin_menu_item')
@@ -96,7 +100,9 @@ def page_listing_more_buttons(page, page_perms, is_parent=False):
     if page_perms.can_move():
         yield Button(_('Move'), reverse('wagtailadmin_pages:move', args=[page.id]),
                      attrs={"title": _('Move this page')}, priority=10)
-    if not page.is_root():
+    if (not page.is_root() and
+            page.get_parent().permissions_for_user(
+                page_perms.user).can_publish_subpage()):
         yield Button(_('Copy'), reverse('wagtailadmin_pages:copy', args=[page.id]),
                      attrs={'title': _('Copy this page')}, priority=20)
     if page_perms.can_delete():

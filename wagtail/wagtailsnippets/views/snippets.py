@@ -121,7 +121,8 @@ def _redirect_to(app_label, model_name):
 
 
 def create(request, app_label, model_name,
-           template='wagtailsnippets/snippets/create.html'):
+           template='wagtailsnippets/snippets/create.html',
+           redirect_to=_redirect_to):
     model = get_snippet_model_from_url_params(app_label, model_name)
 
     permission = get_permission_name('add', model)
