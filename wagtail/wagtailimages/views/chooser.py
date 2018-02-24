@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import json
 import uuid
 import urllib
-import urlparse
+from urllib import parse as urlparse
 
 import urllib3
 

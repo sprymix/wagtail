@@ -588,7 +588,8 @@ class Rendition(AbstractRendition):
 
 
 class UserRendition(AbstractRendition, WillowImageWrapper):
-    image = models.ForeignKey('Image', related_name='user_renditions')
+    image = models.ForeignKey('Image', related_name='user_renditions',
+                              on_delete=models.CASCADE)
 
     class Meta:
         unique_together = (
