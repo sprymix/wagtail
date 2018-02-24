@@ -71,7 +71,7 @@ def _generate_output_filename(input_filename, output_format,
     return output_filename
 
 
-def _rendition_for_missing_image(rendition_cls, image, filter):
+def _rendition_for_missing_image(rendition_cls, image, filter_spec):
     '''Provide dummy rendition for missing image files.
 
     It's fairly routine for people to pull down remote databases to
@@ -84,7 +84,7 @@ def _rendition_for_missing_image(rendition_cls, image, filter):
     '''
     rendition = rendition_cls(image=image, width=0, height=0)
     rendition.file.name = 'source-image-not-found'
-    rendition.filter = filter
+    rendition.filter_spec = filter_spec
     return rendition
 
 
@@ -310,12 +310,13 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
         else:
             return cls.renditions.related.related_model
 
-    def _get_rendition(self, renditions, filter, focal_point_key=''):
+    def _get_rendition(self, renditions, filter_spec, focal_point_key=''):
+        filter = Filter(spec=filter_spec)
         spec_hash = filter.get_cache_key(self)
 
         try:
             rendition = renditions.get(
-                filter=filter,
+                filter_spec=filter_spec,
                 focal_point_key=focal_point_key,
             )
         except ObjectDoesNotExist:
@@ -324,7 +325,7 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
                 generated_image = filter.run(self, BytesIO())
             except IOError:
                 return _rendition_for_missing_image(renditions.model, self,
-                                                    filter=filter)
+                                                    filter_spec=filter_spec)
 
             # Generate filename
             input_filename = os.path.basename(self.file.name)
@@ -334,7 +335,7 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
                                 spec_hash)
 
             rendition, created = renditions.get_or_create(
-                filter=filter,
+                filter_spec=filter_spec,
                 focal_point_key=focal_point_key,
                 defaults={'file': File(generated_image.f, name=output_filename)}
             )
@@ -591,10 +592,10 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
 
     class Meta:
         unique_together = (
-            ('image', 'filter', 'focal_point_key'),
+            ('image', 'filter_spec', 'focal_point_key'),
         )
 
-    def get_rendition(self, filter):
+    def get_rendition(self, filter_spec):
         # we need to construct a new filter combining what we've been passed
         # and the filter used to get THIS rendition
         if not hasattr(filter, 'run'):
@@ -602,13 +603,13 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
         else:
             filter = '|'.join([self.filter_spec, filter.spec])
 
-        filter, created = Filter.objects.get_or_create(spec=filter)
+        filter = Filter(spec=filter)
 
         spec_hash = filter.get_cache_key(self)
 
         try:
             rendition = self.image.renditions.get(
-                filter=filter,
+                filter_spec=filter_spec,
             )
         except ObjectDoesNotExist:
             try:
@@ -617,7 +618,7 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
             except IOError:
                 return _rendition_for_missing_image(
                             self.image.renditions.model,
-                            self.image, filter=filter)
+                            self.image, filter_spec=filter_spec)
 
             # Generate filename
             input_filename = os.path.basename(self.file.name)
@@ -627,7 +628,7 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
                 spec_hash)
 
             rendition, created = self.image.renditions.get_or_create(
-                filter=filter,
+                filter_spec=filter_spec,
                 defaults={'file': File(generated_image.f,
                                        name=output_filename)}
             )

@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
             name='UserRendition',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file', models.ImageField(height_field='height', upload_to='images', width_field='width')),
+                ('file', models.ImageField(height_field='height', upload_to=wagtail.wagtailimages.models.get_rendition_upload_to, width_field='width')),
                 ('width', models.IntegerField(editable=False)),
                 ('height', models.IntegerField(editable=False)),
                 ('focal_point_key', models.CharField(blank=True, default='', editable=False, max_length=255)),
@@ -86,9 +86,5 @@ class Migration(migrations.Migration):
                 ('image', models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='user_renditions', to='wagtailimages.Image')),
             ],
             bases=(models.Model, wagtail.wagtailimages.models.WillowImageWrapper),
-        ),
-        migrations.AlterUniqueTogether(
-            name='userrendition',
-            unique_together=set([('image', 'filter', 'focal_point_key')]),
         ),
     ]

@@ -16,4 +16,8 @@ class Migration(migrations.Migration):
             model_name='rendition',
             name='filter',
         ),
+        migrations.RemoveField(
+            model_name='userrendition',
+            name='filter',
+        ),
     ]

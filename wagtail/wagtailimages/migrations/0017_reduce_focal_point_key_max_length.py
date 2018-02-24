@@ -21,4 +21,9 @@ class Migration(migrations.Migration):
             name='focal_point_key',
             field=models.CharField(blank=True, default='', max_length=16, editable=False),
         ),
+        migrations.AlterField(
+            model_name='userrendition',
+            name='focal_point_key',
+            field=models.CharField(blank=True, default='', max_length=16, editable=False),
+        ),
     ]

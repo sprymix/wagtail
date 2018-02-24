@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wagtailimages', '0015_fill_filter_spec_field'),
+        ('wagtailimages', '0015_1_remove_duplicate_user_renditions'),
     ]
 
     operations = [
@@ -51,8 +51,19 @@ class Migration(migrations.Migration):
             field=models.CharField(blank=True, default='', max_length=17, editable=False),
         ),
 
+        migrations.AlterField(
+            model_name='userrendition',
+            name='focal_point_key',
+            field=models.CharField(blank=True, default='', max_length=17, editable=False),
+        ),
+
         migrations.AlterUniqueTogether(
             name='rendition',
+            unique_together=set([('image', 'filter_spec', 'focal_point_key')]),
+        ),
+
+        migrations.AlterUniqueTogether(
+            name='userrendition',
             unique_together=set([('image', 'filter_spec', 'focal_point_key')]),
         ),
     ]
