@@ -28,8 +28,9 @@ from wagtail.wagtailadmin.forms import WagtailAdminPageForm
 from wagtail.wagtailadmin.utils import send_mail
 from wagtail.wagtailcore.blocks import CharBlock, RichTextBlock
 from wagtail.wagtailcore.fields import RichTextField, StreamField
-from wagtail.wagtailcore.models import Orderable, Page, PageManager
+from wagtail.wagtailcore.models import Orderable, Page, PageManager, PageQuerySet
 from wagtail.wagtaildocs.edit_handlers import DocumentChooserPanel
+from wagtail.wagtaildocs.models import AbstractDocument, Document
 from wagtail.wagtailforms.models import AbstractEmailForm, AbstractFormField, AbstractFormSubmission
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
@@ -289,8 +290,8 @@ class SingleEventPage(EventPage):
     )
 
     # Give this page model a custom URL routing scheme
-    def get_url_parts(self):
-        url_parts = super(SingleEventPage, self).get_url_parts()
+    def get_url_parts(self, request=None):
+        url_parts = super(SingleEventPage, self).get_url_parts(request=request)
         if url_parts is None:
             return None
         else:
@@ -304,6 +305,9 @@ class SingleEventPage(EventPage):
         else:
             # fall back to default routing rules
             return super(SingleEventPage, self).route(request, path_components)
+
+    def get_admin_display_title(self):
+        return "%s (single event)" % super(SingleEventPage, self).get_admin_display_title()
 
 
 SingleEventPage.content_panels = [FieldPanel('excerpt')] + EventPage.content_panels
@@ -363,6 +367,11 @@ class EventIndex(Page):
                 'location': self.full_url + 'past/',
                 'lastmod': self.latest_revision_created_at
             }
+        ]
+
+    def get_cached_paths(self):
+        return super(EventIndex, self).get_cached_paths() + [
+            '/past/'
         ]
 
 
@@ -670,6 +679,10 @@ class CustomRendition(AbstractRendition):
         )
 
 
+class CustomDocument(AbstractDocument):
+    admin_form_fields = Document.admin_form_fields
+
+
 class StreamModel(models.Model):
     body = StreamField([
         ('text', CharBlock()),
@@ -782,6 +795,11 @@ class ManyToManyBlogPage(Page):
     blog_categories = models.ManyToManyField(
         BlogCategory, through=BlogCategoryBlogPage, blank=True)
 
+    # make first_published_at editable on this page model
+    settings_panels = Page.settings_panels + [
+        FieldPanel('first_published_at'),
+    ]
+
 
 class OneToOnePage(Page):
     """
@@ -833,8 +851,12 @@ class CustomImageFilePath(AbstractImage):
         return os.path.join(folder_name, checksum[:3], filename)
 
 
-class CustomManager(PageManager):
-    pass
+class CustomPageQuerySet(PageQuerySet):
+    def about_spam(self):
+        return self.filter(title__contains='spam')
+
+
+CustomManager = PageManager.from_queryset(CustomPageQuerySet)
 
 
 class CustomManagerPage(Page):
@@ -903,6 +925,15 @@ class CustomRichBlockFieldPage(Page):
     ]
 
 
+class RichTextFieldWithFeaturesPage(Page):
+    body = RichTextField(features=['blockquote', 'embed', 'made-up-feature'])
+
+    content_panels = [
+        FieldPanel('title', classname="full title"),
+        FieldPanel('body'),
+    ]
+
+
 # a page that only contains RichTextField within an InlinePanel,
 # to test that the inline child's form media gets pulled through
 class SectionedRichTextPageSection(Orderable):
@@ -961,3 +992,7 @@ class TabbedSettings(TestSetting):
             FieldPanel('email')
         ], heading='Second tab'),
     ])
+
+
+class AlwaysShowInMenusPage(Page):
+    show_in_menus_default = True

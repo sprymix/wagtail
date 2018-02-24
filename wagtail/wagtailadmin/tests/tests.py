@@ -35,12 +35,18 @@ class TestHome(TestCase, WagtailTestUtils):
         # check that media attached to menu items is correctly pulled in
         self.assertContains(
             response,
-            '<script type="text/javascript" src="/static/wagtailadmin/js/explorer-menu.js"></script>'
+            '<script type="text/javascript" src="/static/testapp/js/kittens.js"></script>'
         )
         # check that custom menu items (including classname / attrs parameters) are pulled in
         self.assertContains(
             response,
             '<a href="http://www.tomroyal.com/teaandkittens/" class="icon icon-kitten" data-fluffy="yes">Kittens!</a>'
+        )
+
+        # Check that the explorer menu item is here, with the right start page.
+        self.assertContains(
+            response,
+            'data-explorer-start-page="1"'
         )
 
         # check that is_shown is respected on menu items
@@ -252,6 +258,14 @@ class TestUserPassesTestPermissionDecorator(TestCase):
         response = self.client.get(reverse('testapp_bob_only_zone'))
         self.assertRedirects(response, reverse('wagtailadmin_home'))
 
+    def test_user_fails_test_ajax(self):
+        # create and log in as a user not called Bob
+        get_user_model().objects.create_superuser(first_name='Vic', last_name='Reeves', username='test', email='test@email.com', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
+
+        response = self.client.get(reverse('testapp_bob_only_zone'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 403)
+
 
 class TestUserHasAnyPagePermission(TestCase):
     def test_superuser(self):
@@ -286,3 +300,17 @@ class TestUserHasAnyPagePermission(TestCase):
             Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')
         )
         self.assertFalse(user_has_any_page_permission(user))
+
+
+class Test404(TestCase, WagtailTestUtils):
+    def test_admin_404_template_used(self):
+        self.login()
+        response = self.client.get('/admin/sdfgdsfgdsfgsdf')
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'wagtailadmin/404.html')
+
+    def test_not_logged_in_redirect(self):
+        response = self.client.get('/admin/sdfgdsfgdsfgsdf')
+
+        # Check that the user was redirected to the login page and that next was set correctly
+        self.assertRedirects(response, reverse('wagtailadmin_login') + '?next=/admin/sdfgdsfgdsfgsdf')

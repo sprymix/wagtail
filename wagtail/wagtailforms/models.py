@@ -29,6 +29,7 @@ FORM_FIELD_CHOICES = (
     ('checkbox', _('Checkbox')),
     ('checkboxes', _('Checkboxes')),
     ('dropdown', _('Drop down')),
+    ('multiselect', _('Multiple select')),
     ('radio', _('Radio buttons')),
     ('date', _('Date')),
     ('datetime', _('Date/time')),
@@ -229,14 +230,14 @@ class AbstractForm(Page):
         For example, if you want to save reference to a user.
         """
 
-        self.get_submission_class().objects.create(
+        return self.get_submission_class().objects.create(
             form_data=json.dumps(form.cleaned_data, cls=DjangoJSONEncoder),
             page=self,
         )
 
     def serve(self, request, *args, **kwargs):
         if request.method == 'POST':
-            form = self.get_form(request.POST, page=self, user=request.user)
+            form = self.get_form(request.POST, request.FILES, page=self, user=request.user)
 
             if form.is_valid():
                 self.process_form_submission(form)

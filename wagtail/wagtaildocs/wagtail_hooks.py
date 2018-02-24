@@ -1,16 +1,21 @@
 from __future__ import absolute_import, unicode_literals
 
+from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.core import urlresolvers
+from django.template.response import TemplateResponse
 from django.utils.html import format_html, format_html_join
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext
 
 from wagtail.wagtailadmin.menu import MenuItem
+from wagtail.wagtailadmin.rich_text import HalloPlugin
 from wagtail.wagtailadmin.search import SearchArea
 from wagtail.wagtailadmin.site_summary import SummaryItem
 from wagtail.wagtailcore import hooks
+from wagtail.wagtailcore.models import BaseViewRestriction
+from wagtail.wagtailcore.wagtail_hooks import require_wagtail_login
 from wagtail.wagtaildocs import admin_urls
 from wagtail.wagtaildocs.api.admin.endpoints import DocumentsAdminAPIEndpoint
 from wagtail.wagtaildocs.forms import GroupDocumentPermissionFormSet
@@ -52,7 +57,6 @@ def register_documents_menu_item():
 @hooks.register('insert_editor_js')
 def editor_js():
     js_files = [
-        static('wagtaildocs/js/hallo-plugins/hallo-wagtaildoclink.js'),
         static('wagtaildocs/js/document-chooser.js'),
         static('wagtaildocs/js/add-multiple.js'),
         static('wagtailadmin/js/vendor/jquery.iframe-transport.js'),
@@ -72,6 +76,18 @@ def editor_js():
         """,
         urlresolvers.reverse('wagtaildocs:chooser')
     )
+
+
+@hooks.register('register_rich_text_features')
+def register_embed_feature(features):
+    features.register_editor_plugin(
+        'hallo', 'document-link',
+        HalloPlugin(
+            name='hallowagtaildoclink',
+            js=['wagtaildocs/js/hallo-plugins/hallo-wagtaildoclink.js'],
+        )
+    )
+    features.default_features.append('document-link')
 
 
 @hooks.register('register_rich_text_link_handler')
@@ -134,3 +150,32 @@ def describe_collection_docs(collection):
             ) % {'count': docs_count},
             'url': url,
         }
+
+
+@hooks.register('before_serve_document')
+def check_view_restrictions(document, request):
+    """
+    Check whether there are any view restrictions on this document which are
+    not fulfilled by the given request object. If there are, return an
+    HttpResponse that will notify the user of that restriction (and possibly
+    include a password / login form that will allow them to proceed). If
+    there are no such restrictions, return None
+    """
+    for restriction in document.collection.get_view_restrictions():
+        if not restriction.accept_request(request):
+            if restriction.restriction_type == BaseViewRestriction.PASSWORD:
+                from wagtail.wagtailcore.forms import PasswordViewRestrictionForm
+                form = PasswordViewRestrictionForm(instance=restriction,
+                                                   initial={'return_url': request.get_full_path()})
+                action_url = urlresolvers.reverse('wagtaildocs_authenticate_with_password', args=[restriction.id])
+
+                password_required_template = getattr(settings, 'DOCUMENT_PASSWORD_REQUIRED_TEMPLATE', 'wagtaildocs/password_required.html')
+
+                context = {
+                    'form': form,
+                    'action_url': action_url
+                }
+                return TemplateResponse(request, password_required_template, context)
+
+            elif restriction.restriction_type in [BaseViewRestriction.LOGIN, BaseViewRestriction.GROUPS]:
+                return require_wagtail_login(next=request.get_full_path())

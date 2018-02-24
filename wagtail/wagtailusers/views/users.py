@@ -70,17 +70,18 @@ def index(request):
             is_searching = True
             conditions = Q()
 
-            if 'username' in model_fields:
-                conditions |= Q(username__icontains=q)
+            for term in q.split():
+                if 'username' in model_fields:
+                    conditions |= Q(username__icontains=term)
 
-            if 'first_name' in model_fields:
-                conditions |= Q(first_name__icontains=q)
+                if 'first_name' in model_fields:
+                    conditions |= Q(first_name__icontains=term)
 
-            if 'last_name' in model_fields:
-                conditions |= Q(last_name__icontains=q)
+                if 'last_name' in model_fields:
+                    conditions |= Q(last_name__icontains=term)
 
-            if 'email' in model_fields:
-                conditions |= Q(email__icontains=q)
+                if 'email' in model_fields:
+                    conditions |= Q(email__icontains=term)
 
             users = User.objects.filter(conditions)
     else:
@@ -143,9 +144,10 @@ def create(request):
 def edit(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     can_delete = user_can_delete_user(request.user, user)
+    editing_self = request.user == user
 
     if request.method == 'POST':
-        form = get_user_edit_form()(request.POST, request.FILES, instance=user)
+        form = get_user_edit_form()(request.POST, request.FILES, instance=user, editing_self=editing_self)
         if form.is_valid():
             user = form.save()
             messages.success(request, _("User '{0}' updated.").format(user), buttons=[
@@ -155,7 +157,7 @@ def edit(request, user_id):
         else:
             messages.error(request, _("The user could not be saved due to errors."))
     else:
-        form = get_user_edit_form()(instance=user)
+        form = get_user_edit_form()(instance=user, editing_self=editing_self)
 
     return render(request, 'wagtailusers/users/edit.html', {
         'user': user,

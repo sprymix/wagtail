@@ -7,6 +7,7 @@ from functools import wraps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail as django_send_mail
 from django.db.models import Count, Q
 from django.shortcuts import redirect
@@ -34,14 +35,17 @@ WAGTAILADMIN_PROVIDED_LANGUAGES = [
     ('gl', ugettext_lazy('Galician')),
     ('is-is', ugettext_lazy('Icelandic')),
     ('it', ugettext_lazy('Italian')),
+    ('ko', ugettext_lazy('Korean')),
     ('lt', ugettext_lazy('Lithuanian')),
     ('nb', ugettext_lazy('Norwegian Bokmål')),
     ('nl-nl', ugettext_lazy('Netherlands Dutch')),
+    ('fa', ugettext_lazy('Persian')),
     ('pl', ugettext_lazy('Polish')),
     ('pt-br', ugettext_lazy('Brazilian Portuguese')),
     ('pt-pt', ugettext_lazy('Portuguese')),
     ('ro', ugettext_lazy('Romanian')),
     ('ru', ugettext_lazy('Russian')),
+    ('se', ugettext_lazy('Swedish')),
     ('zh-cn', ugettext_lazy('Chinese (China)')),
 ]
 
@@ -111,6 +115,9 @@ def users_with_page_permission(page, permission_type, include_superusers=True):
 
 def permission_denied(request):
     """Return a standard 'permission denied' response"""
+    if request.is_ajax():
+        raise PermissionDenied
+
     from wagtail.wagtailadmin import messages
 
     messages.error(request, _('Sorry, you do not have permission to access this area.'))

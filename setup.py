@@ -25,12 +25,12 @@ install_requires = [
     "django-modelcluster>=3.1,<4.0",
     "django-taggit>=0.20,<1.0",
     "django-treebeard>=3.0,<5.0",
-    "djangorestframework>=3.1.3",
+    "djangorestframework>=3.1.3,<3.7",  # 3.7 drops Django 1.8 support
     "Pillow>=2.6.1",
     "beautifulsoup4>=4.5.1",
     "html5lib>=0.999,<1",
     "Unidecode>=0.04.14",
-    "Willow>=0.4,<0.5",
+    "Willow>=1.0,<1.1",
     "requests>=2.11.1,<3.0",
 ]
 
@@ -49,7 +49,7 @@ testing_extras = [
     # For coverage and PEP8 linting
     'coverage>=3.7.0',
     'flake8>=2.2.0',
-    'isort>=4.2.0',
+    'isort==4.2.5',
     'flake8-blind-except==0.1.1',
     'flake8-print==2.0.2',
 ]

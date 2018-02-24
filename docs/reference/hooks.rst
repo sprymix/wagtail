@@ -163,15 +163,15 @@ Hooks for building new areas of the admin interface (alongside pages, images, do
 
     from wagtail.wagtailcore import hooks
 
-    def admin_view( request ):
-      return HttpResponse( \
-        "I have approximate knowledge of many things!", \
+    def admin_view(request):
+      return HttpResponse(
+        "I have approximate knowledge of many things!",
         content_type="text/plain")
 
     @hooks.register('register_admin_urls')
     def urlconf_time():
       return [
-        url(r'^how_did_you_almost_know_my_name/$', admin_view, name='frank' ),
+        url(r'^how_did_you_almost_know_my_name/$', admin_view, name='frank'),
       ]
 
 
@@ -697,3 +697,14 @@ Page serving
     def block_googlebot(page, request, serve_args, serve_kwargs):
         if request.META.get('HTTP_USER_AGENT') == 'GoogleBot':
             return HttpResponse("<h1>bad googlebot no cookie</h1>")
+
+
+Document serving
+----------------
+
+.. _before_serve_document:
+
+``before_serve_document``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Called when Wagtail is about to serve a document. The callable passed into the hook will receive the document object and the request object. If the callable returns an ``HttpResponse``, that response will be returned immediately to the user, instead of serving the document.

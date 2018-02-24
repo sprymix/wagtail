@@ -87,14 +87,14 @@ class Index(object):
             yield (unidecode(self.prepare_value(field.get_value(obj))),
                    get_weight(field.boost))
         elif isinstance(field, RelatedFields):
-            sub_obj = getattr(obj, field.field_name)
+            sub_obj = field.get_value(obj)
             if sub_obj is None:
                 return
-            if callable(sub_obj):
-                sub_obj = sub_obj()
             if isinstance(sub_obj, Manager):
                 sub_objs = sub_obj.all()
             else:
+                if callable(sub_obj):
+                    sub_obj = sub_obj()
                 sub_objs = [sub_obj]
             for sub_obj in sub_objs:
                 for sub_field in field.fields:
@@ -180,7 +180,7 @@ class PostgresSearchQuery(BaseSearchQuery):
 
     def __init__(self, *args, **kwargs):
         super(PostgresSearchQuery, self).__init__(*args, **kwargs)
-        self.search_fields = self.queryset.model.get_search_fields()
+        self.search_fields = self.queryset.model.get_searchable_search_fields()
 
     def get_search_query(self, config):
         combine = OR if self.operator == 'or' else AND
@@ -246,11 +246,16 @@ class PostgresSearchQuery(BaseSearchQuery):
 
     def search_in_index(self, queryset, search_query, start, stop):
         index_entries = self.get_in_index_queryset(queryset, search_query)
+        values = ['typed_pk']
         if self.order_by_relevance:
             index_entries = index_entries.rank(search_query)
+            values.append('rank')
+            order_sql = 'index_entry.rank DESC, id ASC'
+        else:
+            order_sql = 'id ASC'
         index_sql, index_params = get_sql(
             index_entries.annotate_typed_pk()
-            .values('typed_pk', 'rank')
+            .values(*values)
         )
         model_sql, model_params = get_sql(queryset)
         model = queryset.model
@@ -258,17 +263,20 @@ class PostgresSearchQuery(BaseSearchQuery):
             SELECT obj.*
             FROM (%s) AS index_entry
             INNER JOIN (%s) AS obj ON obj."%s" = index_entry.typed_pk
-            ORDER BY index_entry.rank DESC
+            ORDER BY %s
             OFFSET %%s LIMIT %%s;
-            """ % (index_sql, model_sql, get_pk_column(model))
+            """ % (index_sql, model_sql, get_pk_column(model), order_sql)
         limits = (start, None if stop is None else stop - start)
         return model._default_manager.using(get_db_alias(queryset)).raw(
             sql, index_params + model_params + limits)
 
     def search_in_fields(self, queryset, search_query, start, stop):
+        # Due to a Django bug, arrays are not automatically converted here.
+        converted_weights = '{' + ','.join(map(str, WEIGHTS_VALUES)) + '}'
+
         return (self.get_in_fields_queryset(queryset, search_query)
                 .annotate(_rank_=SearchRank(F('_search_'), search_query,
-                                            weights=WEIGHTS_VALUES))
+                                            weights=converted_weights))
                 .order_by('-_rank_'))[start:stop]
 
     def search(self, config, start, stop):
@@ -281,7 +289,7 @@ class PostgresSearchQuery(BaseSearchQuery):
         return self.search_in_fields(queryset, search_query, start, stop)
 
 
-class PostgresSearchResult(BaseSearchResults):
+class PostgresSearchResults(BaseSearchResults):
     def get_config(self):
         queryset = self.query.queryset
         return self.backend.get_index_for_model(
@@ -331,7 +339,7 @@ class PostgresSearchAtomicRebuilder(PostgresSearchRebuilder):
 
 class PostgresSearchBackend(BaseSearchBackend):
     query_class = PostgresSearchQuery
-    results_class = PostgresSearchResult
+    results_class = PostgresSearchResults
     rebuilder_class = PostgresSearchRebuilder
     atomic_rebuilder_class = PostgresSearchAtomicRebuilder
 

@@ -34,6 +34,12 @@ if DATABASES['default']['ENGINE'] == 'sql_server.pyodbc':
     }
 
 
+# explicitly set charset / collation to utf8 on mysql
+if DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
+    DATABASES['default']['TEST']['CHARSET'] = 'utf8'
+    DATABASES['default']['TEST']['COLLATION'] = 'utf8_general_ci'
+
+
 SECRET_KEY = 'not needed'
 
 ROOT_URLCONF = 'wagtail.tests.urls'
@@ -88,7 +94,6 @@ if django.VERSION >= (1, 10):
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
 

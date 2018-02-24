@@ -14,10 +14,14 @@ from django.utils.safestring import mark_safe
 
 from wagtail.utils.pagination import DEFAULT_PAGE_KEY, replace_page_in_query
 from wagtail.wagtailadmin.menu import admin_menu
-from wagtail.wagtailadmin.navigation import get_explorable_root_page, get_navigation_menu_items
+from wagtail.wagtailadmin.navigation import get_explorable_root_page
 from wagtail.wagtailadmin.search import admin_search_areas
 from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Page, PageViewRestriction, UserPagePermissionsProxy
+from wagtail.wagtailcore.models import (
+    CollectionViewRestriction,
+    Page, PageViewRestriction,
+    UserPagePermissionsProxy
+)
 from wagtail.wagtailcore.utils import cautious_slugify as _cautious_slugify
 from wagtail.wagtailcore.utils import camelcase_to_underscore, escape_script
 
@@ -29,20 +33,6 @@ if django.VERSION >= (1, 9):
     assignment_tag = register.simple_tag
 else:
     assignment_tag = register.assignment_tag
-
-
-@register.inclusion_tag('wagtailadmin/shared/explorer_nav.html', takes_context=True)
-def explorer_nav(context):
-    return {
-        'nodes': get_navigation_menu_items(context['request'].user)
-    }
-
-
-@register.inclusion_tag('wagtailadmin/shared/explorer_nav_child.html')
-def explorer_subnav(nodes):
-    return {
-        'nodes': nodes
-    }
 
 
 @register.simple_tag(takes_context=True)
@@ -145,6 +135,25 @@ def page_permissions(context, page):
 
     # Now retrieve a PagePermissionTester from it, specific to the given page
     return context['user_page_permissions'].for_page(page)
+
+
+@assignment_tag(takes_context=True)
+def test_collection_is_public(context, collection):
+    """
+    Usage: {% test_collection_is_public collection as is_public %}
+    Sets 'is_public' to True iff there are no collection view restrictions in place
+    on this collection.
+    Caches the list of collection view restrictions in the context, to avoid repeated
+    DB queries on repeated calls.
+    """
+    if 'all_collection_view_restrictions' not in context:
+        context['all_collection_view_restrictions'] = CollectionViewRestriction.objects.select_related('collection').values_list(
+            'collection__name', flat=True
+        )
+
+    is_private = collection.name in context['all_collection_view_restrictions']
+
+    return not is_private
 
 
 @assignment_tag(takes_context=True)

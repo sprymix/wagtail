@@ -22,6 +22,12 @@ Database fields
 
         Human-readable title of the page.
 
+    .. attribute:: draft_title
+
+        (text)
+
+        Human-readable title of the page, incorporating any changes that have been made in a draft edit (in contrast to the ``title`` field, which for published pages will be the title as it exists in the current published version).
+
     .. attribute:: slug
 
         (text)
@@ -62,6 +68,12 @@ Database fields
 
         The date/time when the page was first published.
 
+    .. attribute:: last_published_at
+
+        (date/time)
+
+        The date/time when the page was last published.
+
     .. attribute:: seo_title
 
         (text)
@@ -79,6 +91,8 @@ Database fields
         (boolean)
 
         Toggles whether the page should be included in site-wide menus.
+
+        Defaults to ``False`` and can be overridden on the model with ``show_in_menus_default = True``.
 
         This is used by the :meth:`~wagtail.wagtailcore.query.PageQuerySet.in_menu` QuerySet filter.
 

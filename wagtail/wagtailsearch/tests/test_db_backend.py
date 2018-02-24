@@ -17,6 +17,10 @@ class TestDBBackend(BackendTests, TestCase):
         super(TestDBBackend, self).test_callable_indexed_field()
 
     @unittest.expectedFailure
+    def test_related_objects_search(self):
+        super(TestDBBackend, self).test_related_objects_search()
+
+    @unittest.expectedFailure
     def test_update_index_command(self):
         super(TestDBBackend, self).test_update_index_command()
 
@@ -26,3 +30,11 @@ class TestDBBackend(BackendTests, TestCase):
         for result in results:
             # DB backend doesn't do scoring, so annotate_score should just add None
             self.assertIsNone(result._score)
+
+    @unittest.expectedFailure
+    def test_boost(self):
+        super(TestDBBackend, self).test_boost()
+
+    @unittest.expectedFailure
+    def test_order_by_relevance(self):
+        super(TestDBBackend, self).test_order_by_relevance()
