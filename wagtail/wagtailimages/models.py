@@ -310,8 +310,8 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
         else:
             return cls.renditions.related.related_model
 
-    def _get_rendition(self, renditions, filter_spec, focal_point_key=''):
-        filter = Filter(spec=filter_spec)
+    def _get_rendition(self, renditions, filter, focal_point_key=''):
+        filter_spec = filter.spec
         spec_hash = filter.get_cache_key(self)
 
         try:
@@ -344,14 +344,14 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
 
     def get_rendition(self, filter):
         if isinstance(filter, string_types):
-            filter, created = Filter.objects.get_or_create(spec=filter)
+            filter = Filter(spec=filter)
 
         return self._get_rendition(self.renditions, filter,
                                    self.get_focal_point_key(filter))
 
     def get_user_rendition(self, filter):
         if isinstance(filter, string_types):
-            filter, created = Filter.objects.get_or_create(spec=filter)
+            filter = Filter(spec=filter)
 
         return self._get_rendition(self.user_renditions, filter)
 
@@ -598,12 +598,12 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
     def get_rendition(self, filter_spec):
         # we need to construct a new filter combining what we've been passed
         # and the filter used to get THIS rendition
-        if not hasattr(filter, 'run'):
-            filter = '|'.join([self.filter_spec, filter])
+        if not hasattr(filter_spec, 'run'):
+            filter_spec = '|'.join([self.filter_spec, filter_spec])
         else:
-            filter = '|'.join([self.filter_spec, filter.spec])
+            filter_spec = '|'.join([self.filter_spec, filter_spec.spec])
 
-        filter = Filter(spec=filter)
+        filter = Filter(spec=filter_spec)
 
         spec_hash = filter.get_cache_key(self)
 
