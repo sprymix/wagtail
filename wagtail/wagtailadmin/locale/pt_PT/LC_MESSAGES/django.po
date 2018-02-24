@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-05 16:37+0100\n"
-"PO-Revision-Date: 2016-10-14 13:50+0000\n"
-"Last-Translator: Tiago Henriques <trinosauro@gmail.com>\n"
+"POT-Creation-Date: 2017-04-19 21:02+0000\n"
+"PO-Revision-Date: 2017-04-19 21:05+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Portuguese (Portugal) (http://www.transifex.com/torchbox/"
 "wagtail/language/pt_PT/)\n"
 "MIME-Version: 1.0\n"
@@ -126,17 +126,11 @@ msgstr "Este \"slug\" já está a ser usado no contexto da sua página-mãe \"%s
 msgid "Visibility"
 msgstr "Visibilidade"
 
-msgid "Public"
-msgstr "Público"
-
-msgid "Private, accessible with the following password"
-msgstr "Privado, acessível com a seguinte senha"
-
-msgid "Password"
-msgstr "Senha"
-
 msgid "This field is required."
 msgstr "Este campo é obrigatório."
+
+msgid "Please select at least one group."
+msgstr "Por favor selecione pelo menos um grupo."
 
 msgid "This slug is already in use"
 msgstr "Este “slug” já existe"
@@ -178,17 +172,11 @@ msgstr "Preferências de notificação"
 msgid "Choose which email notifications to receive."
 msgstr "Escolha quais as notificações de e-mail a receber."
 
-msgid "Change Password"
-msgstr "Alterar Senha"
-
 msgid ""
 "Your password can't be changed here. Please contact a site administrator."
 msgstr ""
 "A sua senha não pode ser alterada aqui. Por favor contacte um administrador "
 "do site."
-
-msgid "Notification Preferences"
-msgstr "Preferências de notificação"
 
 msgid "Update"
 msgstr "Atualizar"
@@ -494,6 +482,9 @@ msgstr "Destrancada"
 msgid "Privacy"
 msgstr "Privacidade"
 
+msgid "Public"
+msgstr "Público"
+
 msgid "Private"
 msgstr "Privada"
 
@@ -776,7 +767,7 @@ msgstr "Explorar as páginas-filha de '%(title)s'"
 msgid "Add a child page to '%(title)s'"
 msgstr "Adicionar página-filha a %(title)s"
 
-msgid "Add subpage"
+msgid "Add child page"
 msgstr "Adicionar página-filha"
 
 #, python-format
@@ -965,8 +956,22 @@ msgstr ""
 "por este software. Por favor <a href=\"http://browserhappy.com/\">atualize o "
 "seu browser</a>."
 
-msgid "Javascript is required to use Wagtail, but it is currently disabled"
-msgstr "O Javascript é necessário para usar o Wagtail, mas está desativado"
+msgid ""
+"\n"
+"            Javascript is required to use Wagtail, but it is currently "
+"disabled.<br />\n"
+"            Here are the <a href=\"http://www.enable-javascript.com/\" "
+"target=\"_blank\" rel=\"noopener\">instructions how to enable JavaScript in "
+"your web browser</a>.\n"
+"        "
+msgstr ""
+"\n"
+"            O Javascript é necessário para usar o Wagtail, mas neste momento "
+"está desativado.<br />\n"
+"            Aqui estão as <a href=\"http://www.enable-javascript.com/\" "
+"target=\"_blank\" rel=\"noopener\">instruções para ativar o JavaScript no "
+"seu browser</a>.\n"
+"        "
 
 msgid "Go to Wagtail admin interface"
 msgstr "Ir para a interface de administração do Wagtail"
@@ -1150,33 +1155,8 @@ msgstr ""
 msgid "Pages"
 msgstr "Páginas"
 
-msgid "Preview draft"
-msgstr "Visualizar rascunho"
-
-msgid "Add child page"
-msgstr "Adicionar página-filha"
-
-#, python-brace-format
-msgid "Add a child page to '{0}' "
-msgstr "Adicionar página-filha a '{0}'"
-
 msgid "More"
 msgstr "Mais"
-
-msgid "View more options"
-msgstr "Ver mais opções"
-
-msgid "Move this page"
-msgstr "Mover esta página"
-
-msgid "Delete this page"
-msgstr "Apagar esta página"
-
-msgid "Unpublish this page"
-msgstr "Despublicar esta página"
-
-msgid "View this page's revision history"
-msgstr "Ver o histórico de versões desta página"
 
 msgid "Choose an item"
 msgstr "Escolher um item"

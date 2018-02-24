@@ -140,7 +140,7 @@ class BaseStreamBlock(Block):
         return render_to_string('wagtailadmin/block_forms/stream.html', {
             'prefix': prefix,
             'list_members_html': list_members_html,
-            'child_blocks': self.child_blocks.values(),
+            'child_blocks': sorted(self.child_blocks.values(), key=lambda child_block: child_block.meta.group),
             'header_menu_prefix': '%s-before' % prefix,
             'block_errors': error_dict.get(NON_FIELD_ERRORS),
         })
@@ -208,6 +208,16 @@ class BaseStreamBlock(Block):
 
         return [
             {'type': child.block.name, 'value': child.block.get_prep_value(child.value)}
+            for child in value  # child is a BoundBlock instance
+        ]
+
+    def get_api_representation(self, value, context=None):
+        if value is None:
+            # treat None as identical to an empty stream
+            return []
+
+        return [
+            {'type': child.block.name, 'value': child.block.get_api_representation(child.value, context=context)}
             for child in value  # child is a BoundBlock instance
         ]
 
@@ -344,6 +354,15 @@ class StreamValue(collections.Sequence):
 
         for i, value in zip(raw_values.keys(), converted_values):
             self._bound_blocks[i] = StreamValue.StreamChild(child_block, value)
+
+    def __eq__(self, other):
+        if not isinstance(other, StreamValue):
+            return False
+
+        return self.stream_data == other.stream_data
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __len__(self):
         return len(self.stream_data)

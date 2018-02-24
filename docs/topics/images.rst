@@ -5,7 +5,9 @@ Using images in templates
 
 The ``image`` tag inserts an XHTML-compatible ``img`` element into the page, setting its ``src``, ``width``, ``height`` and ``alt``. See also :ref:`image_tag_alt`.
 
-The syntax for the tag is thus::
+The syntax for the tag is thus:
+
+.. code-block:: html+django
 
     {% image [image] [resize-rule] %}
 
@@ -269,3 +271,9 @@ all images to output in JPEG format):
 .. code-block:: html+Django
 
     {% image page.photo width-400 format-jpeg jpegquality-40 %}
+
+Generating image renditions in Python
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All of the image transformations mentioned above can also be used directly in Python code.
+See :ref:`image_renditions`.

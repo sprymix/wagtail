@@ -132,7 +132,7 @@ function InlinePanel(opts) {
                 var currentChildOrder = currentChildOrderElem.val();
 
                 /* find the previous visible 'inline_child' li before this one */
-                var prevChild = currentChild.prev(':visible');
+                var prevChild = currentChild.prevAll(':not(.deleted)').first();
                 if (!prevChild.length) return;
                 var prevChildOrderElem = prevChild.find('input[name$="-ORDER"]');
                 var prevChildOrder = prevChildOrderElem.val();
@@ -153,7 +153,7 @@ function InlinePanel(opts) {
                 var currentChildOrder = currentChildOrderElem.val();
 
                 /* find the next visible 'inline_child' li after this one */
-                var nextChild = currentChild.next(':visible');
+                var nextChild = currentChild.nextAll(':not(.deleted)').first();
                 if (!nextChild.length) return;
                 var nextChildOrderElem = nextChild.find('input[name$="-ORDER"]');
                 var nextChildOrder = nextChildOrderElem.val();
@@ -485,6 +485,71 @@ $(function() {
         if (form_action_url.split('?').length > 1) {
             form.attr('action', form_action_url.replace(stay_re, ''));
         }
+    });
+
+    //
+    // Preview
+    //
+    // In order to make the preview truly reliable, the preview page needs
+    // to be perfectly independent from the edit page,
+    // from the browser perspective. To pass data from the edit page
+    // to the preview page, we send the form after each change
+    // and save it inside the user session.
+
+    var $previewButton = $('.action-preview'), $form = $('#page-edit-form');
+    var previewUrl = $previewButton.data('action');
+    var autoUpdatePreviewDataTimeout = -1;
+
+    function setPreviewData() {
+        return $.ajax({
+            url: previewUrl,
+            method: 'POST',
+            data: new FormData($form[0]),
+            processData: false,
+            contentType: false
+        });
+    }
+
+    $previewButton.one('click', function () {
+        if ($previewButton.data('auto-update')) {
+            // Form data is changed when field values are changed
+            // (change event), when HTML elements are added, modified, moved,
+            // and deleted (DOMSubtreeModified event), and we need to delay
+            // setPreviewData when typing to avoid useless extra AJAX requests
+            // (so we postpone setPreviewData when keyup occurs).
+            // TODO: Replace DOMSubtreeModified with a MutationObserver.
+            $form.on('change keyup DOMSubtreeModified', function () {
+                clearTimeout(autoUpdatePreviewDataTimeout);
+                autoUpdatePreviewDataTimeout = setTimeout(setPreviewData, 1000);
+            }).change();
+        }
+    });
+
+    $previewButton.click(function(e) {
+        e.preventDefault();
+        var $this = $(this);
+        var $icon = $this.filter('.icon'),
+            thisPreviewUrl = $this.data('action');
+        $icon.addClass('icon-spinner').removeClass('icon-view');
+        var previewWindow = window.open('', thisPreviewUrl);
+        previewWindow.focus();
+
+        setPreviewData().done(function (data) {
+            if (data['is_valid']) {
+                previewWindow.document.location = thisPreviewUrl;
+            } else {
+                window.focus();
+                previewWindow.close();
+                // TODO: Stop sending the form, as it removes file data.
+                $form.submit();
+            }
+        }).fail(function () {
+            alert('Error while sending preview data.');
+            window.focus();
+            previewWindow.close();
+        }).always(function () {
+            $icon.addClass('icon-view').removeClass('icon-spinner');
+        });
     });
 
     var preview_b = $('form#page-edit-form .actions.preview .action-preview');

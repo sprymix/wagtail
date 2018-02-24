@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-05 16:37+0100\n"
-"PO-Revision-Date: 2016-10-05 15:39+0000\n"
+"POT-Creation-Date: 2017-04-19 21:02+0000\n"
+"PO-Revision-Date: 2017-04-19 21:05+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Arabic (http://www.transifex.com/torchbox/wagtail/language/"
 "ar/)\n"
@@ -94,12 +94,6 @@ msgstr "هذه النسخه مباشرة. هل تريد نشر نسخه لها �
 msgid "Publish copies"
 msgstr "انشر النسخ"
 
-msgid "Public"
-msgstr "عمومي"
-
-msgid "Private, accessible with the following password"
-msgstr "حصوصي , قابل للدحول باستعمال كلمة السر الآتية"
-
 msgid "This field is required."
 msgstr "هذا الحقل مقتضى"
 
@@ -124,15 +118,9 @@ msgstr "أفضليات الأبلاغ"
 msgid "Choose which email notifications to receive."
 msgstr "اختر وسيلة الإبلاغ التي تفضلها للاستلام"
 
-msgid "Change Password"
-msgstr "غير كلمة السر"
-
 msgid ""
 "Your password can't be changed here. Please contact a site administrator."
 msgstr "من غير ممكن أن تغير كلمتك السرية هنا , من فضلك اتصل بمدير الموقع"
-
-msgid "Notification Preferences"
-msgstr "أفضليات الإبلاغ"
 
 msgid "Update"
 msgstr "حدث"
@@ -321,6 +309,9 @@ msgstr "غير مغلق"
 msgid "Privacy"
 msgstr "نظام السرية"
 
+msgid "Public"
+msgstr "عمومي"
+
 msgid "Private"
 msgstr "خصوصي"
 
@@ -407,8 +398,8 @@ msgstr "لم تنسأ إي صفحات في هذا الموقع"
 msgid "This page is locked to further editing"
 msgstr "هذه الصفحة مغلقة لأي تنقيح"
 
-msgid "Add subpage"
-msgstr "أضف صفحة تحتية"
+msgid "Add child page"
+msgstr "أضف صفحة لطفل "
 
 msgid "Previous"
 msgstr "سابق"
@@ -433,9 +424,6 @@ msgstr "انظر في الواقع"
 
 msgid "Pages"
 msgstr "صفحات"
-
-msgid "Add child page"
-msgstr "أضف صفحة لطفل "
 
 msgid "Choose another page"
 msgstr "إختر صفحة أخرى"

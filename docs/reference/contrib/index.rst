@@ -1,20 +1,20 @@
 Contrib modules
 ===============
 
-Wagtail ships with a variety of extra optional modules. 
+Wagtail ships with a variety of extra optional modules.
 
 
 .. toctree::
     :maxdepth: 2
 
     settings
-    forms
-    staticsitegen
+    forms/index
     sitemaps
     frontendcache
     routablepage
     api/index
     modeladmin/index
+    postgres_search
     searchpromotions
     table_block
 
@@ -25,16 +25,10 @@ Wagtail ships with a variety of extra optional modules.
 Site-wide settings that are editable by administrators in the Wagtail admin.
 
 
-:doc:`forms`
-------------
+:doc:`forms/index`
+------------------
 
 Allows forms to be created by admins and provides an interface for browsing form submissions.
-
-
-:doc:`staticsitegen`
---------------------
-
-Provides a management command that turns a Wagtail site into a set of static HTML files.
 
 
 :doc:`sitemaps`

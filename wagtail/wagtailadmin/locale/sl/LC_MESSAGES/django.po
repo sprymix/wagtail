@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-05 16:37+0100\n"
-"PO-Revision-Date: 2016-10-05 15:39+0000\n"
+"POT-Creation-Date: 2017-04-19 21:02+0000\n"
+"PO-Revision-Date: 2017-04-19 21:05+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Slovenian (http://www.transifex.com/torchbox/wagtail/language/"
 "sl/)\n"
@@ -124,12 +124,6 @@ msgid ""
 "This slug is already in use within the context of its parent page \"%s\""
 msgstr "Ključ je že v uporabi znotraj konteksta nadrejene strani \"%s\""
 
-msgid "Public"
-msgstr "Javno"
-
-msgid "Private, accessible with the following password"
-msgstr "Privatno, dostopno z sledečim geslom"
-
 msgid "This field is required."
 msgstr "Polje je obvezno."
 
@@ -171,17 +165,11 @@ msgstr "Nastavitve obveščanja"
 msgid "Choose which email notifications to receive."
 msgstr "Izberite katera obvestila želite prejemati na vaš e-naslov."
 
-msgid "Change Password"
-msgstr "Spremeni geslo"
-
 msgid ""
 "Your password can't be changed here. Please contact a site administrator."
 msgstr ""
 "Vaše gesla tu ni mogoče spremeniti. Prosimo vzpostavite kontakt z "
 "administratorjem strani.  "
-
-msgid "Notification Preferences"
-msgstr "Nastavitve Obveščanja"
 
 msgid "Update"
 msgstr "Posodbi"
@@ -474,6 +462,9 @@ msgstr "Odklenjeno"
 msgid "Privacy"
 msgstr "Zasebnost"
 
+msgid "Public"
+msgstr "Javno"
+
 msgid "Private"
 msgstr "Zasebno"
 
@@ -678,8 +669,8 @@ msgstr "Razišči podrejene strani od '%(title)s'"
 msgid "Add a child page to '%(title)s'"
 msgstr "Dodaj podrejeno stran v '%(title)s'"
 
-msgid "Add subpage"
-msgstr "Dodaj podstran"
+msgid "Add child page"
+msgstr "Dodaj podrejeno stran"
 
 msgid "Previous"
 msgstr "Prejšnja"
@@ -829,11 +820,6 @@ msgstr ""
 "Predlagamo vam, da ga <a href=\"http://browsehappy.com/\">posodobite</a> na "
 "novejšo različico."
 
-msgid "Javascript is required to use Wagtail, but it is currently disabled"
-msgstr ""
-"JavaScript, ki je nujno potreben za delovanje Wagtail-a, je trenutno "
-"izklopljen"
-
 msgid "Go to Wagtail admin interface"
 msgstr "Pojdite v Wagtail admin vmesnik"
 
@@ -965,9 +951,6 @@ msgstr "Stran '{0}' je sedaj odklenjena."
 
 msgid "Pages"
 msgstr "Strani"
-
-msgid "Add child page"
-msgstr "Dodaj podrejeno stran"
 
 msgid "Choose an item"
 msgstr "Izberite element"

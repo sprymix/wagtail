@@ -83,6 +83,10 @@ class TestValidation(TestCase):
         homepage.add_child(instance=christmas_page)
         self.assertTrue(Page.objects.filter(id=christmas_page.id).exists())
 
+    def test_get_admin_display_title(self):
+        homepage = Page.objects.get(url_path='/home/')
+        self.assertEqual(homepage.title, homepage.get_admin_display_title())
+
 
 @override_settings(ALLOWED_HOSTS=['localhost', 'events.example.com', 'about.example.com', 'unknown.site.com'])
 class TestSiteRouting(TestCase):
@@ -767,6 +771,17 @@ class TestCopyPage(TestCase):
         self.assertEqual(
             old_christmas_event.specific.revisions.count(), 1, "Revisions were removed from the original page"
         )
+
+    def test_copy_page_copies_recursively_to_the_same_tree(self):
+        events_index = EventIndex.objects.get(url_path='/home/events/')
+        old_christmas_event = events_index.get_children().filter(slug='christmas').first().specific
+        old_christmas_event.save_revision()
+
+        with self.assertRaises(Exception) as exception:
+            events_index.copy(
+                recursive=True, update_attrs={'title': "New events index", 'slug': 'new-events-index'}, to=events_index
+            )
+        self.assertEqual(str(exception.exception), "You cannot copy a tree branch recursively into itself")
 
     def test_copy_page_updates_user(self):
         event_moderator = get_user_model().objects.get(username='eventmoderator')

@@ -16,9 +16,7 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.urlresolvers import reverse
 from django.db import connection, models, transaction
-from django.db.models import Case, IntegerField, Q, When
-from django.db.models.signals import post_delete, post_save, pre_delete
-from django.dispatch.dispatcher import receiver
+from django.db.models import Q
 from django.http import Http404
 from django.template.response import TemplateResponse
 # Must be imported from Django so we get the new implementation of with_metaclass
@@ -27,13 +25,15 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
 from django.utils.six import StringIO
 from django.utils.six.moves.urllib.parse import urlparse
-from django.utils.text import slugify
+from django.utils.text import capfirst, slugify
 from django.utils.translation import ugettext_lazy as _
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from treebeard.mp_tree import MP_Node
 
+from wagtail.utils.compat import user_is_authenticated
 from wagtail.wagtailcore.query import PageQuerySet, TreeQuerySet
 from wagtail.wagtailcore.signals import page_published, page_unpublished
+from wagtail.wagtailcore.sites import get_site_for_hostname
 from wagtail.wagtailcore.url_routing import RouteResult
 from wagtail.wagtailcore.utils import (
     WAGTAIL_APPEND_SLASH, camelcase_to_underscore, resolve_model_string)
@@ -42,12 +42,6 @@ from wagtail.wagtailsearch import index
 logger = logging.getLogger('wagtail.core')
 
 PAGE_TEMPLATE_VAR = 'page'
-
-
-MATCH_HOSTNAME_PORT = 0
-MATCH_HOSTNAME_DEFAULT = 1
-MATCH_DEFAULT = 2
-MATCH_HOSTNAME = 3
 
 
 class SiteManager(models.Manager):
@@ -131,42 +125,7 @@ class Site(models.Model):
         except (AttributeError, KeyError):
             port = request.META.get('SERVER_PORT')
 
-        sites = list(Site.objects.annotate(match=Case(
-            # annotate the results by best choice descending
-
-            # put exact hostname+port match first
-            When(hostname=hostname, port=port, then=MATCH_HOSTNAME_PORT),
-
-            # then put hostname+default (better than just hostname or just default)
-            When(hostname=hostname, is_default_site=True, then=MATCH_HOSTNAME_DEFAULT),
-
-            # then match default with different hostname. there is only ever
-            # one default, so order it above (possibly multiple) hostname
-            # matches so we can use sites[0] below to access it
-            When(is_default_site=True, then=MATCH_DEFAULT),
-
-            # because of the filter below, if it's not default then its a hostname match
-            default=MATCH_HOSTNAME,
-
-            output_field=IntegerField(),
-        )).filter(Q(hostname=hostname) | Q(is_default_site=True)).order_by(
-            'match'
-        ).select_related(
-            'root_page'
-        ))
-
-        if sites:
-            # if theres a unique match or hostname (with port or default) match
-            if len(sites) == 1 or sites[0].match in (MATCH_HOSTNAME_PORT, MATCH_HOSTNAME_DEFAULT):
-                return sites[0]
-
-            # if there is a default match with a different hostname, see if
-            # there are many hostname matches. if only 1 then use that instead
-            # otherwise we use the default
-            if sites[0].match == MATCH_DEFAULT:
-                return sites[len(sites) == 2]
-
-        raise Site.DoesNotExist()
+        return get_site_for_hostname(hostname, port)
 
     @property
     def root_url(self):
@@ -216,17 +175,6 @@ class Site(models.Model):
         return result
 
 
-# Clear the wagtail_site_root_paths from the cache whenever Site records are updated
-@receiver(post_save, sender=Site)
-def clear_site_root_paths_on_save(sender, instance, **kwargs):
-    cache.delete('wagtail_site_root_paths')
-
-
-@receiver(post_delete, sender=Site)
-def clear_site_root_paths_on_delete(sender, instance, **kwargs):
-    cache.delete('wagtail_site_root_paths')
-
-
 PAGE_MODEL_CLASSES = []
 
 
@@ -248,6 +196,7 @@ def get_default_page_content_type():
 class BasePageManager(models.Manager):
     def get_queryset(self):
         return PageQuerySet(self.model).order_by('path')
+
 
 PageManager = BasePageManager.from_queryset(PageQuerySet)
 
@@ -366,13 +315,11 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
 
     go_live_at = models.DateTimeField(
         verbose_name=_("go live date/time"),
-        help_text=_("Please add a date-time in the form YYYY-MM-DD hh:mm."),
         blank=True,
         null=True
     )
     expire_at = models.DateTimeField(
         verbose_name=_("expiry date/time"),
-        help_text=_("Please add a date-time in the form YYYY-MM-DD hh:mm."),
         blank=True,
         null=True
     )
@@ -412,6 +359,12 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
 
     # Do not allow plain Page instances to be created through the Wagtail admin
     is_creatable = False
+
+    # Define these attributes early to avoid masking errors. (Issue #3078)
+    # The canonical definition is in wagtailadmin.edit_handlers.
+    content_panels = []
+    promote_panels = []
+    settings_panels = []
 
     def __init__(self, *args, **kwargs):
         super(Page, self).__init__(*args, **kwargs)
@@ -485,6 +438,7 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
         super(Page, self).full_clean(*args, **kwargs)
 
     def clean(self):
+        super(Page, self).clean()
         if not Page._slug_is_available(self.slug, self.get_parent(), self):
             raise ValidationError({'slug': _("This slug is already in use")})
 
@@ -590,8 +544,7 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
             errors.append(
                 checks.Error(
                     "Manager does not inherit from PageManager",
-                    hint="Ensure that custom Page managers inherit from {}.{}".format(
-                        PageManager.__module__, PageManager.__name__),
+                    hint="Ensure that custom Page managers inherit from wagtail.wagtailcore.models.PageManager",
                     obj=cls,
                     id='wagtailcore.E002',
                 )
@@ -702,6 +655,12 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
                 return RouteResult(self)
             else:
                 raise Http404
+
+    def get_admin_display_title(self):
+        """
+        Return the title for this page as it should appear in the admin backend.
+        """
+        return self.title
 
     def save_revision(self, user=None, submitted_for_moderation=False, approved_go_live_at=None, changed=True):
         self.full_clean()
@@ -1035,11 +994,11 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
     @classmethod
     def get_verbose_name(cls):
         """
-            Returns the human-readable "verbose name" of this page model e.g "Blog page".
+        Returns the human-readable "verbose name" of this page model e.g "Blog page".
         """
         # This is similar to doing cls._meta.verbose_name.title()
         # except this doesn't convert any characters to lowercase
-        return ' '.join([word[0].upper() + word[1:] for word in cls._meta.verbose_name.split()])
+        return capfirst(cls._meta.verbose_name)
 
     @property
     def status_string(self):
@@ -1126,6 +1085,8 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
                 setattr(page_copy, field, value)
 
         if to:
+            if recursive and (to == self or to.is_descendant_of(self)):
+                raise Exception("You cannot copy a tree branch recursively into itself")
             page_copy = to.add_child(instance=page_copy)
         else:
             page_copy = self.add_sibling(instance=page_copy)
@@ -1213,6 +1174,8 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
                 )
 
         return page_copy
+
+    copy.alters_data = True
 
     def permissions_for_user(self, user):
         """
@@ -1415,19 +1378,6 @@ class Page(six.with_metaclass(PageBase, AbstractPage, index.Indexed, Clusterable
         verbose_name_plural = _('pages')
 
 
-@receiver(pre_delete, sender=Page)
-def unpublish_page_before_delete(sender, instance, **kwargs):
-    # Make sure pages are unpublished before deleting
-    if instance.live:
-        # Don't bother to save, this page is just about to be deleted!
-        instance.unpublish(commit=False)
-
-
-@receiver(post_delete, sender=Page)
-def log_page_deletion(sender, instance, **kwargs):
-    logger.info("Page deleted: \"%s\" id=%d", instance.title, instance.id)
-
-
 class Orderable(models.Model):
     sort_order = models.IntegerField(null=True, blank=True, editable=False)
     sort_order_field = 'sort_order'
@@ -1570,6 +1520,12 @@ class PageRevision(models.Model):
                 page.go_live_at.isoformat()
             )
 
+    def get_previous(self):
+        return self.get_previous_by_created_at(page=self.page)
+
+    def get_next(self):
+        return self.get_next_by_created_at(page=self.page)
+
     def __str__(self):
         return '"' + six.text_type(self.page) + '" at ' + six.text_type(self.created_at)
 
@@ -1582,6 +1538,7 @@ PAGE_PERMISSION_TYPES = [
     ('add', _("Add"), _("Add/edit pages you own")),
     ('edit', _("Edit"), _("Edit any page")),
     ('publish', _("Publish"), _("Publish any page")),
+    ('bulk_delete', _("Bulk delete"), _("Delete pages with children")),
     ('lock', _("Lock"), _("Lock/unlock any page")),
 ]
 
@@ -1735,21 +1692,34 @@ class PagePermissionTester(object):
         if self.page_is_root:  # root node is not a page and can never be deleted, even by superusers
             return False
 
-        if self.user.is_superuser or ('publish' in self.permissions):
-            # Users with publish permission can unpublish any pages that need to be unpublished to achieve deletion
+        if self.user.is_superuser:
+            # superusers require no further checks
             return True
 
-        elif 'edit' in self.permissions:
-            # user can only delete if there are no live pages in this subtree
-            return (not self.page.live) and (not self.page.get_descendants().filter(live=True).exists())
+        # if the user does not have bulk_delete permission, they may only delete leaf pages
+        if 'bulk_delete' not in self.permissions and not self.page.is_leaf():
+            return False
+
+        if 'edit' in self.permissions:
+            # if the user does not have publish permission, we also need to confirm that there
+            # are no published pages here
+            if 'publish' not in self.permissions:
+                pages_to_delete = self.page.get_descendants(inclusive=True)
+                if pages_to_delete.live().exists():
+                    return False
+
+            return True
 
         elif 'add' in self.permissions:
-            # user can only delete if all pages in this subtree are unpublished and owned by this user
-            return (
-                (not self.page.live) and
-                (self.page.owner_id == self.user.pk) and
-                (not self.page.get_descendants().exclude(live=False, owner=self.user).exists())
-            )
+            pages_to_delete = self.page.get_descendants(inclusive=True)
+            if 'publish' in self.permissions:
+                # we don't care about live state, but all pages must be owned by this user
+                # (i.e. eliminating pages owned by this user must give us the empty set)
+                return not pages_to_delete.exclude(owner=self.user).exists()
+            else:
+                # all pages must be owned by this user and non-live
+                # (i.e. eliminating non-live pages owned by this user must give us the empty set)
+                return not pages_to_delete.exclude(live=False, owner=self.user).exists()
 
         else:
             return False
@@ -1846,10 +1816,70 @@ class PagePermissionTester(object):
             # no publishing required, so the already-tested 'add' permission is sufficient
             return True
 
+    def can_copy_to(self, destination, recursive=False):
+        # reject the logically impossible cases first
+        # recursive can't copy to the same tree otherwise it will be on infinite loop
+        if recursive and (self.page == destination or destination.is_descendant_of(self.page)):
+            return False
+
+        # shortcut the trivial 'everything' / 'nothing' permissions
+        if not self.user.is_active:
+            return False
+        if self.user.is_superuser:
+            return True
+
+        # Inspect permissions on the destination
+        destination_perms = self.user_perms.for_page(destination)
+
+        if not destination.specific_class.creatable_subpage_models():
+            return False
+
+        # we always need at least add permission in the target
+        if 'add' not in destination_perms.permissions:
+            return False
+
+        return True
+
 
 class PageViewRestriction(models.Model):
-    page = models.ForeignKey('Page', verbose_name=_('page'), related_name='view_restrictions', on_delete=models.CASCADE)
-    password = models.CharField(verbose_name=_('password'), max_length=255)
+    NONE = 'none'
+    PASSWORD = 'password'
+    GROUPS = 'groups'
+    LOGIN = 'login'
+
+    RESTRICTION_CHOICES = (
+        (NONE, _("Public")),
+        (LOGIN, _("Private, accessible to logged-in users")),
+        (PASSWORD, _("Private, accessible with the following password")),
+        (GROUPS, _("Private, accessible to users in specific groups")),
+    )
+
+    restriction_type = models.CharField(
+        max_length=20, choices=RESTRICTION_CHOICES)
+    page = models.ForeignKey(
+        'Page', verbose_name=_('page'), related_name='view_restrictions', on_delete=models.CASCADE
+    )
+    password = models.CharField(verbose_name=_('password'), max_length=255, blank=True)
+    groups = models.ManyToManyField(Group, blank=True)
+
+    def accept_request(self, request):
+        if self.restriction_type == PageViewRestriction.PASSWORD:
+            passed_restrictions = request.session.get('passed_page_view_restrictions', [])
+            if self.id not in passed_restrictions:
+                return False
+
+        elif self.restriction_type == PageViewRestriction.LOGIN:
+            if not user_is_authenticated(request.user):
+                return False
+
+        elif self.restriction_type == PageViewRestriction.GROUPS:
+            if not request.user.is_superuser:
+                current_user_groups = request.user.groups.all()
+
+                if not any(group in current_user_groups for group in self.groups.all()):
+                    return False
+
+        return True
 
     class Meta:
         verbose_name = _('page view restriction')
@@ -1859,6 +1889,7 @@ class PageViewRestriction(models.Model):
 class BaseCollectionManager(models.Manager):
     def get_queryset(self):
         return TreeQuerySet(self.model).order_by('path')
+
 
 CollectionManager = BaseCollectionManager.from_queryset(TreeQuerySet)
 

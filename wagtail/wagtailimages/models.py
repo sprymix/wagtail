@@ -1,24 +1,18 @@
 from __future__ import absolute_import, unicode_literals
 
 import hashlib
-import inspect
 import os.path
-import warnings
 from collections import OrderedDict
 from contextlib import contextmanager
 
 import django
 from django.conf import settings
 from django.core import checks
-from django.core.exceptions import ImproperlyConfigured
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models.signals import post_delete, pre_save
-from django.db.utils import DatabaseError
-from django.dispatch.dispatcher import receiver
-from django.forms.widgets import flatatt
+from django.forms.utils import flatatt
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
@@ -28,7 +22,6 @@ from taggit.managers import TaggableManager
 from unidecode import unidecode
 from willow.image import Image as WillowImage
 
-from wagtail.utils.deprecation import RemovedInWagtail19Warning
 from wagtail.wagtailadmin.utils import get_object_usage
 from wagtail.wagtailcore import hooks
 from wagtail.wagtailcore.models import CollectionMember
@@ -406,52 +399,16 @@ class Image(AbstractImage):
     )
 
 
-# Do smartcropping calculations when user saves an image without a focal point
-@receiver(pre_save, sender=Image)
-def image_feature_detection(sender, instance, **kwargs):
-    if getattr(settings, 'WAGTAILIMAGES_FEATURE_DETECTION_ENABLED', False):
-        # Make sure the image doesn't already have a focal point
-        if not instance.has_focal_point():
-            # Set the focal point
-            instance.set_focal_point(instance.get_suggested_focal_point())
-
-
-# Receive the post_delete signal and delete the file associated with the model instance.
-@receiver(post_delete, sender=Image)
-def image_delete(sender, instance, **kwargs):
-    # Pass false so FileField doesn't save the model.
-    instance.file.delete(False)
-
-
-def get_image_model():
-    from django.conf import settings
-    from django.apps import apps
-
-    try:
-        app_label, model_name = settings.WAGTAILIMAGES_IMAGE_MODEL.split('.')
-    except AttributeError:
-        return Image
-    except ValueError:
-        raise ImproperlyConfigured("WAGTAILIMAGES_IMAGE_MODEL must be of the form 'app_label.model_name'")
-
-    image_model = apps.get_model(app_label, model_name)
-    if image_model is None:
-        raise ImproperlyConfigured(
-            "WAGTAILIMAGES_IMAGE_MODEL refers to model '%s' that has not been installed" %
-            settings.WAGTAILIMAGES_IMAGE_MODEL
-        )
-    return image_model
-
-
-class Filter(models.Model):
+class Filter(object):
     """
     Represents one or more operations that can be applied to an Image to produce a rendition
     appropriate for final display on the website. Usually this would be a resize operation,
     but could potentially involve colour processing, etc.
     """
 
-    # The spec pattern is operation1-var1-var2|operation2-var1
-    spec = models.CharField(max_length=255, unique=True)
+    def __init__(self, spec=None):
+        # The spec pattern is operation1-var1-var2|operation2-var1
+        self.spec = spec
 
     @cached_property
     def operations(self):
@@ -481,24 +438,7 @@ class Filter(models.Model):
                 'original-format': original_format,
             }
             for operation in self.operations:
-                # Check that the operation can take the "env" argument
-                try:
-                    inspect.getcallargs(operation.run, willow, image, env)
-                    accepts_env = True
-                except TypeError:
-                    # Check that the paramters fit the old style, so we don't
-                    # raise a warning if there is a coding error
-                    inspect.getcallargs(operation.run, willow, image)
-                    accepts_env = False
-                    warnings.warn("ImageOperation run methods should take 4 "
-                                  "arguments. %d.run only takes 3.",
-                                  RemovedInWagtail19Warning)
-
-                # Call operation
-                if accepts_env:
-                    willow = operation.run(willow, image, env) or willow
-                else:
-                    willow = operation.run(willow, image) or willow
+                willow = operation.run(willow, image, env) or willow
 
             # Find the output format to use
             if 'output-format' in env:
@@ -566,12 +506,11 @@ class Filter(models.Model):
 
 
 class AbstractRendition(models.Model):
-    filter = models.ForeignKey(Filter, related_name='+', null=True, blank=True)
-    filter_spec = models.CharField(max_length=255, db_index=True, blank=True, default='')
+    filter_spec = models.CharField(max_length=255, db_index=True)
     file = models.ImageField(upload_to=get_rendition_upload_to, width_field='width', height_field='height')
     width = models.IntegerField(editable=False)
     height = models.IntegerField(editable=False)
-    focal_point_key = models.CharField(max_length=255, blank=True, default='', editable=False)
+    focal_point_key = models.CharField(max_length=16, blank=True, default='', editable=False)
 
     @property
     def url(self):
@@ -614,39 +553,23 @@ class AbstractRendition(models.Model):
         filename = self.file.field.storage.get_valid_name(filename)
         return os.path.join(folder_name, filename)
 
-    def save(self, *args, **kwargs):
-        # populate the `filter_spec` field with the spec string of the filter. In Wagtail 1.8
-        # Filter will be dropped as a model, and lookups will be done based on this string instead
-        self.filter_spec = self.filter.spec
-        return super(AbstractRendition, self).save(*args, **kwargs)
-
     @classmethod
     def check(cls, **kwargs):
         errors = super(AbstractRendition, cls).check(**kwargs)
-
-        # If a filter_spec column exists on this model, and contains null entries, warn that
-        # a data migration needs to be performed to populate it
-
-        try:
-            null_filter_spec_exists = cls.objects.filter(filter_spec='').exists()
-        except DatabaseError:
-            # The database is not in a state where the above lookup makes sense;
-            # this is entirely expected, because system checks are performed before running
-            # migrations. We're only interested in the specific case where the column exists
-            # in the db and contains nulls.
-            null_filter_spec_exists = False
-
-        if null_filter_spec_exists:
-            errors.append(
-                checks.Warning(
-                    "Custom image model %r needs a data migration to populate filter_src" % cls,
-                    hint="The database representation of image filters has been changed, and a data "
-                    "migration needs to be put in place before upgrading to Wagtail 1.8, in order to "
-                    "avoid data loss. See http://docs.wagtail.io/en/latest/releases/1.7.html#filter-spec-migration",
-                    obj=cls,
-                    id='wagtailimages.W001',
+        if not cls._meta.abstract:
+            if not any(
+                set(constraint) == set(['image', 'filter_spec', 'focal_point_key'])
+                for constraint in cls._meta.unique_together
+            ):
+                errors.append(
+                    checks.Error(
+                        "Custom rendition model %r has an invalid unique_together setting" % cls,
+                        hint="Custom rendition models must include the constraint "
+                        "('image', 'filter_spec', 'focal_point_key') in their unique_together definition.",
+                        obj=cls,
+                        id='wagtailimages.E001',
+                    )
                 )
-            )
 
         return errors
 
@@ -659,15 +582,8 @@ class Rendition(AbstractRendition):
 
     class Meta:
         unique_together = (
-            ('image', 'filter', 'focal_point_key'),
+            ('image', 'filter_spec', 'focal_point_key'),
         )
-
-
-# Receive the post_delete signal and delete the file associated with the model instance.
-@receiver(post_delete, sender=Rendition)
-def rendition_delete(sender, instance, **kwargs):
-    # Pass false so FileField doesn't save the model.
-    instance.file.delete(False)
 
 
 class UserRendition(AbstractRendition, WillowImageWrapper):
@@ -726,10 +642,3 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
 
     def has_focal_point(self):
         return False
-
-
-# Receive the post_delete signal and delete the file associated with the model instance.
-@receiver(post_delete, sender=UserRendition)
-def user_rendition_delete(sender, instance, **kwargs):
-    # Pass false so FileField doesn't save the model.
-    instance.file.delete(False)

@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
 
-from wagtail.tests.testapp.models import BusinessIndex
+from wagtail.tests.testapp.models import BusinessIndex, EventCategory, EventPage
 from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailcore.models import GroupPagePermission, Page
 
@@ -58,6 +58,27 @@ class TestIndexView(TestCase, WagtailTestUtils):
         self.assertEqual(response.context['result_count'], 4)
 
 
+class TestExcludeFromExplorer(TestCase, WagtailTestUtils):
+    fixtures = ['modeladmintest_test.json']
+
+    def setUp(self):
+        self.login()
+
+    def test_attribute_effects_explorer(self):
+        # The two VenuePages should appear in the venuepage list
+        response = self.client.get('/admin/modeladmintest/venuepage/')
+        self.assertContains(response, "Santa&#39;s Grotto")
+        self.assertContains(response, "Santa&#39;s Workshop")
+
+        # But when viewing the children of 'Christmas' event in explorer
+        response = self.client.get('/admin/pages/4/')
+        self.assertNotContains(response, "Santa&#39;s Grotto")
+        self.assertNotContains(response, "Santa&#39;s Workshop")
+
+        # But the other test page should...
+        self.assertContains(response, "Claim your free present!")
+
+
 class TestCreateView(TestCase, WagtailTestUtils):
     fixtures = ['test_specific.json']
 
@@ -103,6 +124,29 @@ class TestInspectView(TestCase, WagtailTestUtils):
         """
         response = self.get(4)
         self.assertContains(response, 'Christmas', 2)
+
+    def test_manytomany_output(self):
+        """
+        Because ManyToMany fields are output InspectView by default, the
+        `categories` for the event should output as a comma separated list
+        once populated.
+        """
+        eventpage = EventPage.objects.get(pk=4)
+        free_category = EventCategory.objects.create(name='Free')
+        child_friendly_category = EventCategory.objects.create(name='Child-friendly')
+        eventpage.categories = (free_category, child_friendly_category)
+        eventpage.save()
+        response = self.get(4)
+        self.assertContains(response, '<dd>Free, Child-friendly</dd>', html=True)
+
+    def test_false_values_displayed(self):
+        """
+        Boolean fields with False values should display False, rather than the
+        value of `get_empty_value_display()`. For this page, those should be
+        `locked`, `expired` and `has_unpublished_changes`
+        """
+        response = self.get(4)
+        self.assertContains(response, '<dd>False</dd>', count=3, html=True)
 
     def test_location_present(self):
         """

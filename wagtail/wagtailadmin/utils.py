@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -11,6 +12,7 @@ from django.db.models import Count, Q
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext as _
+from django.utils.translation import override, ugettext_lazy
 from modelcluster.fields import ParentalKey
 from taggit.models import Tag
 
@@ -18,6 +20,34 @@ from wagtail.wagtailcore.models import GroupPagePermission, Page, PageRevision
 from wagtail.wagtailusers.models import UserProfile
 
 logger = logging.getLogger('wagtail.admin')
+
+# Wagtail languages with >=90% coverage
+# This list is manually maintained
+WAGTAILADMIN_PROVIDED_LANGUAGES = [
+    ('ca', ugettext_lazy('Catalan')),
+    ('de', ugettext_lazy('German')),
+    ('el', ugettext_lazy('Greek')),
+    ('en', ugettext_lazy('English')),
+    ('es', ugettext_lazy('Spanish')),
+    ('fi', ugettext_lazy('Finnish')),
+    ('fr', ugettext_lazy('French')),
+    ('gl', ugettext_lazy('Galician')),
+    ('is-is', ugettext_lazy('Icelandic')),
+    ('it', ugettext_lazy('Italian')),
+    ('lt', ugettext_lazy('Lithuanian')),
+    ('nb', ugettext_lazy('Norwegian Bokmål')),
+    ('nl-nl', ugettext_lazy('Netherlands Dutch')),
+    ('pl', ugettext_lazy('Polish')),
+    ('pt-br', ugettext_lazy('Brazilian Portuguese')),
+    ('pt-pt', ugettext_lazy('Portuguese')),
+    ('ro', ugettext_lazy('Romanian')),
+    ('ru', ugettext_lazy('Russian')),
+    ('zh-cn', ugettext_lazy('Chinese (China)')),
+]
+
+
+def get_available_admin_languages():
+    return getattr(settings, 'WAGTAILADMIN_PERMITTED_LANGUAGES', WAGTAILADMIN_PROVIDED_LANGUAGES)
 
 
 def get_object_usage(obj):
@@ -216,9 +246,11 @@ def send_notification(page_revision_id, notification, excluded_user_id):
             # update context with this recipient
             context["user"] = recipient
 
-            # Get email subject and content
-            email_subject = render_to_string(template_subject, context).strip()
-            email_content = render_to_string(template_text, context).strip()
+            # Translate text to the recipient language settings
+            with override(recipient.wagtail_userprofile.get_preferred_language()):
+                # Get email subject and content
+                email_subject = render_to_string(template_subject, context).strip()
+                email_content = render_to_string(template_text, context).strip()
 
             kwargs = {}
             if getattr(settings, 'WAGTAILADMIN_NOTIFICATION_USE_HTML', False):
@@ -234,3 +266,27 @@ def send_notification(page_revision_id, notification, excluded_user_id):
             )
 
     return sent_count == len(email_recipients)
+
+
+def user_has_any_page_permission(user):
+    """
+    Check if a user has any permission to add, edit, or otherwise manage any
+    page.
+    """
+    # Can't do nothin if you're not active.
+    if not user.is_active:
+        return False
+
+    # Superusers can do anything.
+    if user.is_superuser:
+        return True
+
+    # At least one of the users groups has a GroupPagePermission.
+    # The user can probably do something.
+    if GroupPagePermission.objects.filter(group__in=user.groups.all()).exists():
+        return True
+
+    # Specific permissions for a page type do not mean anything.
+
+    # No luck! This user can not do anything with pages.
+    return False

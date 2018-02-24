@@ -5,8 +5,10 @@ from django.contrib.auth.models import Permission
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
+
 from wagtail.wagtailadmin.menu import MenuItem, SubmenuMenuItem, settings_menu
 from wagtail.wagtailadmin.search import SearchArea
+from wagtail.wagtailadmin.utils import user_has_any_page_permission
 from wagtail.wagtailadmin.widgets import Button, ButtonWithDropdownFromHook, PageListingButton
 from wagtail.wagtailcore import hooks
 from wagtail.wagtailcore.permissions import collection_permission_policy
@@ -47,13 +49,21 @@ def register_permissions():
     return Permission.objects.filter(content_type__app_label='wagtailadmin', codename='access_admin')
 
 
+class PageSearchArea(SearchArea):
+    def __init__(self):
+        super(PageSearchArea, self).__init__(
+            _('Pages'), reverse('wagtailadmin_pages:search'),
+            name='pages',
+            classnames='icon icon-folder-open-inverse',
+            order=100)
+
+    def is_shown(self, request):
+        return user_has_any_page_permission(request.user)
+
+
 @hooks.register('register_admin_search_area')
 def register_pages_search_area():
-    return SearchArea(
-        _('Pages'), reverse('wagtailadmin_pages:search'),
-        name='pages',
-        classnames='icon icon-folder-open-inverse',
-        order=100)
+    return PageSearchArea()
 
 
 class CollectionsMenuItem(MenuItem):
@@ -71,20 +81,42 @@ def register_collections_menu_item():
 @hooks.register('register_page_listing_buttons')
 def page_listing_buttons(page, page_perms, is_parent=False):
     if page_perms.can_edit():
-        yield PageListingButton(_('Edit'), reverse('wagtailadmin_pages:edit', args=[page.id]),
-                                attrs={'title': _('Edit this page')}, priority=10)
+        yield PageListingButton(
+            _('Edit'),
+            reverse('wagtailadmin_pages:edit', args=[page.id]),
+            attrs={'title': _("Edit '{title}'").format(title=page.get_admin_display_title())},
+            priority=10
+        )
     if page.has_unpublished_changes:
-        yield PageListingButton(_('Draft'), reverse('wagtailadmin_pages:view_draft', args=[page.id]),
-                                attrs={'title': _('Preview draft'), 'target': '_blank'}, priority=20)
+        yield PageListingButton(
+            _('View draft'),
+            reverse('wagtailadmin_pages:view_draft', args=[page.id]),
+            attrs={'title': _("Preview draft version of '{title}'").format(title=page.get_admin_display_title()), 'target': '_blank'},
+            priority=20
+        )
     if page.live and page.url:
-        yield PageListingButton(_('Live'), page.url, attrs={'target': "_blank", 'title': _('View live')}, priority=30)
+        yield PageListingButton(
+            _('View live'),
+            page.url,
+            attrs={'target': "_blank", 'title': _("View live version of '{title}'").format(title=page.get_admin_display_title())},
+            priority=30
+        )
     if page_perms.can_add_subpage():
         if is_parent:
-            yield Button(_('Add child page'), reverse('wagtailadmin_pages:add_subpage', args=[page.id]),
-                         attrs={'title': _("Add a child page to '{0}' ".format(page.title))}, classes={'button', 'button-small', 'bicolor', 'icon', 'white', 'icon-plus'}, priority=40)
+            yield Button(
+                _('Add child page'),
+                reverse('wagtailadmin_pages:add_subpage', args=[page.id]),
+                attrs={'title': _("Add a child page to '{title}' ").format(title=page.get_admin_display_title())},
+                classes={'button', 'button-small', 'bicolor', 'icon', 'white', 'icon-plus'},
+                priority=40
+            )
         else:
-            yield PageListingButton(_('Add child page'), reverse('wagtailadmin_pages:add_subpage', args=[page.id]),
-                                    attrs={'title': _("Add a child page to '{0}' ".format(page.title))}, priority=40)
+            yield PageListingButton(
+                _('Add child page'),
+                reverse('wagtailadmin_pages:add_subpage', args=[page.id]),
+                attrs={'title': _("Add a child page to '{title}' ").format(title=page.get_admin_display_title())},
+                priority=40
+            )
 
     yield ButtonWithDropdownFromHook(
         _('More'),
@@ -92,24 +124,47 @@ def page_listing_buttons(page, page_perms, is_parent=False):
         page=page,
         page_perms=page_perms,
         is_parent=is_parent,
-        attrs={'target': '_blank', 'title': _('View more options')}, priority=50)
+        attrs={'target': '_blank', 'title': _("View more options for '{title}'").format(title=page.get_admin_display_title())},
+        priority=50
+    )
 
 
 @hooks.register('register_page_listing_more_buttons')
 def page_listing_more_buttons(page, page_perms, is_parent=False):
     if page_perms.can_move():
-        yield Button(_('Move'), reverse('wagtailadmin_pages:move', args=[page.id]),
-                     attrs={"title": _('Move this page')}, priority=10)
+        yield Button(
+            _('Move'),
+            reverse('wagtailadmin_pages:move', args=[page.id]),
+            attrs={"title": _("Move page '{title}'").format(title=page.get_admin_display_title())},
+            priority=10
+        )
     if (not page.is_root() and
             page.get_parent().permissions_for_user(
                 page_perms.user).can_publish_subpage()):
-        yield Button(_('Copy'), reverse('wagtailadmin_pages:copy', args=[page.id]),
-                     attrs={'title': _('Copy this page')}, priority=20)
+        yield Button(
+            _('Copy'),
+            reverse('wagtailadmin_pages:copy', args=[page.id]),
+            attrs={'title': _("Copy page '{title}'").format(title=page.get_admin_display_title())},
+            priority=20
+        )
     if page_perms.can_delete():
-        yield Button(_('Delete'), reverse('wagtailadmin_pages:delete', args=[page.id]),
-                     attrs={'title': _('Delete this page')}, priority=30)
+        yield Button(
+            _('Delete'),
+            reverse('wagtailadmin_pages:delete', args=[page.id]),
+            attrs={'title': _("Delete page '{title}'").format(title=page.get_admin_display_title())},
+            priority=30
+        )
     if page_perms.can_unpublish():
-        yield Button(_('Unpublish'), reverse('wagtailadmin_pages:unpublish', args=[page.id]),
-                     attrs={'title': _('Unpublish this page')}, priority=40)
-    yield Button(_('Revisions'), reverse('wagtailadmin_pages:revisions_index', args=[page.id]),
-                 attrs={'title': _("View this page's revision history")}, priority=50)
+        yield Button(
+            _('Unpublish'),
+            reverse('wagtailadmin_pages:unpublish', args=[page.id]),
+            attrs={'title': _("Unpublish page '{title}'").format(title=page.get_admin_display_title())},
+            priority=40
+        )
+    if not page.is_root():
+        yield Button(
+            _('Revisions'),
+            reverse('wagtailadmin_pages:revisions_index', args=[page.id]),
+            attrs={'title': _("View revision history for '{title}'").format(title=page.get_admin_display_title())},
+            priority=50
+        )

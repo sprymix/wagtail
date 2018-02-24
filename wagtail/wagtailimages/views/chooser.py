@@ -24,10 +24,10 @@ from wagtail.wagtailadmin.utils import PermissionPolicyChecker
 from wagtail.wagtailadmin.utils import permission_required
 from wagtail.wagtailadmin.utils import popular_tags_for_model
 from wagtail.wagtailcore.models import Collection
+from wagtail.wagtailimages import get_image_model
 from wagtail.wagtailimages.formats import get_image_format
 from wagtail.wagtailimages.forms import ImageInsertionForm, get_image_form
 from wagtail.wagtailimages.forms import ImageCropperForm
-from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.permissions import permission_policy
 from wagtail.wagtailimages.fields import ALLOWED_EXTENSIONS
 
@@ -127,6 +127,10 @@ def chooser(request):
     images = Image.objects.order_by('-created_at') \
                           .filter(show_in_catalogue=True)
 
+    # allow hooks to modify the queryset
+    for hook in hooks.get_hooks('construct_image_chooser_queryset'):
+        images = hook(images, request)
+
     q = None
     if (
         'q' in request.GET or 'p' in request.GET or 'tag' in request.GET or
@@ -171,28 +175,28 @@ def chooser(request):
 
         paginator, images = paginate(request, images, per_page=12)
 
-    return render_modal_workflow(request, 'wagtailimages/chooser/chooser.html', 'wagtailimages/chooser/chooser.js', {
-        'images': images,
-        'uploadform': uploadform,
-        'searchform': searchform,
-        'is_searching': False,
-        'query_string': q,
-        'will_select_format': will_select_format,
-        'will_select_rendition': will_select_rendition,
-        'popular_tags': popular_tags_for_model(Image),
-        'collections': collections,
-        'uploadid': uuid.uuid4(),
-        'post_processing_spec': request.GET.get('pps'),
-        'additional_params': get_cropper_params(request),
-        'allowed_extensions': ALLOWED_EXTENSIONS,
-        'error_max_file_size':
-            uploadform.fields['file']
-                      .error_messages['file_too_large_unknown_size']
-                        if uploadform else None,
-        'error_accepted_file_types':
-            uploadform.fields['file'].error_messages['invalid_image']
-                        if uploadform else None,
-    })
+        return render_modal_workflow(request, 'wagtailimages/chooser/chooser.html', 'wagtailimages/chooser/chooser.js', {
+            'images': images,
+            'uploadform': uploadform,
+            'searchform': searchform,
+            'is_searching': False,
+            'query_string': q,
+            'will_select_format': will_select_format,
+            'will_select_rendition': will_select_rendition,
+            'popular_tags': popular_tags_for_model(Image),
+            'collections': collections,
+            'uploadid': uuid.uuid4(),
+            'post_processing_spec': request.GET.get('pps'),
+            'additional_params': get_cropper_params(request),
+            'allowed_extensions': ALLOWED_EXTENSIONS,
+            'error_max_file_size':
+                uploadform.fields['file']
+                          .error_messages['file_too_large_unknown_size']
+                            if uploadform else None,
+            'error_accepted_file_types':
+                uploadform.fields['file'].error_messages['invalid_image']
+                            if uploadform else None,
+        })
 
 
 def image_chosen(request, image_id):

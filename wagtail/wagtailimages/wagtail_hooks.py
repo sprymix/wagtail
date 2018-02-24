@@ -11,10 +11,9 @@ from wagtail.wagtailadmin.menu import MenuItem
 from wagtail.wagtailadmin.search import SearchArea
 from wagtail.wagtailadmin.site_summary import SummaryItem
 from wagtail.wagtailcore import hooks
-from wagtail.wagtailimages import admin_urls, image_operations
+from wagtail.wagtailimages import admin_urls, get_image_model, image_operations
 from wagtail.wagtailimages.api.admin.endpoints import ImagesAdminAPIEndpoint
 from wagtail.wagtailimages.forms import GroupImagePermissionFormSet
-from wagtail.wagtailimages.models import get_image_model
 from wagtail.wagtailimages.permissions import permission_policy
 from wagtail.wagtailimages.rich_text import ImageEmbedHandler
 
@@ -109,6 +108,11 @@ class ImagesSummaryItem(SummaryItem):
             'total_images':
                 get_image_model().objects.filter(show_in_catalogue=True).count()
         }
+
+    def is_shown(self):
+        return permission_policy.user_has_any_permission(
+            self.request.user, ['add', 'change', 'delete']
+        )
 
 
 @hooks.register('construct_homepage_summary_items')

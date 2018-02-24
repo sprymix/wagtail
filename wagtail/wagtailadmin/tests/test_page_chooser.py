@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils.http import urlencode
 
-from wagtail.tests.testapp.models import EventIndex, EventPage, SimplePage
+from wagtail.tests.testapp.models import EventIndex, EventPage, SimplePage, SingleEventPage
 from wagtail.tests.utils import WagtailTestUtils
 from wagtail.wagtailcore.models import Page
 
@@ -26,6 +26,21 @@ class TestChooserBrowse(TestCase, WagtailTestUtils):
         response = self.get()
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wagtailadmin/chooser/browse.html')
+
+    def test_construct_queryset_hook(self):
+        page = SimplePage(title="Test shown", content="hello")
+        Page.get_first_root_node().add_child(instance=page)
+
+        page_not_shown = SimplePage(title="Test not shown", content="hello")
+        Page.get_first_root_node().add_child(instance=page_not_shown)
+
+        def filter_pages(pages, request):
+            return pages.filter(id=page.id)
+
+        with self.register_hook('construct_page_chooser_queryset', filter_pages):
+            response = self.get()
+        self.assertEqual(len(response.context['pages']), 1)
+        self.assertEqual(response.context['pages'][0].specific, page)
 
 
 class TestCanChooseRootFlag(TestCase, WagtailTestUtils):
@@ -116,6 +131,27 @@ class TestChooserBrowseChild(TestCase, WagtailTestUtils):
         self.assertIn(event_index_page.id, pages)
         self.assertFalse(pages[event_index_page.id].can_choose)
         self.assertTrue(pages[event_index_page.id].can_descend)
+
+    def test_with_url_extended_page_type(self):
+        # Add a page that overrides the url path
+        single_event_page = SingleEventPage(
+            title="foo",
+            location='the moon', audience='public',
+            cost='free', date_from='2001-01-01',
+        )
+        self.root_page.add_child(instance=single_event_page)
+
+        # Send request
+        response = self.get()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailadmin/chooser/browse.html')
+
+        page_urls = [
+            page.url
+            for page in response.context['pages']
+        ]
+
+        self.assertIn('/foo/pointless-suffix/', page_urls)
 
     def test_with_blank_page_type(self):
         # a blank page_type parameter should be equivalent to an absent parameter
@@ -296,6 +332,99 @@ class TestChooserSearch(TestCase, WagtailTestUtils):
     def test_with_invalid_page_type(self):
         response = self.get({'page_type': 'foo'})
         self.assertEqual(response.status_code, 404)
+
+    def test_construct_queryset_hook(self):
+        page = SimplePage(title="Test shown", content="hello")
+        self.root_page.add_child(instance=page)
+
+        page_not_shown = SimplePage(title="Test not shown", content="hello")
+        self.root_page.add_child(instance=page_not_shown)
+
+        def filter_pages(pages, request):
+            return pages.filter(id=page.id)
+
+        with self.register_hook('construct_page_chooser_queryset', filter_pages):
+            response = self.get({'q': 'Test'})
+        self.assertEqual(len(response.context['pages']), 1)
+        self.assertEqual(response.context['pages'][0].specific, page)
+
+
+class TestAutomaticRootPageDetection(TestCase, WagtailTestUtils):
+    def setUp(self):
+        self.tree_root = Page.objects.get(id=1)
+        self.home_page = Page.objects.get(id=2)
+
+        self.about_page = self.home_page.add_child(instance=SimplePage(
+            title='About', content='About Foo'))
+        self.contact_page = self.about_page.add_child(instance=SimplePage(
+            title='Contact', content='Content Foo'))
+        self.people_page = self.about_page.add_child(instance=SimplePage(
+            title='People', content='The people of Foo'))
+
+        self.event_index = self.make_event_section('Events')
+
+        self.login()
+
+    def make_event_section(self, name):
+        event_index = self.home_page.add_child(instance=EventIndex(
+            title=name))
+        event_index.add_child(instance=EventPage(
+            title='First Event',
+            location='Bar', audience='public',
+            cost='free', date_from='2001-01-01'))
+        event_index.add_child(instance=EventPage(
+            title='Second Event',
+            location='Baz', audience='public',
+            cost='free', date_from='2001-01-01'))
+        return event_index
+
+    def get_best_root(self, params={}):
+        response = self.client.get(reverse('wagtailadmin_choose_page'), params)
+        return response.context['parent_page'].specific
+
+    def test_no_type_filter(self):
+        self.assertEqual(self.get_best_root(), self.tree_root)
+
+    def test_type_page(self):
+        self.assertEqual(
+            self.get_best_root({'page_type': 'wagtailcore.Page'}),
+            self.tree_root)
+
+    def test_type_eventpage(self):
+        """
+        The chooser should start at the EventIndex that holds all the
+        EventPages.
+        """
+        self.assertEqual(
+            self.get_best_root({'page_type': 'tests.EventPage'}),
+            self.event_index)
+
+    def test_type_eventpage_two_indexes(self):
+        """
+        The chooser should start at the home page, as there are two
+        EventIndexes with EventPages.
+        """
+        self.make_event_section('Other events')
+        self.assertEqual(
+            self.get_best_root({'page_type': 'tests.EventPage'}),
+            self.home_page)
+
+    def test_type_simple_page(self):
+        """
+        The chooser should start at the home page, as all SimplePages are
+        directly under it
+        """
+        self.assertEqual(
+            self.get_best_root({'page_type': 'tests.BusinessIndex'}),
+            self.tree_root)
+
+    def test_type_missing(self):
+        """
+        The chooser should start at the root, as there are no BusinessIndexes
+        """
+        self.assertEqual(
+            self.get_best_root({'page_type': 'tests.BusinessIndex'}),
+            self.tree_root)
 
 
 class TestChooserExternalLink(TestCase, WagtailTestUtils):

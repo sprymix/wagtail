@@ -7,6 +7,7 @@ import os
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
@@ -14,7 +15,7 @@ from django.shortcuts import render
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.six import text_type
 from modelcluster.contrib.taggit import ClusterTaggableManager
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
@@ -32,7 +33,7 @@ from wagtail.wagtaildocs.edit_handlers import DocumentChooserPanel
 from wagtail.wagtailforms.models import AbstractEmailForm, AbstractFormField, AbstractFormSubmission
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
-from wagtail.wagtailimages.models import AbstractImage, Image
+from wagtail.wagtailimages.models import AbstractImage, AbstractRendition, Image
 from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
@@ -197,6 +198,30 @@ class EventPageSpeaker(Orderable, LinkFields):
     ]
 
 
+@python_2_unicode_compatible
+class EventCategory(models.Model):
+    name = models.CharField("Name", max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+# Override the standard WagtailAdminPageForm to add validation on start/end dates
+# that appears as a non-field error
+
+class EventPageForm(WagtailAdminPageForm):
+    def clean(self):
+        cleaned_data = super(EventPageForm, self).clean()
+
+        # Make sure that the event starts before it ends
+        start_date = cleaned_data['date_from']
+        end_date = cleaned_data['date_to']
+        if start_date and end_date and start_date > end_date:
+            raise ValidationError('The end date must be after the start date')
+
+        return cleaned_data
+
+
 class EventPage(Page):
     date_from = models.DateField("Start date", null=True)
     date_to = models.DateField(
@@ -219,6 +244,7 @@ class EventPage(Page):
         on_delete=models.SET_NULL,
         related_name='+'
     )
+    categories = ParentalManyToManyField(EventCategory, blank=True)
 
     search_fields = [
         index.SearchField('get_audience_display'),
@@ -227,6 +253,8 @@ class EventPage(Page):
     ]
 
     password_required_template = 'tests/event_page_password_required.html'
+    base_form_class = EventPageForm
+
 
 EventPage.content_panels = [
     FieldPanel('title', classname="full title"),
@@ -242,6 +270,7 @@ EventPage.content_panels = [
     FieldPanel('body', classname="full"),
     InlinePanel('speakers', label="Speakers"),
     InlinePanel('related_links', label="Related links"),
+    FieldPanel('categories'),
 ]
 
 EventPage.promote_panels = [
@@ -275,6 +304,7 @@ class SingleEventPage(EventPage):
         else:
             # fall back to default routing rules
             return super(SingleEventPage, self).route(request, path_components)
+
 
 SingleEventPage.content_panels = [FieldPanel('excerpt')] + EventPage.content_panels
 
@@ -335,6 +365,7 @@ class EventIndex(Page):
             }
         ]
 
+
 EventIndex.content_panels = [
     FieldPanel('title', classname="full title"),
     FieldPanel('intro', classname="full"),
@@ -350,6 +381,7 @@ class FormPage(AbstractEmailForm):
         context = super(FormPage, self).get_context(request)
         context['greeting'] = "hello world"
         return context
+
 
 FormPage.content_panels = [
     FieldPanel('title', classname="full title"),
@@ -370,6 +402,7 @@ class JadeFormField(AbstractFormField):
 
 class JadeFormPage(AbstractEmailForm):
     template = "tests/form_page.jade"
+
 
 JadeFormPage.content_panels = [
     FieldPanel('title', classname="full title"),
@@ -451,7 +484,7 @@ FormPageWithCustomSubmission.content_panels = [
 
 
 class FormFieldWithCustomSubmission(AbstractFormField):
-    page = ParentalKey(FormPageWithCustomSubmission, related_name='custom_form_fields')
+    page = ParentalKey(FormPageWithCustomSubmission, on_delete=models.CASCADE, related_name='custom_form_fields')
 
 
 class CustomFormPageSubmission(AbstractFormSubmission):
@@ -520,6 +553,9 @@ class AdvertWithTabbedInterface(models.Model):
     def __str__(self):
         return self.text
 
+    class Meta:
+        ordering = ('text',)
+
 
 register_snippet(AdvertWithTabbedInterface)
 
@@ -542,6 +578,7 @@ StandardIndex.promote_panels = []
 
 class StandardChild(Page):
     pass
+
 
 # Test overriding edit_handler with a custom one
 StandardChild.edit_handler = TabbedInterface([
@@ -584,6 +621,7 @@ class TaggedPageTag(TaggedItemBase):
 class TaggedPage(Page):
     tags = ClusterTaggableManager(through=TaggedPageTag, blank=True)
 
+
 TaggedPage.content_panels = [
     FieldPanel('title', classname="full title"),
     FieldPanel('tags'),
@@ -623,6 +661,15 @@ class CustomImage(AbstractImage):
     )
 
 
+class CustomRendition(AbstractRendition):
+    image = models.ForeignKey(CustomImage, related_name='renditions', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = (
+            ('image', 'filter_spec', 'focal_point_key'),
+        )
+
+
 class StreamModel(models.Model):
     body = StreamField([
         ('text', CharBlock()),
@@ -631,11 +678,27 @@ class StreamModel(models.Model):
     ])
 
 
+class ExtendedImageChooserBlock(ImageChooserBlock):
+    """
+    Example of Block with custom get_api_representation method.
+    If the request has an 'extended' query param, it returns a dict of id and title,
+    otherwise, it returns the default value.
+    """
+    def get_api_representation(self, value, context=None):
+        image_id = super(ExtendedImageChooserBlock, self).get_api_representation(value, context=context)
+        if 'request' in context and context['request'].query_params.get('extended', False):
+            return {
+                'id': image_id,
+                'title': value.title
+            }
+        return image_id
+
+
 class StreamPage(Page):
     body = StreamField([
         ('text', CharBlock()),
         ('rich_text', RichTextBlock()),
-        ('image', ImageChooserBlock()),
+        ('image', ExtendedImageChooserBlock()),
     ])
 
     api_fields = ('body',)
@@ -881,3 +944,20 @@ class UserProfile(models.Model):
     # Wagtail's schema must be able to coexist alongside a custom UserProfile model
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     favourite_colour = models.CharField(max_length=255)
+
+
+class PanelSettings(TestSetting):
+    panels = [
+        FieldPanel('title')
+    ]
+
+
+class TabbedSettings(TestSetting):
+    edit_handler = TabbedInterface([
+        ObjectList([
+            FieldPanel('title')
+        ], heading='First tab'),
+        ObjectList([
+            FieldPanel('email')
+        ], heading='Second tab'),
+    ])

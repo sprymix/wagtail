@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-05 16:37+0100\n"
-"PO-Revision-Date: 2016-10-05 15:39+0000\n"
+"POT-Creation-Date: 2017-04-19 21:02+0000\n"
+"PO-Revision-Date: 2017-04-19 21:05+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Hebrew (Israel) (http://www.transifex.com/torchbox/wagtail/"
 "language/he_IL/)\n"
@@ -110,12 +110,6 @@ msgid ""
 "This slug is already in use within the context of its parent page \"%s\""
 msgstr "הכתובת שבחרת כבר בשימוש בתוך הקונטקסט של עמוד ההורה \"%s\""
 
-msgid "Public"
-msgstr "ציבורי"
-
-msgid "Private, accessible with the following password"
-msgstr "פרטי, זמין עם הסיסמה הבאה"
-
 msgid "This field is required."
 msgstr "שדה חובה"
 
@@ -154,15 +148,9 @@ msgstr "העדפות התראות"
 msgid "Choose which email notifications to receive."
 msgstr "בחרו אילו התראות דואר אלקטרוני לקבל"
 
-msgid "Change Password"
-msgstr "שינוי סיסמה"
-
 msgid ""
 "Your password can't be changed here. Please contact a site administrator."
 msgstr "אי אפשר לשנות את הסיסמה. נא לפנות למנהל האתר."
-
-msgid "Notification Preferences"
-msgstr "העדפות התראות"
 
 msgid "Update"
 msgstr "עדכן"
@@ -397,6 +385,9 @@ msgstr "בלתי נעול"
 msgid "Privacy"
 msgstr "פרטיות"
 
+msgid "Public"
+msgstr "ציבורי"
+
 msgid "Private"
 msgstr "פרטי"
 
@@ -547,8 +538,8 @@ msgstr "מסייר בעמודים שבתוך '%(title)s'"
 msgid "Add a child page to '%(title)s'"
 msgstr "הוספת תת-עמוד אל '%(title)s'"
 
-msgid "Add subpage"
-msgstr "הוספת תת עמוד"
+msgid "Add child page"
+msgstr "הוספת תת-עמוד"
 
 msgid "Previous"
 msgstr "קודם"
@@ -673,9 +664,6 @@ msgstr ""
 "הדפדפן שלכם <strong>מיושן</strong> ולא נתמך ע\"י התוכנה הזו. אנא <a href="
 "\"http://browsehappy.com/\">עברו לדפדפן מודרני</a>."
 
-msgid "Javascript is required to use Wagtail, but it is currently disabled"
-msgstr "יש צורך בJavascript על מנת להתשמש בWagtail, אך הוא מכובה כרגע"
-
 msgid "Go to Wagtail admin interface"
 msgstr "כניסה למערך המנהל של Wagtail "
 
@@ -757,9 +745,6 @@ msgstr "עמוד {0} נעול כעת"
 #, python-brace-format
 msgid "Page '{0}' is now unlocked."
 msgstr "עמוד {0} בלתי נעול כעת"
-
-msgid "Add child page"
-msgstr "הוספת תת-עמוד"
 
 msgid "Choose an item"
 msgstr "בחרו פריט"

@@ -170,6 +170,7 @@ class TestFormsSubmissionsList(TestCase, WagtailTestUtils):
             form_data=json.dumps({
                 'your-email': "new@example.com",
                 'your-message': "this is a fairly new message",
+                'your-choices': ['foo', 'baz'],
             }),
         )
         new_form_submission.submit_time = '2014-01-01T12:00:00.000Z'
@@ -208,6 +209,9 @@ class TestFormsSubmissionsList(TestCase, WagtailTestUtils):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wagtailforms/index_submissions.html')
         self.assertEqual(len(response.context['data_rows']), 2)
+
+        # check display of list values within form submissions
+        self.assertContains(response, 'foo, baz')
 
     def test_list_submissions_after_filter_form_submissions_for_user_hook(self):
         # Hook forbids to delete form submissions for everyone
@@ -308,6 +312,7 @@ class TestFormsSubmissionsExport(TestCase, WagtailTestUtils):
             form_data=json.dumps({
                 'your-email': "old@example.com",
                 'your-message': "this is a really old message",
+                'your-choices': ['foo', 'baz'],
             }),
         )
         old_form_submission.submit_time = '2013-01-01T12:00:00.000Z'
@@ -337,7 +342,7 @@ class TestFormsSubmissionsExport(TestCase, WagtailTestUtils):
         data_lines = response.content.decode().split("\n")
 
         self.assertEqual(data_lines[0], 'Submission date,Your email,Your message,Your choices\r')
-        self.assertEqual(data_lines[1], '2013-01-01 12:00:00+00:00,old@example.com,this is a really old message,None\r')
+        self.assertEqual(data_lines[1], '2013-01-01 12:00:00+00:00,old@example.com,this is a really old message,"foo, baz"\r')
         self.assertEqual(data_lines[2], '2014-01-01 12:00:00+00:00,new@example.com,this is a fairly new message,None\r')
 
     def test_list_submissions_csv_export_after_filter_form_submissions_for_user_hook(self):
@@ -355,7 +360,7 @@ class TestFormsSubmissionsExport(TestCase, WagtailTestUtils):
         data_lines = response.content.decode().split("\n")
 
         self.assertEqual(data_lines[0], 'Submission date,Your email,Your message,Your choices\r')
-        self.assertEqual(data_lines[1], '2013-01-01 12:00:00+00:00,old@example.com,this is a really old message,None\r')
+        self.assertEqual(data_lines[1], '2013-01-01 12:00:00+00:00,old@example.com,this is a really old message,"foo, baz"\r')
         self.assertEqual(data_lines[2], '2014-01-01 12:00:00+00:00,new@example.com,this is a fairly new message,None\r')
 
         with self.register_hook('filter_form_submissions_for_user', construct_forms_for_user):
@@ -391,7 +396,7 @@ class TestFormsSubmissionsExport(TestCase, WagtailTestUtils):
         data_lines = response.content.decode().split("\n")
 
         self.assertEqual(data_lines[0], 'Submission date,Your email,Your message,Your choices\r')
-        self.assertEqual(data_lines[1], '2013-01-01 12:00:00+00:00,old@example.com,this is a really old message,None\r')
+        self.assertEqual(data_lines[1], '2013-01-01 12:00:00+00:00,old@example.com,this is a really old message,"foo, baz"\r')
 
     def test_list_submissions_csv_export_with_range_filtering(self):
         response = self.client.get(
@@ -767,11 +772,11 @@ class TestDeleteFormSubmission(TestCase, WagtailTestUtils):
         self.assertTrue(self.client.login(username='siteeditor', password='password'))
         self.form_page = Page.objects.get(url_path='/home/contact-us/')
 
-    def test_delete_submission_show_cofirmation(self):
+    def test_delete_submission_show_confirmation(self):
         response = self.client.get(reverse(
-            'wagtailforms:delete_submission',
-            args=(self.form_page.id, FormSubmission.objects.first().id)
-        ))
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}'.format(FormSubmission.objects.first().id))
         # Check show confirm page when HTTP method is GET
         self.assertTemplateUsed(response, 'wagtailforms/confirm_delete.html')
 
@@ -780,12 +785,23 @@ class TestDeleteFormSubmission(TestCase, WagtailTestUtils):
 
     def test_delete_submission_with_permissions(self):
         response = self.client.post(reverse(
-            'wagtailforms:delete_submission',
-            args=(self.form_page.id, FormSubmission.objects.first().id)
-        ))
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}'.format(FormSubmission.objects.first().id))
 
         # Check that the submission is gone
         self.assertEqual(FormSubmission.objects.count(), 1)
+        # Should be redirected to list of submissions
+        self.assertRedirects(response, reverse("wagtailforms:list_submissions", args=(self.form_page.id,)))
+
+    def test_delete_multiple_submissions_with_permissions(self):
+        response = self.client.post(reverse(
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}&selected-submissions={}'.format(FormSubmission.objects.first().id, FormSubmission.objects.last().id))
+
+        # Check that both submissions are gone
+        self.assertEqual(FormSubmission.objects.count(), 0)
         # Should be redirected to list of submissions
         self.assertRedirects(response, reverse("wagtailforms:list_submissions", args=(self.form_page.id,)))
 
@@ -793,11 +809,11 @@ class TestDeleteFormSubmission(TestCase, WagtailTestUtils):
         self.assertTrue(self.client.login(username="eventeditor", password="password"))
 
         response = self.client.post(reverse(
-            'wagtailforms:delete_submission',
-            args=(self.form_page.id, FormSubmission.objects.first().id)
-        ))
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}'.format(FormSubmission.objects.first().id))
 
-        # Check that the user recieved a 403 response
+        # Check that the user received a 403 response
         self.assertEqual(response.status_code, 403)
 
         # Check that the deletion has not happened
@@ -810,9 +826,9 @@ class TestDeleteFormSubmission(TestCase, WagtailTestUtils):
 
         with self.register_hook('filter_form_submissions_for_user', construct_forms_for_user):
             response = self.client.post(reverse(
-                'wagtailforms:delete_submission',
-                args=(self.form_page.id, FormSubmission.objects.first().id)
-            ))
+                'wagtailforms:delete_submissions',
+                args=(self.form_page.id, )
+            ) + '?selected-submissions={}'.format(FormSubmission.objects.first().id))
 
         # An user can't delete a from submission with the hook
         self.assertEqual(response.status_code, 403)
@@ -820,9 +836,9 @@ class TestDeleteFormSubmission(TestCase, WagtailTestUtils):
 
         # An user can delete a form submission without the hook
         response = self.client.post(reverse(
-            'wagtailforms:delete_submission',
-            args=(self.form_page.id, FormSubmission.objects.first().id)
-        ))
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}'.format(CustomFormPageSubmission.objects.first().id))
         self.assertEqual(FormSubmission.objects.count(), 1)
         self.assertRedirects(response, reverse("wagtailforms:list_submissions", args=(self.form_page.id,)))
 
@@ -834,11 +850,12 @@ class TestDeleteCustomFormSubmission(TestCase):
         self.assertTrue(self.client.login(username='siteeditor', password='password'))
         self.form_page = Page.objects.get(url_path='/home/contact-us-one-more-time/')
 
-    def test_delete_submission_show_cofirmation(self):
+    def test_delete_submission_show_confirmation(self):
         response = self.client.get(reverse(
-            'wagtailforms:delete_submission',
-            args=(self.form_page.id, CustomFormPageSubmission.objects.first().id)
-        ))
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}'.format(CustomFormPageSubmission.objects.first().id))
+
         # Check show confirm page when HTTP method is GET
         self.assertTemplateUsed(response, 'wagtailforms/confirm_delete.html')
 
@@ -847,24 +864,35 @@ class TestDeleteCustomFormSubmission(TestCase):
 
     def test_delete_submission_with_permissions(self):
         response = self.client.post(reverse(
-            'wagtailforms:delete_submission',
-            args=(self.form_page.id, CustomFormPageSubmission.objects.first().id)
-        ))
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}'.format(CustomFormPageSubmission.objects.first().id))
 
         # Check that the submission is gone
         self.assertEqual(CustomFormPageSubmission.objects.count(), 1)
         # Should be redirected to list of submissions
         self.assertRedirects(response, reverse("wagtailforms:list_submissions", args=(self.form_page.id, )))
 
+    def test_delete_multiple_submissions_with_permissions(self):
+        response = self.client.post(reverse(
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}&selected-submissions={}'.format(CustomFormPageSubmission.objects.first().id, CustomFormPageSubmission.objects.last().id))
+
+        # Check that both submissions are gone
+        self.assertEqual(CustomFormPageSubmission.objects.count(), 0)
+        # Should be redirected to list of submissions
+        self.assertRedirects(response, reverse("wagtailforms:list_submissions", args=(self.form_page.id,)))
+
     def test_delete_submission_bad_permissions(self):
         self.assertTrue(self.client.login(username="eventeditor", password="password"))
 
         response = self.client.post(reverse(
-            'wagtailforms:delete_submission',
-            args=(self.form_page.id, CustomFormPageSubmission.objects.first().id)
-        ))
+            'wagtailforms:delete_submissions',
+            args=(self.form_page.id, )
+        ) + '?selected-submissions={}'.format(CustomFormPageSubmission.objects.first().id))
 
-        # Check that the user recieved a 403 response
+        # Check that the user received a 403 response
         self.assertEqual(response.status_code, 403)
 
         # Check that the deletion has not happened

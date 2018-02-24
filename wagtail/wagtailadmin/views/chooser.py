@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from wagtail.utils.pagination import paginate
 from wagtail.wagtailadmin.forms import EmailLinkChooserForm, ExternalLinkChooserForm, SearchForm
 from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
+from wagtail.wagtailcore import hooks
 from wagtail.wagtailcore.models import Page
 from wagtail.wagtailcore.utils import resolve_model_string
 
@@ -51,32 +52,42 @@ def filter_page_type(queryset, page_models):
 
 
 def browse(request, parent_page_id=None):
+    # A missing or empty page_type parameter indicates 'all page types'
+    # (i.e. descendants of wagtailcore.page)
+    page_type_string = request.GET.get('page_type') or 'wagtailcore.page'
+    try:
+        desired_classes = page_models_from_string(page_type_string)
+    except (ValueError, LookupError):
+        raise Http404
+
     # Find parent page
     if parent_page_id:
         parent_page = get_object_or_404(Page, id=parent_page_id)
-    else:
+    elif desired_classes == (Page,):
+        # Just use the root page
         parent_page = Page.get_first_root_node()
+    else:
+        # Find the highest common ancestor for the specific classes passed in
+        # In many cases, such as selecting an EventPage under an EventIndex,
+        # this will help the administrator find their page quicker.
+        all_desired_pages = filter_page_type(Page.objects.all(), desired_classes)
+        parent_page = all_desired_pages.first_common_ancestor()
 
     # Get children of parent page
-    pages = parent_page.get_children()
+    pages = parent_page.get_children().specific()
+
+    # allow hooks to modify the queryset
+    for hook in hooks.get_hooks('construct_page_chooser_queryset'):
+        pages = hook(pages, request)
 
     # Filter them by page type
-    # A missing or empty page_type parameter indicates 'all page types' (i.e. descendants of wagtailcore.page)
-    page_type_string = request.GET.get('page_type') or 'wagtailcore.page'
-    if page_type_string != 'wagtailcore.page':
-        try:
-            desired_classes = page_models_from_string(page_type_string)
-        except (ValueError, LookupError):
-            raise Http404
-
+    if desired_classes != (Page,):
         # restrict the page listing to just those pages that:
         # - are of the given content type (taking into account class inheritance)
         # - or can be navigated into (i.e. have children)
         choosable_pages = filter_page_type(pages, desired_classes)
         descendable_pages = pages.filter(numchild__gt=0)
         pages = choosable_pages | descendable_pages
-    else:
-        desired_classes = (Page, )
 
     can_choose_root = request.GET.get('can_choose_root', False)
 
@@ -125,15 +136,20 @@ def search(request, parent_page_id=None):
     except (ValueError, LookupError):
         raise Http404
 
+    pages = Page.objects.all()
+    # allow hooks to modify the queryset
+    for hook in hooks.get_hooks('construct_page_chooser_queryset'):
+        pages = hook(pages, request)
+
     search_form = SearchForm(request.GET)
     if search_form.is_valid() and search_form.cleaned_data['q']:
-        pages = Page.objects.exclude(
+        pages = pages.exclude(
             depth=1  # never include root
         )
         pages = filter_page_type(pages, desired_classes)
         pages = pages.search(search_form.cleaned_data['q'], fields=['title'])
     else:
-        pages = Page.objects.none()
+        pages = pages.none()
 
     paginator, pages = paginate(request, pages, per_page=25)
 

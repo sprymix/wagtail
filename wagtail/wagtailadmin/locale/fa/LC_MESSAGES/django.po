@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-05 16:37+0100\n"
-"PO-Revision-Date: 2016-10-05 15:39+0000\n"
+"POT-Creation-Date: 2017-04-19 21:02+0000\n"
+"PO-Revision-Date: 2017-04-19 21:05+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Persian (http://www.transifex.com/torchbox/wagtail/language/"
 "fa/)\n"
@@ -31,16 +31,10 @@ msgstr "لطفا آدرس ایمیل خود را وارد کنید."
 msgid "Publish copied page"
 msgstr "انتشار صفحه ی کپی شده"
 
-msgid "Public"
-msgstr "انتشار"
-
 msgid "Account"
 msgstr "حساب کاربری"
 
 msgid "Change password"
-msgstr "تغییر پسورد"
-
-msgid "Change Password"
 msgstr "تغییر پسورد"
 
 msgid "Update"
@@ -84,6 +78,9 @@ msgstr "تاریخ"
 
 msgid "Forgotten it?"
 msgstr "فراموش کردید؟"
+
+msgid "Public"
+msgstr "انتشار"
 
 msgid "Move"
 msgstr "انتقال"

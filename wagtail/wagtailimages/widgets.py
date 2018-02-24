@@ -6,7 +6,8 @@ from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 
 from wagtail.wagtailadmin.widgets import AdminChooser
-from wagtail.wagtailimages.models import get_image_model, UserRendition
+from wagtail.wagtailimages.models import UserRendition
+from wagtail.wagtailimages import get_image_model
 
 
 class AdminImageChooser(AdminChooser):
