@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from functools import wraps
 
 from django.conf import settings
@@ -14,12 +12,20 @@ from django.utils.translation import activate
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 
-from wagtail.utils.compat import user_is_authenticated
-from wagtail.wagtailadmin import forms
-from wagtail.wagtailadmin.utils import get_available_admin_languages
-from wagtail.wagtailcore.models import UserPagePermissionsProxy
-from wagtail.wagtailusers.forms import NotificationPreferencesForm, PreferredLanguageForm
-from wagtail.wagtailusers.models import UserProfile
+from wagtail.admin import forms
+from wagtail.admin.utils import get_available_admin_languages
+from wagtail.core.models import UserPagePermissionsProxy
+from wagtail.users.forms import NotificationPreferencesForm, PreferredLanguageForm
+from wagtail.users.models import UserProfile
+from wagtail.utils.loading import get_custom_form
+
+
+def get_user_login_form():
+    form_setting = 'WAGTAILADMIN_USER_LOGIN_FORM'
+    if hasattr(settings, form_setting):
+        return get_custom_form(form_setting)
+    else:
+        return forms.LoginForm
 
 
 # Helper functions to check password management settings to enable/disable views as appropriate.
@@ -132,14 +138,14 @@ def language_preferences(request):
 @sensitive_post_parameters()
 @never_cache
 def login(request):
-    if user_is_authenticated(request.user) and request.user.has_perm('wagtailadmin.access_admin'):
+    if request.user.is_authenticated and request.user.has_perm('wagtailadmin.access_admin'):
         return redirect('wagtailadmin_home')
     else:
         from django.contrib.auth import get_user_model
         return auth_views.login(
             request,
             template_name='wagtailadmin/login.html',
-            authentication_form=forms.LoginForm,
+            authentication_form=get_user_login_form(),
             extra_context={
                 'site_name': settings.WAGTAIL_SITE_NAME,
                 'show_password_reset': password_reset_enabled(),

@@ -4,10 +4,7 @@ Customising admin templates
 
 In your projects with Wagtail, you may wish to replace elements such as the Wagtail logo within the admin interface with your own branding. This can be done through Django's template inheritance mechanism.
 
-.. note::
-   Using ``{% extends %}`` in this way on a template you're currently overriding is only supported in Django 1.9 and above. On Django 1.8, you will need to use `django-overextends <https://github.com/stephenmcd/django-overextends>`_ instead.
-
-You need to create a ``templates/wagtailadmin/`` folder within one of your apps - this may be an existing one, or a new one created for this purpose, for example, ``dashboard``. This app must be registered in ``INSTALLED_APPS`` before ``wagtail.wagtailadmin``:
+You need to create a ``templates/wagtailadmin/`` folder within one of your apps - this may be an existing one, or a new one created for this purpose, for example, ``dashboard``. This app must be registered in ``INSTALLED_APPS`` before ``wagtail.admin``:
 
 .. code-block:: python
 
@@ -16,8 +13,8 @@ You need to create a ``templates/wagtailadmin/`` folder within one of your apps 
 
         'dashboard',
 
-        'wagtail.wagtailcore',
-        'wagtail.wagtailadmin',
+        'wagtail.core',
+        'wagtail.admin',
 
         # ...
     )
@@ -171,3 +168,25 @@ To completely customise the login form, override the ``login_form`` block. This 
         <p>Some extra form content</p>
         {{ block.super }}
     {% endblock %}
+
+.. _extending_clientside_components:
+
+Extending client-side components
+================================
+
+Some of Wagtail’s admin interface is written as client-side JavaScript with `React <https://reactjs.org/>`_.
+In order to customise or extend those components, you may need to use React too, as well as other related libraries.
+To make this easier, Wagtail exposes its React-related dependencies as global variables within the admin. Here are the available packages:
+
+.. code-block:: javascript
+
+    // 'focus-trap-react'
+    window.FocusTrapReact;
+    // 'react'
+    window.React;
+    // 'react-dom'
+    window.ReactDOM;
+    // 'react-transition-group/CSSTransitionGroup'
+    window.CSSTransitionGroup;
+    // 'draft-js'
+    window.DraftJS;

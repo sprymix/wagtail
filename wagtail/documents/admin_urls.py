@@ -1,9 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import url
 
-from wagtail.wagtaildocs.views import chooser, documents, multiple
+from wagtail.documents.views import chooser, documents, multiple
 
+app_name = 'wagtaildocs'
 urlpatterns = [
     url(r'^$', documents.index, name='index'),
     url(r'^add/$', documents.add, name='add'),

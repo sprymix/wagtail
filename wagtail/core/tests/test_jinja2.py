@@ -1,13 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.template import engines
 from django.template.loader import render_to_string
 from django.test import TestCase
 
 from wagtail import __version__
+from wagtail.core import blocks
+from wagtail.core.models import Page, Site
 from wagtail.tests.testapp.blocks import SectionBlock
-from wagtail.wagtailcore import blocks
-from wagtail.wagtailcore.models import Page, Site
 
 
 class TestCoreGlobalsAndFilters(TestCase):

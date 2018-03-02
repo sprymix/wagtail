@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.core.management.base import BaseCommand
 from django.db import models
 from modelcluster.models import get_all_child_relations
 
-from wagtail.wagtailcore.models import PageRevision, get_page_models
+from wagtail.core.models import PageRevision, get_page_models
 
 
 def replace_in_model(model, from_text, to_text):

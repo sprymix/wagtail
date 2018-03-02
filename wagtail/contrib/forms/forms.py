@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from collections import OrderedDict
 
 import django.forms
 from django.utils.translation import ugettext_lazy as _
 
-from wagtail.wagtailadmin.forms import WagtailAdminPageForm
+from wagtail.admin.forms import WagtailAdminPageForm
 
 
 class BaseForm(django.forms.Form):
@@ -15,10 +13,10 @@ class BaseForm(django.forms.Form):
         self.user = kwargs.pop('user', None)
         self.page = kwargs.pop('page', None)
 
-        super(BaseForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
-class FormBuilder(object):
+class FormBuilder:
     def __init__(self, fields):
         self.fields = fields
 
@@ -76,20 +74,30 @@ class FormBuilder(object):
     def create_checkbox_field(self, field, options):
         return django.forms.BooleanField(**options)
 
-    FIELD_TYPES = {
-        'singleline': create_singleline_field,
-        'multiline': create_multiline_field,
-        'date': create_date_field,
-        'datetime': create_datetime_field,
-        'email': create_email_field,
-        'url': create_url_field,
-        'number': create_number_field,
-        'dropdown': create_dropdown_field,
-        'multiselect': create_multiselect_field,
-        'radio': create_radio_field,
-        'checkboxes': create_checkboxes_field,
-        'checkbox': create_checkbox_field,
-    }
+    def create_hidden_field(self, field, options):
+        return django.forms.CharField(widget=django.forms.HiddenInput, **options)
+
+    def get_create_field_function(self, type):
+        """
+            Takes string of field type and returns a Django Form Field Instance.
+            Assumes form field creation functions are in the format:
+            'create_fieldtype_field'
+        """
+        create_field_function = getattr(self, 'create_%s_field' % type, None)
+        if create_field_function:
+            return create_field_function
+        else:
+            import inspect
+            method_list = [
+                f[0] for f in
+                inspect.getmembers(self.__class__, inspect.isfunction)
+                if f[0].startswith('create_') and f[0].endswith('_field')
+            ]
+            raise AttributeError(
+                "Could not find function matching format \
+                create_<fieldname>_field for type: " + type,
+                "Must be one of: " + ", ".join(method_list)
+            )
 
     @property
     def formfields(self):
@@ -97,11 +105,8 @@ class FormBuilder(object):
 
         for field in self.fields:
             options = self.get_field_options(field)
-
-            if field.field_type in self.FIELD_TYPES:
-                formfields[field.clean_name] = self.FIELD_TYPES[field.field_type](self, field, options)
-            else:
-                raise Exception("Unrecognised field type: " + field.field_type)
+            create_field = self.get_create_field_function(field.field_type)
+            formfields[field.clean_name] = create_field(field, options)
 
         return formfields
 
@@ -132,7 +137,7 @@ class WagtailAdminFormPageForm(WagtailAdminPageForm):
 
     def clean(self):
 
-        super(WagtailAdminFormPageForm, self).clean()
+        super().clean()
 
         # Check for dupe form field labels - fixes #585
         if 'form_fields' in self.formsets:

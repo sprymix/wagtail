@@ -1,12 +1,14 @@
 
-from __future__ import absolute_import, unicode_literals
+import warnings
+from warnings import warn
 
 from django.db.models.lookups import Lookup
 from django.db.models.query import QuerySet
 from django.db.models.sql.where import SubqueryConstraint, WhereNode
-from django.utils.six import text_type
 
-from wagtail.wagtailsearch.index import class_is_indexed
+from wagtail.search.index import class_is_indexed
+from wagtail.search.query import MATCH_ALL, PlainText
+from wagtail.utils.deprecation import RemovedInWagtail22Warning
 
 
 class FilterError(Exception):
@@ -14,18 +16,38 @@ class FilterError(Exception):
 
 
 class FieldError(Exception):
+    def __init__(self, *args, field_name=None, **kwargs):
+        self.field_name = field_name
+        super(FieldError, self).__init__(*args, **kwargs)
+
+
+class SearchFieldError(FieldError):
     pass
 
 
-class BaseSearchQuery(object):
+class FilterFieldError(FieldError):
+    pass
+
+
+class OrderByFieldError(FieldError):
+    pass
+
+
+class BaseSearchQueryCompiler:
     DEFAULT_OPERATOR = 'or'
 
-    def __init__(self, queryset, query_string, fields=None, operator=None, order_by_relevance=True,
+    def __init__(self, queryset, query, fields=None, operator=None, order_by_relevance=True,
                  include_partials=True):
         self.queryset = queryset
-        self.query_string = query_string
+        if query is None:
+            warn('Querying `None` is deprecated, use `MATCH_ALL` instead.',
+                 DeprecationWarning)
+            query = MATCH_ALL
+        elif isinstance(query, str):
+            query = PlainText(query,
+                              operator=operator or self.DEFAULT_OPERATOR)
+        self.query = query
         self.fields = fields
-        self.operator = operator or self.DEFAULT_OPERATOR
         self.order_by_relevance = order_by_relevance
         self.include_partials = include_partials
 
@@ -44,28 +66,30 @@ class BaseSearchQuery(object):
     def _connect_filters(self, filters, connector, negated):
         raise NotImplementedError
 
-    def _process_filter(self, field_attname, lookup, value):
+    def _process_filter(self, field_attname, lookup, value, check_only=False):
         # Get the field
         field = self._get_filterable_field(field_attname)
 
         if field is None:
-            raise FieldError(
+            raise FilterFieldError(
                 'Cannot filter search results with field "' + field_attname + '". Please add index.FilterField(\'' +
-                field_attname + '\') to ' + self.queryset.model.__name__ + '.search_fields.'
+                field_attname + '\') to ' + self.queryset.model.__name__ + '.search_fields.',
+                field_name=field_attname
             )
 
         # Process the lookup
-        result = self._process_lookup(field, lookup, value)
+        if not check_only:
+            result = self._process_lookup(field, lookup, value)
 
         if result is None:
             raise FilterError(
                 'Could not apply filter on search results: "' + field_attname + '__' +
-                lookup + ' = ' + text_type(value) + '". Lookup "' + lookup + '"" not recognised.'
+                lookup + ' = ' + str(value) + '". Lookup "' + lookup + '"" not recognised.'
             )
 
         return result
 
-    def _get_filters_from_where_node(self, where_node):
+    def _get_filters_from_where_node(self, where_node, check_only=False):
         # Check if this is a leaf node
         if isinstance(where_node, Lookup):
             field_attname = where_node.lhs.target.attname
@@ -77,7 +101,7 @@ class BaseSearchQuery(object):
                 return
 
             # Process the filter
-            return self._process_filter(field_attname, lookup, value)
+            return self._process_filter(field_attname, lookup, value, check_only=check_only)
 
         elif isinstance(where_node, SubqueryConstraint):
             raise FilterError('Could not apply filter on search results: Subqueries are not allowed.')
@@ -86,9 +110,10 @@ class BaseSearchQuery(object):
             # Get child filters
             connector = where_node.connector
             child_filters = [self._get_filters_from_where_node(child) for child in where_node.children]
-            child_filters = [child_filter for child_filter in child_filters if child_filter]
 
-            return self._connect_filters(child_filters, connector, where_node.negated)
+            if not check_only:
+                child_filters = [child_filter for child_filter in child_filters if child_filter]
+                return self._connect_filters(child_filters, connector, where_node.negated)
 
         else:
             raise FilterError('Could not apply filter on search results: Unknown where node: ' + str(type(where_node)))
@@ -96,11 +121,55 @@ class BaseSearchQuery(object):
     def _get_filters_from_queryset(self):
         return self._get_filters_from_where_node(self.queryset.query.where)
 
+    def _get_order_by(self):
+        if self.order_by_relevance:
+            return
 
-class BaseSearchResults(object):
-    def __init__(self, backend, query, prefetch_related=None, return_pks=False):
+        for field_name in self.queryset.query.order_by:
+            reverse = False
+
+            if field_name.startswith('-'):
+                reverse = True
+                field_name = field_name[1:]
+
+            field = self._get_filterable_field(field_name)
+
+            if field is None:
+                raise OrderByFieldError(
+                    'Cannot sort search results with field "' + field_name + '". Please add index.FilterField(\'' +
+                    field_name + '\') to ' + self.queryset.model.__name__ + '.search_fields.',
+                    field_name=field_name
+                )
+
+            yield reverse, field
+
+    def check(self):
+        # Check search fields
+        if self.fields:
+            allowed_fields = {field.field_name for field in self.queryset.model.get_searchable_search_fields()}
+
+            for field_name in self.fields:
+                if field_name not in allowed_fields:
+                    raise SearchFieldError(
+                        'Cannot search with field "' + field_name + '". Please add index.SearchField(\'' +
+                        field_name + '\') to ' + self.queryset.model.__name__ + '.search_fields.',
+                        field_name=field_name
+                    )
+
+        # Check where clause
+        # Raises FilterFieldError if an unindexed field is being filtered on
+        self._get_filters_from_where_node(self.queryset.query.where, check_only=True)
+
+        # Check order by
+        # Raises OrderByFieldError if an unindexed field is being used to order by
+        list(self._get_order_by())
+
+
+class BaseSearchResults:
+    def __init__(self, backend, query_compiler, prefetch_related=None,
+                 return_pks=False):
         self.backend = backend
-        self.query = query
+        self.query_compiler = query_compiler
         self.prefetch_related = prefetch_related
         self.return_pks = return_pks
         self.start = 0
@@ -124,8 +193,9 @@ class BaseSearchResults(object):
 
     def _clone(self):
         klass = self.__class__
-        new = klass(self.backend, self.query, prefetch_related=self.prefetch_related,
-                                              return_pks=self.return_pks)
+        new = klass(self.backend, self.query_compiler,
+                    prefetch_related=self.prefetch_related, 
+                    return_pks=self.return_pks)
         new.start = self.start
         new.stop = self.stop
         new._score_field = self._score_field
@@ -139,7 +209,7 @@ class BaseSearchResults(object):
 
     def results(self):
         if self._results_cache is None:
-            self._results_cache = self._do_search()
+            self._results_cache = list(self._do_search())
         return self._results_cache
 
     def count(self):
@@ -192,7 +262,7 @@ class BaseSearchResults(object):
 
 class EmptySearchResults(BaseSearchResults):
     def __init__(self):
-        return super(EmptySearchResults, self).__init__(None, None)
+        return super().__init__(None, None)
 
     def _clone(self):
         return self.__class__()
@@ -204,8 +274,8 @@ class EmptySearchResults(BaseSearchResults):
         return 0
 
 
-class BaseSearchBackend(object):
-    query_class = None
+class BaseSearchBackend:
+    query_compiler_class = None
     results_class = None
     rebuilder_class = None
 
@@ -236,7 +306,7 @@ class BaseSearchBackend(object):
     def delete(self, obj):
         raise NotImplementedError
 
-    def search(self, query_string, model_or_queryset, fields=None, filters=None,
+    def search(self, query, model_or_queryset, fields=None, filters=None,
                prefetch_related=None, operator=None, order_by_relevance=True,
                include_partials=True, return_pks=False):
         # Find model/queryset
@@ -252,38 +322,37 @@ class BaseSearchBackend(object):
             return EmptySearchResults()
 
         # Check that theres still a query string after the clean up
-        if query_string == "":
+        if query == "":
             return EmptySearchResults()
-
-        # Only fields that are indexed as a SearchField can be passed in fields
-        if fields:
-            allowed_fields = {field.field_name for field in model.get_searchable_search_fields()}
-
-            for field_name in fields:
-                if field_name not in allowed_fields:
-                    raise FieldError(
-                        'Cannot search with field "' + field_name + '". Please add index.SearchField(\'' +
-                        field_name + '\') to ' + model.__name__ + '.search_fields.'
-                    )
 
         # Apply filters to queryset
         if filters:
             queryset = queryset.filter(**filters)
+
+            warnings.warn(
+                "The 'filters' argument on the 'search()' method is deprecated. "
+                "Please apply the filters to the base queryset instead.",
+                category=RemovedInWagtail22Warning
+            )
 
         # Prefetch related
         if prefetch_related:
             for prefetch in prefetch_related:
                 queryset = queryset.prefetch_related(prefetch)
 
-        # Check operator
-        if operator is not None:
-            operator = operator.lower()
-            if operator not in ['or', 'and']:
-                raise ValueError("operator must be either 'or' or 'and'")
+            warnings.warn(
+                "The 'prefetch_related' argument on the 'search()' method is deprecated. "
+                "Please add prefetch_related to the base queryset instead.",
+                category=RemovedInWagtail22Warning
+            )
 
         # Search
-        search_query = self.query_class(
-            queryset, query_string, fields=fields, operator=operator, order_by_relevance=order_by_relevance,
+        search_query = self.query_compiler_class(
+            queryset, query, fields=fields, operator=operator, order_by_relevance=order_by_relevance,
             include_partials=include_partials
         )
+
+        # Check the query
+        search_query.check()
+
         return self.results_class(self, search_query, return_pks=return_pks)

@@ -1,13 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.template.loader import render_to_string
 
-from wagtail.wagtailadmin.utils import user_has_any_page_permission
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Page, Site
+from wagtail.admin.utils import user_has_any_page_permission
+from wagtail.core import hooks
+from wagtail.core.models import Page, Site
 
 
-class SummaryItem(object):
+class SummaryItem:
     order = 100
 
     def __init__(self, request):
@@ -53,7 +51,7 @@ def add_pages_summary_item(request, items):
     items.append(PagesSummaryItem(request))
 
 
-class SiteSummaryPanel(object):
+class SiteSummaryPanel:
     name = 'site_summary'
     order = 100
 

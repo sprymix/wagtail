@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import jinja2
 import jinja2.nodes
 from jinja2.ext import Extension
@@ -11,7 +9,7 @@ class WagtailCoreExtension(Extension):
     tags = {'include_block'}
 
     def __init__(self, environment):
-        super(WagtailCoreExtension, self).__init__(environment)
+        super().__init__(environment)
 
         self.environment.globals.update({
             'pageurl': jinja2.contextfunction(pageurl),

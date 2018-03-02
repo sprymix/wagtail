@@ -1,23 +1,21 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
+import re
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
 from django.template.defaultfilters import filesizeformat
 from django.test import TestCase, override_settings
+from django.urls import reverse
 from django.utils.http import RFC3986_SUBDELIMS, urlquote
 
+from wagtail.core.models import Collection, GroupCollectionPermission
+from wagtail.images.views.serve import generate_signature
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailcore.models import Collection, GroupCollectionPermission
-from wagtail.wagtailimages.views.serve import generate_signature
 
 from .utils import Image, get_test_image_file
 
 # Get the chars that Django considers safe to leave unescaped in a URL
-# This list changed in Django 1.8:  https://github.com/django/django/commit/e167e96cfea670422ca75d0b35fe7c4195f25b63
 urlquote_safechars = RFC3986_SUBDELIMS + str('/~:@')
 
 
@@ -481,10 +479,19 @@ class TestImageDeleteView(TestCase, WagtailTestUtils):
     def post(self, post_data={}):
         return self.client.post(reverse('wagtailimages:delete', args=(self.image.id,)), post_data)
 
+    @override_settings(WAGTAIL_USAGE_COUNT_ENABLED=False)
     def test_simple(self):
         response = self.get()
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wagtailimages/images/confirm_delete.html')
+        self.assertNotIn('Used ', str(response.content))
+
+    @override_settings(WAGTAIL_USAGE_COUNT_ENABLED=True)
+    def test_usage_link(self):
+        response = self.get()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailimages/images/confirm_delete.html')
+        self.assertIn('Used 0 times', str(response.content))
 
     def test_delete(self):
         response = self.post()
@@ -614,6 +621,9 @@ class TestImageChooserSelectFormatView(TestCase, WagtailTestUtils):
     def get(self, params={}):
         return self.client.get(reverse('wagtailimages:chooser_select_format', args=(self.image.id,)), params)
 
+    def post(self, post_data={}):
+        return self.client.post(reverse('wagtailimages:chooser_select_format', args=(self.image.id,)), post_data)
+
     def test_simple(self):
         response = self.get()
         self.assertEqual(response.status_code, 200)
@@ -624,6 +634,23 @@ class TestImageChooserSelectFormatView(TestCase, WagtailTestUtils):
         response = self.get(params={'alt_text': "some previous alt text"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'value=\\"some previous alt text\\"')
+
+    def test_post_response(self):
+        response = self.post({'format': 'left', 'alt_text': 'Arthur "two sheds" Jackson'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/javascript')
+
+        # extract data as json from the code line: modal.respond('imageChosen', {json});
+        match = re.search(r'modal.respond\(\'imageChosen\', ([^\)]+)\);', response.content.decode())
+        self.assertTrue(match)
+        response_json = json.loads(match.group(1))
+
+        self.assertEqual(response_json['id'], self.image.id)
+        self.assertEqual(response_json['title'], "Test image")
+        self.assertEqual(response_json['format'], 'left')
+        self.assertEqual(response_json['alt'], 'Arthur "two sheds" Jackson')
+        self.assertIn('alt="Arthur &quot;two sheds&quot; Jackson"', response_json['html'])
 
 
 class TestImageChooserUploadView(TestCase, WagtailTestUtils):
@@ -1059,7 +1086,7 @@ class TestGenerateURLView(TestCase, WagtailTestUtils):
         self.assertEqual(set(content_json.keys()), set(['url', 'preview_url']))
 
         expected_url = 'http://localhost/images/%(signature)s/%(image_id)d/fill-800x600/' % {
-            'signature': urlquote(generate_signature(self.image.id, 'fill-800x600').decode(), safe=urlquote_safechars),
+            'signature': urlquote(generate_signature(self.image.id, 'fill-800x600'), safe=urlquote_safechars),
             'image_id': self.image.id,
         }
         self.assertEqual(content_json['url'], expected_url)

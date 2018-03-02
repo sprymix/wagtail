@@ -1,12 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 from collections import OrderedDict
 
 from wagtail.api.v2.endpoints import PagesAPIEndpoint
 from wagtail.api.v2.filters import (
-    ChildOfFilter, DescendantOfFilter, FieldsFilter, OrderingFilter, SearchFilter)
+    ChildOfFilter, DescendantOfFilter, FieldsFilter, ForExplorerFilter, OrderingFilter,
+    SearchFilter)
 from wagtail.api.v2.utils import BadRequestError, filter_page_type, page_models_from_string
-from wagtail.wagtailcore.models import Page
+from wagtail.core.models import Page
 
 from .filters import HasChildrenFilter
 from .serializers import AdminPageSerializer
@@ -21,6 +20,7 @@ class PagesAdminAPIEndpoint(PagesAPIEndpoint):
         FieldsFilter,
         ChildOfFilter,
         DescendantOfFilter,
+        ForExplorerFilter,
         HasChildrenFilter,
         OrderingFilter,
         SearchFilter,
@@ -49,6 +49,7 @@ class PagesAdminAPIEndpoint(PagesAPIEndpoint):
     detail_only_fields = []
 
     known_query_parameters = PagesAPIEndpoint.known_query_parameters.union([
+        'for_explorer',
         'has_children'
     ])
 
@@ -90,11 +91,11 @@ class PagesAdminAPIEndpoint(PagesAPIEndpoint):
         return types
 
     def listing_view(self, request):
-        response = super(PagesAdminAPIEndpoint, self).listing_view(request)
+        response = super().listing_view(request)
         response.data['__types'] = self.get_type_info()
         return response
 
     def detail_view(self, request, pk):
-        response = super(PagesAdminAPIEndpoint, self).detail_view(request, pk)
+        response = super().detail_view(request, pk)
         response.data['__types'] = self.get_type_info()
         return response

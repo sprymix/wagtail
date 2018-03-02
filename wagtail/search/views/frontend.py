@@ -1,12 +1,13 @@
-from __future__ import absolute_import, unicode_literals
+import warnings
 
 from django.conf import settings
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.shortcuts import render
 
-from wagtail.wagtailcore import models
-from wagtail.wagtailsearch.models import Query
+from wagtail.core import models
+from wagtail.search.models import Query
+from wagtail.utils.deprecation import RemovedInWagtail22Warning
 
 
 def search(
@@ -20,6 +21,13 @@ def search(
         search_title_only=False,
         extra_filters={},
         path=None):
+
+    warnings.warn(
+        "Wagtail's builtin search view "
+        "(wagtail.search.views.frontend.search) is deprecated and will "
+        "be removed in a future release",
+        category=RemovedInWagtail22Warning
+    )
 
     # Get default templates
     if template is None:

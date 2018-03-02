@@ -1,1 +1,1 @@
-default_app_config = 'wagtail.wagtaildocs.apps.WagtailDocsAppConfig'
+default_app_config = 'wagtail.documents.apps.WagtailDocsAppConfig'

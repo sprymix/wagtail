@@ -1,7 +1,5 @@
-from __future__ import absolute_import, unicode_literals
 
-
-class EmbedFinder(object):
+class EmbedFinder:
     def accept(self, url):
         return False
 

@@ -1,17 +1,15 @@
-from __future__ import absolute_import, unicode_literals
-
 from django import forms
 from django.forms.models import modelform_factory
 from django.utils.text import capfirst
 from django.utils.translation import ugettext as _
 
-from wagtail.wagtailadmin import widgets
-from wagtail.wagtailadmin.forms import (
+from wagtail.admin import widgets
+from wagtail.admin.forms import (
     BaseCollectionMemberForm, collection_member_permission_formset_factory)
-from wagtail.wagtailimages.fields import WagtailImageField
-from wagtail.wagtailimages.formats import get_image_formats
-from wagtail.wagtailimages.models import Image
-from wagtail.wagtailimages.permissions import permission_policy as images_permission_policy
+from wagtail.images.fields import WagtailImageField
+from wagtail.images.formats import get_image_formats
+from wagtail.images.models import Image
+from wagtail.images.permissions import permission_policy as images_permission_policy
 
 
 # Callback to allow us to override the default form field for the image file field
@@ -88,9 +86,9 @@ class URLGeneratorForm(forms.Form):
             ('fill', _("Resize to fill")),
         ),
     )
-    width = forms.IntegerField(_("Width"), min_value=0)
-    height = forms.IntegerField(_("Height"), min_value=0)
-    closeness = forms.IntegerField(_("Closeness"), min_value=0, initial=0)
+    width = forms.IntegerField(label=_("Width"), min_value=0)
+    height = forms.IntegerField(label=_("Height"), min_value=0)
+    closeness = forms.IntegerField(label=_("Closeness"), min_value=0, initial=0)
 
 
 class HiddenNumberInput(forms.IntegerField):

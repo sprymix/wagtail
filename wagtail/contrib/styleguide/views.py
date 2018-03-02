@@ -1,23 +1,22 @@
-from __future__ import absolute_import, unicode_literals
-
 from django import forms
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.utils.translation import ugettext as _
-from wagtail.wagtailadmin import messages
-from wagtail.wagtailadmin.forms import SearchForm
-from wagtail.wagtailadmin.rich_text import get_rich_text_editor_widget
-from wagtail.wagtailadmin.widgets import (
+
+from wagtail.admin import messages
+from wagtail.admin.forms import SearchForm
+from wagtail.admin.rich_text import get_rich_text_editor_widget
+from wagtail.admin.widgets import (
     AdminAutoHeightTextInput, AdminDateInput, AdminDateTimeInput, AdminPageChooser, AdminTimeInput)
-from wagtail.wagtailcore.models import Page
-from wagtail.wagtaildocs.widgets import AdminDocumentChooser
-from wagtail.wagtailimages.widgets import AdminImageChooser
-from wagtail.wagtailsnippets.widgets import AdminSnippetChooser
+from wagtail.core.models import Page
+from wagtail.documents.widgets import AdminDocumentChooser
+from wagtail.images.widgets import AdminImageChooser
+from wagtail.snippets.widgets import AdminSnippetChooser
 
 
 class ExampleForm(forms.Form):
     def __init__(self, *args, **kwargs):
-        super(ExampleForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['page_chooser'].widget = AdminPageChooser()
         self.fields['image_chooser'].widget = AdminImageChooser()
         self.fields['document_chooser'].widget = AdminDocumentChooser()

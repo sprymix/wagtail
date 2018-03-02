@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import logging
 import os
+from itertools import chain
 
-import django
 import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -13,25 +11,26 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages import constants as message_constants
 from django.core import mail, paginator
 from django.core.files.base import ContentFile
-from django.core.urlresolvers import reverse
 from django.db.models.signals import post_delete, pre_delete
 from django.http import HttpRequest, HttpResponse
-from django.test import TestCase, modify_settings
+from django.test import TestCase, modify_settings, override_settings
+from django.urls import reverse
 from django.utils import formats, timezone
 from django.utils.dateparse import parse_date
-
 from freezegun import freeze_time
+
+from wagtail.admin.views.home import RecentEditsPanel
+from wagtail.admin.views.pages import PreviewOnEdit
+from wagtail.core.models import GroupPagePermission, Page, PageRevision, Site
+from wagtail.core.signals import page_published, page_unpublished
+from wagtail.search.index import SearchField
 from wagtail.tests.testapp.models import (
     EVENT_AUDIENCE_CHOICES, Advert, AdvertPlacement, BusinessChild, BusinessIndex, BusinessSubIndex,
-    DefaultStreamPage, EventCategory, EventPage, EventPageCarouselItem, FilePage, ManyToManyBlogPage,
-    SimplePage, SingleEventPage, SingletonPage, StandardChild, StandardIndex, TaggedPage)
+    DefaultStreamPage, EventCategory, EventPage, EventPageCarouselItem, FilePage,
+    ManyToManyBlogPage, SimplePage, SingleEventPage, SingletonPage, StandardChild, StandardIndex,
+    TaggedPage)
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailadmin.views.home import RecentEditsPanel
-from wagtail.wagtailadmin.views.pages import PreviewOnEdit
-from wagtail.wagtailcore.models import GroupPagePermission, Page, PageRevision, Site
-from wagtail.wagtailcore.signals import page_published, page_unpublished
-from wagtail.wagtailsearch.index import SearchField
-from wagtail.wagtailusers.models import UserProfile
+from wagtail.users.models import UserProfile
 
 
 def submittable_timestamp(timestamp):
@@ -389,7 +388,6 @@ class TestPageExplorerSignposting(TestCase, WagtailTestUtils):
         self.assertEqual(response.status_code, 200)
         # There should be no warning message here
         self.assertNotContains(response, "Pages created here will not be accessible")
-
 
 
 class TestExplorablePageVisibility(TestCase, WagtailTestUtils):
@@ -957,10 +955,7 @@ class TestPageCreation(TestCase, WagtailTestUtils):
         )
 
         # Check that a form error was raised
-        if django.VERSION >= (1, 9):
-            self.assertFormError(response, 'form', 'title', "This field is required.")
-        else:
-            self.assertFormError(response, 'form', 'title', "This field cannot be blank.")
+        self.assertFormError(response, 'form', 'title', "This field is required.")
 
     def test_whitespace_titles_with_tab(self):
         post_data = {
@@ -972,10 +967,7 @@ class TestPageCreation(TestCase, WagtailTestUtils):
         response = self.client.post(reverse('wagtailadmin_pages:add', args=('tests', 'simplepage', self.root_page.id)), post_data)
 
         # Check that a form error was raised
-        if django.VERSION >= (1, 9):
-            self.assertFormError(response, 'form', 'title', "This field is required.")
-        else:
-            self.assertFormError(response, 'form', 'title', "This field cannot be blank.")
+        self.assertFormError(response, 'form', 'title', "This field is required.")
 
     def test_whitespace_titles_with_tab_in_seo_title(self):
         post_data = {
@@ -1134,6 +1126,10 @@ class TestPageEdit(TestCase, WagtailTestUtils):
         response = self.client.get(reverse('wagtailadmin_pages:edit', args=(self.event_page.id, )))
         self.assertEqual(response.status_code, 200)
 
+        # Test InlinePanel labels/headings
+        self.assertContains(response, '<legend>Speaker lineup</legend>')
+        self.assertContains(response, 'Add speakers')
+
     def test_edit_multipart(self):
         """
         Test checks if 'enctype="multipart/form-data"' is added and only to forms that require multipart encoding.
@@ -1168,14 +1164,7 @@ class TestPageEdit(TestCase, WagtailTestUtils):
         # Check the new file exists
         file_page = FilePage.objects.get()
 
-        # In Django < 1.10 the file_field.name starts with ./ whereas in 1.10 it is the basename;
-        # we test against os.path.basename(file_page.file_field.name) so that both possibilities
-        # are handled. os.path.basename can be removed when support for Django <= 1.9 is dropped.
-
-        # (hello, future person grepping for the string `if DJANGO_VERSION < (1, 10)`)
-
-        self.assertEqual(os.path.basename(file_page.file_field.name),
-                         os.path.basename(file_upload.name))
+        self.assertEqual(file_page.file_field.name, file_upload.name)
         self.assertTrue(os.path.exists(file_page.file_field.path))
         self.assertEqual(file_page.file_field.read(), b"A new file")
 
@@ -1203,16 +1192,9 @@ class TestPageEdit(TestCase, WagtailTestUtils):
         # Publish the draft just created
         FilePage.objects.get().get_latest_revision().publish()
 
-        # In Django < 1.10 the file_field.name starts with ./ whereas in 1.10 it is the basename;
-        # we test against os.path.basename(file_page.file_field.name) so that both possibilities
-        # are handled. os.path.basename can be removed when support for Django <= 1.9 is dropped.
-
-        # (hello, future person grepping for the string `if DJANGO_VERSION < (1, 10)`)
-
         # Get the file page, check the file is set
         file_page = FilePage.objects.get()
-        self.assertEqual(os.path.basename(file_page.file_field.name),
-                         os.path.basename(file_upload.name))
+        self.assertEqual(file_page.file_field.name, file_upload.name)
         self.assertTrue(os.path.exists(file_page.file_field.path))
         self.assertEqual(file_page.file_field.read(), b"A new file")
 
@@ -1414,8 +1396,6 @@ class TestPageEdit(TestCase, WagtailTestUtils):
 
         initial_delta = self.child_page.first_published_at - timezone.now()
 
-        go_live_at = timezone.now() + datetime.timedelta(days=1)
-        expire_at = timezone.now() + datetime.timedelta(days=2)
         first_published_at = timezone.now() - datetime.timedelta(days=2)
 
         post_data = {
@@ -1423,8 +1403,6 @@ class TestPageEdit(TestCase, WagtailTestUtils):
             'body': "Some content",
             'slug': 'hello-again-world',
             'action-publish': "Publish",
-            'go_live_at': submittable_timestamp(go_live_at),
-            'expire_at': submittable_timestamp(expire_at),
             'first_published_at': submittable_timestamp(first_published_at),
         }
         self.client.post(reverse('wagtailadmin_pages:edit', args=(self.child_page.id, )), post_data)
@@ -1438,7 +1416,11 @@ class TestPageEdit(TestCase, WagtailTestUtils):
         # first_published_at should be 3 days ago.
         self.assertEqual(new_delta.days, -3)
 
-    def test_edit_post_publish_scheduled(self):
+    def test_edit_post_publish_scheduled_unpublished_page(self):
+        # Unpublish the page
+        self.child_page.live = False
+        self.child_page.save()
+
         go_live_at = timezone.now() + datetime.timedelta(days=1)
         expire_at = timezone.now() + datetime.timedelta(days=2)
         post_data = {
@@ -1471,7 +1453,13 @@ class TestPageEdit(TestCase, WagtailTestUtils):
             "A page scheduled for future publishing should have has_unpublished_changes=True"
         )
 
-    def test_edit_post_publish_now_an_already_scheduled(self):
+        self.assertEqual(child_page_new.status_string, "scheduled")
+
+    def test_edit_post_publish_now_an_already_scheduled_unpublished_page(self):
+        # Unpublish the page
+        self.child_page.live = False
+        self.child_page.save()
+
         # First let's publish a page with a go_live_at in the future
         go_live_at = timezone.now() + datetime.timedelta(days=1)
         expire_at = timezone.now() + datetime.timedelta(days=2)
@@ -1490,8 +1478,10 @@ class TestPageEdit(TestCase, WagtailTestUtils):
 
         child_page_new = SimplePage.objects.get(id=self.child_page.id)
 
-        # The page should not be live anymore
+        # The page should not be live
         self.assertFalse(child_page_new.live)
+
+        self.assertEqual(child_page_new.status_string, "scheduled")
 
         # Instead a revision with approved_go_live_at should now exist
         self.assertTrue(
@@ -1520,6 +1510,124 @@ class TestPageEdit(TestCase, WagtailTestUtils):
         # And a revision with approved_go_live_at should not exist
         self.assertFalse(
             PageRevision.objects.filter(page=child_page_new).exclude(approved_go_live_at__isnull=True).exists()
+        )
+
+    def test_edit_post_publish_scheduled_published_page(self):
+        # Page is live
+        self.child_page.live = True
+        self.child_page.save()
+
+        live_revision = self.child_page.live_revision
+        original_title = self.child_page.title
+
+        go_live_at = timezone.now() + datetime.timedelta(days=1)
+        expire_at = timezone.now() + datetime.timedelta(days=2)
+        post_data = {
+            'title': "I've been edited!",
+            'content': "Some content",
+            'slug': 'hello-world',
+            'action-publish': "Publish",
+            'go_live_at': submittable_timestamp(go_live_at),
+            'expire_at': submittable_timestamp(expire_at),
+        }
+        response = self.client.post(reverse('wagtailadmin_pages:edit', args=(self.child_page.id, )), post_data)
+
+        # Should be redirected to explorer page
+        self.assertEqual(response.status_code, 302)
+
+        child_page_new = SimplePage.objects.get(id=self.child_page.id)
+
+        # The page should still be live
+        self.assertTrue(child_page_new.live)
+
+        self.assertEqual(child_page_new.status_string, "live + scheduled")
+
+        # Instead a revision with approved_go_live_at should now exist
+        self.assertTrue(
+            PageRevision.objects.filter(page=child_page_new).exclude(approved_go_live_at__isnull=True).exists()
+        )
+
+        # The page SHOULD have the "has_unpublished_changes" flag set,
+        # because the changes are not visible as a live page yet
+        self.assertTrue(
+            child_page_new.has_unpublished_changes,
+            "A page scheduled for future publishing should have has_unpublished_changes=True"
+        )
+
+        self.assertNotEqual(
+            child_page_new.get_latest_revision(), live_revision,
+            "A page scheduled for future publishing should have a new revision, that is not the live revision"
+        )
+
+        self.assertEqual(
+            child_page_new.title, original_title,
+            "A live page with scheduled revisions should still have original content"
+        )
+
+    def test_edit_post_publish_now_an_already_scheduled_published_page(self):
+        # Unpublish the page
+        self.child_page.live = True
+        self.child_page.save()
+
+        original_title = self.child_page.title
+        # First let's publish a page with a go_live_at in the future
+        go_live_at = timezone.now() + datetime.timedelta(days=1)
+        expire_at = timezone.now() + datetime.timedelta(days=2)
+        post_data = {
+            'title': "I've been edited!",
+            'content': "Some content",
+            'slug': 'hello-world',
+            'action-publish': "Publish",
+            'go_live_at': submittable_timestamp(go_live_at),
+            'expire_at': submittable_timestamp(expire_at),
+        }
+        response = self.client.post(reverse('wagtailadmin_pages:edit', args=(self.child_page.id, )), post_data)
+
+        # Should be redirected to edit page
+        self.assertEqual(response.status_code, 302)
+
+        child_page_new = SimplePage.objects.get(id=self.child_page.id)
+
+        # The page should still be live
+        self.assertTrue(child_page_new.live)
+
+        # Instead a revision with approved_go_live_at should now exist
+        self.assertTrue(
+            PageRevision.objects.filter(page=child_page_new).exclude(approved_go_live_at__isnull=True).exists()
+        )
+
+        self.assertEqual(
+            child_page_new.title, original_title,
+            "A live page with scheduled revisions should still have original content"
+        )
+
+        # Now, let's edit it and publish it right now
+        go_live_at = timezone.now()
+        post_data = {
+            'title': "I've been edited!",
+            'content': "Some content",
+            'slug': 'hello-world',
+            'action-publish': "Publish",
+            'go_live_at': "",
+        }
+        response = self.client.post(reverse('wagtailadmin_pages:edit', args=(self.child_page.id, )), post_data)
+
+        # Should be redirected to edit page
+        self.assertEqual(response.status_code, 302)
+
+        child_page_new = SimplePage.objects.get(id=self.child_page.id)
+
+        # The page should be live now
+        self.assertTrue(child_page_new.live)
+
+        # And a revision with approved_go_live_at should not exist
+        self.assertFalse(
+            PageRevision.objects.filter(page=child_page_new).exclude(approved_go_live_at__isnull=True).exists()
+        )
+
+        self.assertEqual(
+            child_page_new.title, post_data['title'],
+            "A published page should have the new title"
         )
 
     def test_page_edit_post_submit(self):
@@ -1777,6 +1885,10 @@ class TestPageEditReordering(TestCase, WagtailTestUtils):
             'speakers-MAX_NUM_FORMS': 1000,
             'speakers-TOTAL_FORMS': 0,
 
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 1000,
+            'head_counts-TOTAL_FORMS': 0,
+
             'carousel_items-INITIAL_FORMS': 3,
             'carousel_items-MAX_NUM_FORMS': 1000,
             'carousel_items-TOTAL_FORMS': 3,
@@ -1818,6 +1930,10 @@ class TestPageEditReordering(TestCase, WagtailTestUtils):
             'speakers-INITIAL_FORMS': 0,
             'speakers-MAX_NUM_FORMS': 1000,
             'speakers-TOTAL_FORMS': 0,
+
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 1000,
+            'head_counts-TOTAL_FORMS': 0,
 
             'carousel_items-INITIAL_FORMS': 3,
             'carousel_items-MAX_NUM_FORMS': 1000,
@@ -3198,7 +3314,25 @@ class TestNotificationPreferences(TestCase, WagtailTestUtils):
         self.assertIn(user1.email, email_to)
         self.assertIn(user2.email, email_to)
 
-    @mock.patch('wagtail.wagtailadmin.utils.django_send_mail', side_effect=IOError('Server down'))
+    @override_settings(WAGTAILADMIN_NOTIFICATION_INCLUDE_SUPERUSERS=False)
+    def test_disable_superuser_notification(self):
+        # Add one of the superusers to the moderator group
+        self.moderator.groups.add(Group.objects.get(name='Moderators'))
+
+        response = self.submit()
+
+        # Should be redirected to explorer page
+        self.assertEqual(response.status_code, 302)
+
+        # Check that the non-moderator superuser is not being notified
+        expected_emails = 1
+        self.assertEqual(len(mail.outbox), expected_emails)
+        # Use chain as the 'to' field is a list of recipients
+        email_to = list(chain.from_iterable([m.to for m in mail.outbox]))
+        self.assertIn(self.moderator.email, email_to)
+        self.assertNotIn(self.moderator2.email, email_to)
+
+    @mock.patch('wagtail.admin.utils.django_send_mail', side_effect=IOError('Server down'))
     def test_email_send_error(self, mock_fn):
         logging.disable(logging.CRITICAL)
         # Approve
@@ -3682,6 +3816,22 @@ class TestRevisions(TestCase, WagtailTestUtils):
         self.assertContains(response, "Replace current draft")
         self.assertContains(response, "Publish this revision")
 
+    def test_scheduled_revision(self):
+        self.last_christmas_revision.publish()
+        self.this_christmas_revision.approved_go_live_at = local_datetime(2014, 12, 26)
+        self.this_christmas_revision.save()
+        this_christmas_unschedule_url = reverse(
+            'wagtailadmin_pages:revisions_unschedule',
+            args=(self.christmas_event.id, self.this_christmas_revision.id)
+        )
+        response = self.client.get(
+            reverse('wagtailadmin_pages:revisions_index', args=(self.christmas_event.id, ))
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Scheduled for')
+        self.assertContains(response, formats.localize(parse_date('2014-12-26')))
+        self.assertContains(response, this_christmas_unschedule_url)
+
 
 class TestCompareRevisions(TestCase, WagtailTestUtils):
     # Actual tests for the comparison classes can be found in test_compare.py
@@ -3760,6 +3910,100 @@ class TestCompareRevisions(TestCase, WagtailTestUtils):
         self.assertContains(response, '<span class="deletion">Last Christmas I gave you my heart, but the very next day you gave it away</span><span class="addition">This year, to save me from tears, I&#39;ll just feed it to the dog</span>')
 
 
+class TestRevisionsUnschedule(TestCase, WagtailTestUtils):
+    fixtures = ['test.json']
+
+    def setUp(self):
+        self.christmas_event = EventPage.objects.get(url_path='/home/events/christmas/')
+        self.christmas_event.title = "Last Christmas"
+        self.christmas_event.date_from = '2013-12-25'
+        self.christmas_event.body = (
+            "<p>Last Christmas I gave you my heart, "
+            "but the very next day you gave it away</p>"
+        )
+        self.last_christmas_revision = self.christmas_event.save_revision()
+        self.last_christmas_revision.created_at = local_datetime(2013, 12, 25)
+        self.last_christmas_revision.save()
+        self.last_christmas_revision.publish()
+
+        self.christmas_event.title = "This Christmas"
+        self.christmas_event.date_from = '2014-12-25'
+        self.christmas_event.body = (
+            "<p>This year, to save me from tears, "
+            "I'll give it to someone special</p>"
+        )
+        self.this_christmas_revision = self.christmas_event.save_revision()
+        self.this_christmas_revision.created_at = local_datetime(2014, 12, 24)
+        self.this_christmas_revision.save()
+
+        self.this_christmas_revision.approved_go_live_at = local_datetime(2014, 12, 25)
+        self.this_christmas_revision.save()
+
+        self.user = self.login()
+
+    def test_unschedule_view(self):
+        """
+        This tests that the unschedule view responds with a confirm page
+        """
+        response = self.client.get(reverse('wagtailadmin_pages:revisions_unschedule', args=(self.christmas_event.id, self.this_christmas_revision.id)))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailadmin/pages/revisions/confirm_unschedule.html')
+
+    def test_unschedule_view_invalid_page_id(self):
+        """
+        This tests that the unschedule view returns an error if the page id is invalid
+        """
+        # Get unschedule page
+        response = self.client.get(reverse('wagtailadmin_pages:revisions_unschedule', args=(12345, 67894)))
+
+        # Check that the user received a 404 response
+        self.assertEqual(response.status_code, 404)
+
+    def test_unschedule_view_invalid_revision_id(self):
+        """
+        This tests that the unschedule view returns an error if the page id is invalid
+        """
+        # Get unschedule page
+        response = self.client.get(reverse('wagtailadmin_pages:revisions_unschedule', args=(self.christmas_event.id, 67894)))
+
+        # Check that the user received a 404 response
+        self.assertEqual(response.status_code, 404)
+
+    def test_unschedule_view_bad_permissions(self):
+        """
+        This tests that the unschedule view doesn't allow users without publish permissions
+        """
+        # Remove privileges from user
+        self.user.is_superuser = False
+        self.user.user_permissions.add(
+            Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')
+        )
+        self.user.save()
+
+        # Get unschedule page
+        response = self.client.get(reverse('wagtailadmin_pages:revisions_unschedule', args=(self.christmas_event.id, self.this_christmas_revision.id)))
+
+        # Check that the user received a 403 response
+        self.assertEqual(response.status_code, 403)
+
+    def test_unschedule_view_post(self):
+        """
+        This posts to the unschedule view and checks that the revision was unscheduled
+        """
+
+        # Post to the unschedule page
+        response = self.client.post(reverse('wagtailadmin_pages:revisions_unschedule', args=(self.christmas_event.id, self.this_christmas_revision.id)))
+
+        # Should be redirected to revisions index page
+        self.assertRedirects(response, reverse('wagtailadmin_pages:revisions_index', args=(self.christmas_event.id, )))
+
+        # Check that the page has no approved_schedule
+        self.assertFalse(EventPage.objects.get(id=self.christmas_event.id).approved_schedule)
+
+        # Check that the approved_go_live_at has been cleared from the revision
+        self.assertIsNone(self.christmas_event.revisions.get(id=self.this_christmas_revision.id).approved_go_live_at)
+
+
 class TestIssue2599(TestCase, WagtailTestUtils):
     """
     When previewing a page on creation, we need to assign it a path value consistent with its
@@ -3767,6 +4011,7 @@ class TestIssue2599(TestCase, WagtailTestUtils):
     one more than numchild - however, index numbers are not reassigned on page deletion, so
     this can result in a path that collides with an existing page (which is invalid).
     """
+
     def test_issue_2599(self):
         homepage = Page.objects.get(id=2)
 
@@ -3812,6 +4057,7 @@ class TestIssue2492(TestCase, WagtailTestUtils):
     This test ensures that the specific_class url method is called
     when the 'view live' message button is created.
     """
+
     def setUp(self):
         self.root_page = Page.objects.get(id=2)
         child_page = SingleEventPage(
@@ -3844,6 +4090,10 @@ class TestIssue2492(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
         }
         response = self.client.post(
             reverse('wagtailadmin_pages:edit', args=(self.child_page.id, )),
@@ -3858,29 +4108,145 @@ class TestIssue2492(TestCase, WagtailTestUtils):
             break
 
 
+class TestIssue3982(TestCase, WagtailTestUtils):
+    """
+    Pages that are not associated with a site, and thus do not have a live URL,
+    should not display a "View live" link in the flash message after being
+    edited.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.login()
+
+    def _create_page(self, parent):
+        response = self.client.post(
+            reverse('wagtailadmin_pages:add', args=('tests', 'simplepage', parent.pk)),
+            {'title': "Hello, world!", 'content': "Some content", 'slug': 'hello-world', 'action-publish': "publish"},
+            follow=True)
+        self.assertRedirects(response, reverse('wagtailadmin_explore', args=(parent.pk,)))
+        page = SimplePage.objects.get()
+        self.assertTrue(page.live)
+        return response, page
+
+    def test_create_accessible(self):
+        """
+        Create a page under the site root, check the flash message has a valid
+        "View live" button.
+        """
+        response, page = self._create_page(Page.objects.get(pk=2))
+        self.assertIsNotNone(page.url)
+        self.assertTrue(any(
+            'View live' in message.message and page.url in message.message
+            for message in response.context['messages']))
+
+    def test_create_inaccessible(self):
+        """
+        Create a page outside of the site root, check the flash message does
+        not have a "View live" button.
+        """
+        response, page = self._create_page(Page.objects.get(pk=1))
+        self.assertIsNone(page.url)
+        self.assertFalse(any(
+            'View live' in message.message
+            for message in response.context['messages']))
+
+    def _edit_page(self, parent):
+        page = parent.add_child(instance=SimplePage(title='Hello, world!', content='Some content'))
+        response = self.client.post(
+            reverse('wagtailadmin_pages:edit', args=(page.pk,)),
+            {'title': "Hello, world!", 'content': "Some content", 'slug': 'hello-world', 'action-publish': "publish"},
+            follow=True)
+        self.assertRedirects(response, reverse('wagtailadmin_explore', args=(parent.pk,)))
+        page = SimplePage.objects.get(pk=page.pk)
+        self.assertTrue(page.live)
+        return response, page
+
+    def test_edit_accessible(self):
+        """
+        Edit a page under the site root, check the flash message has a valid
+        "View live" button.
+        """
+        response, page = self._edit_page(Page.objects.get(pk=2))
+        self.assertIsNotNone(page.url)
+        self.assertTrue(any(
+            'View live' in message.message and page.url in message.message
+            for message in response.context['messages']))
+
+    def test_edit_inaccessible(self):
+        """
+        Edit a page outside of the site root, check the flash message does
+        not have a "View live" button.
+        """
+        response, page = self._edit_page(Page.objects.get(pk=1))
+        self.assertIsNone(page.url)
+        self.assertFalse(any(
+            'View live' in message.message
+            for message in response.context['messages']))
+
+    def _approve_page(self, parent):
+        response = self.client.post(
+            reverse('wagtailadmin_pages:add', args=('tests', 'simplepage', parent.pk)),
+            {'title': "Hello, world!", 'content': "Some content", 'slug': 'hello-world', 'action-submit': "submit"},
+            follow=True)
+        self.assertRedirects(response, reverse('wagtailadmin_explore', args=(parent.pk,)))
+        page = SimplePage.objects.get()
+        self.assertFalse(page.live)
+        revision = PageRevision.objects.get(page=page)
+        response = self.client.post(reverse('wagtailadmin_pages:approve_moderation', args=(revision.pk,)), follow=True)
+        page = SimplePage.objects.get()
+        self.assertTrue(page.live)
+        self.assertRedirects(response, reverse('wagtailadmin_home'))
+        return response, page
+
+    def test_approve_accessible(self):
+        """
+        Edit a page under the site root, check the flash message has a valid
+        "View live" button.
+        """
+        response, page = self._approve_page(Page.objects.get(pk=2))
+        self.assertIsNotNone(page.url)
+        self.assertTrue(any(
+            'View live' in message.message and page.url in message.message
+            for message in response.context['messages']))
+
+    def test_approve_inaccessible(self):
+        """
+        Edit a page outside of the site root, check the flash message does
+        not have a "View live" button.
+        """
+        response, page = self._approve_page(Page.objects.get(pk=1))
+        self.assertIsNone(page.url)
+        self.assertFalse(any(
+            'View live' in message.message
+            for message in response.context['messages']))
+
+
 class TestInlinePanelMedia(TestCase, WagtailTestUtils):
     """
     Test that form media required by InlinePanels is correctly pulled in to the edit page
     """
+
     def test_inline_panel_media(self):
         homepage = Page.objects.get(id=2)
         self.login()
 
-        # simplepage does not need hallo...
+        # simplepage does not need draftail...
         response = self.client.get(reverse('wagtailadmin_pages:add', args=('tests', 'simplepage', homepage.id)))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'wagtailadmin/js/hallo-bootstrap.js')
+        self.assertNotContains(response, 'wagtailadmin/js/draftail.js')
 
         # but sectionedrichtextpage does
         response = self.client.get(reverse('wagtailadmin_pages:add', args=('tests', 'sectionedrichtextpage', homepage.id)))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'wagtailadmin/js/hallo-bootstrap.js')
+        self.assertContains(response, 'wagtailadmin/js/draftail.js')
 
 
 class TestInlineStreamField(TestCase, WagtailTestUtils):
     """
     Test that streamfields inside an inline child work
     """
+
     def test_inline_streamfield(self):
         homepage = Page.objects.get(id=2)
         self.login()
@@ -3978,13 +4344,12 @@ class TestRecentEditsPanel(TestCase, WagtailTestUtils):
 
 class TestIssue2994(TestCase, WagtailTestUtils):
     """
-    When submitting the add/edit page form, Django 1.10.1 fails to update StreamFields
-    that have a default value, because it notices the lack of postdata field
-    with a name exactly matching the field name and wrongly assumes that the field has
-    been omitted from the form. To avoid this in Django 1.10.1, we need to set
-    dont_use_model_field_default_for_empty_data=True on the widget; in Django >=1.10.2,
+    In contrast to most "standard" form fields, StreamField form widgets generally won't
+    provide a postdata field with a name exactly matching the field name. To prevent Django
+    from wrongly interpreting this as the field being omitted from the form,
     we need to provide a custom value_omitted_from_data method.
     """
+
     def setUp(self):
         self.root_page = Page.objects.get(id=2)
         self.user = self.login()
@@ -4039,6 +4404,10 @@ class TestParentalM2M(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
             'categories': [self.holiday_category.id, self.men_with_beards_category.id]
         }
         response = self.client.post(
@@ -4073,6 +4442,10 @@ class TestParentalM2M(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
             'categories': [self.holiday_category.id, self.men_with_beards_category.id]
         }
         response = self.client.post(
@@ -4105,6 +4478,10 @@ class TestParentalM2M(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
             'categories': [self.holiday_category.id, self.men_with_beards_category.id]
         }
         response = self.client.post(
@@ -4142,6 +4519,10 @@ class TestParentalM2M(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
             'categories': [self.holiday_category.id, self.men_with_beards_category.id]
         }
         response = self.client.post(
@@ -4184,6 +4565,10 @@ class TestValidationErrorMessages(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
         }
         response = self.client.post(
             reverse('wagtailadmin_pages:edit', args=(self.christmas_page.id, )),
@@ -4218,6 +4603,10 @@ class TestValidationErrorMessages(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
         }
         response = self.client.post(
             reverse('wagtailadmin_pages:edit', args=(self.christmas_page.id, )),
@@ -4254,6 +4643,10 @@ class TestValidationErrorMessages(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
         }
         response = self.client.post(
             reverse('wagtailadmin_pages:edit', args=(self.christmas_page.id, )),
@@ -4344,7 +4737,9 @@ class TestPreview(TestCase, WagtailTestUtils):
         self.post_data = {
             'title': "Beach party",
             'slug': 'beach-party',
-            'body': "party on wayne",
+            'body': '''{"entityMap": {},"blocks": [
+                {"inlineStyleRanges": [], "text": "party on wayne", "depth": 0, "type": "unstyled", "key": "00000", "entityRanges": []}
+            ]}''',
             'date_from': '2017-08-01',
             'audience': 'public',
             'location': 'the beach',
@@ -4361,6 +4756,10 @@ class TestPreview(TestCase, WagtailTestUtils):
             'related_links-INITIAL_FORMS': 0,
             'related_links-MIN_NUM_FORMS': 0,
             'related_links-MAX_NUM_FORMS': 0,
+            'head_counts-TOTAL_FORMS': 0,
+            'head_counts-INITIAL_FORMS': 0,
+            'head_counts-MIN_NUM_FORMS': 0,
+            'head_counts-MAX_NUM_FORMS': 0,
             'categories': [self.parties_category.id, self.holidays_category.id],
         }
 

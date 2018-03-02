@@ -112,6 +112,8 @@ function createRenditionChooser(id) {
                 }
             }
         });
+
+        return false;
     });
 
     $('.edit-link', chooserElement).click(function() {
@@ -131,6 +133,8 @@ function createRenditionChooser(id) {
                 }
             }
         });
+
+        return false;
     });
 
     $('.action-clear', chooserElement).click(function() {

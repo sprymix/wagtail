@@ -1,34 +1,30 @@
-from __future__ import absolute_import, unicode_literals
-
 import hashlib
 import os.path
 from collections import OrderedDict
 from contextlib import contextmanager
+from io import BytesIO
 
-import django
 from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
-from django.core.urlresolvers import reverse
 from django.db import models
 from django.forms.utils import flatatt
-from django.utils.encoding import python_2_unicode_compatible
+from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
-from django.utils.six import BytesIO, string_types, text_type
 from django.utils.translation import ugettext_lazy as _
 from taggit.managers import TaggableManager
 from unidecode import unidecode
 from willow.image import Image as WillowImage
 
-from wagtail.wagtailadmin.utils import get_object_usage
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import CollectionMember
-from wagtail.wagtailimages.exceptions import InvalidFilterSpecError
-from wagtail.wagtailimages.rect import Rect
-from wagtail.wagtailsearch import index
-from wagtail.wagtailsearch.queryset import SearchableQuerySetMixin
+from wagtail.admin.utils import get_object_usage
+from wagtail.core import hooks
+from wagtail.core.models import CollectionMember
+from wagtail.images.exceptions import InvalidFilterSpecError
+from wagtail.images.rect import Rect
+from wagtail.search import index
+from wagtail.search.queryset import SearchableQuerySetMixin
 
 
 # A mapping of image formats to extensions
@@ -114,7 +110,7 @@ class ImageQuerySet(SearchableQuerySetMixin, models.QuerySet):
     pass
 
 
-class WillowImageWrapper(object):
+class WillowImageWrapper:
     def is_stored_locally(self):
         """
         Returns True if the image is hosted on the local filesystem
@@ -147,7 +143,7 @@ class WillowImageWrapper(object):
         except IOError as e:
             # re-throw this as a SourceImageIOError so that calling code can distinguish
             # these from IOErrors elsewhere in the process
-            raise SourceImageIOError(text_type(e))
+            raise SourceImageIOError(str(e))
 
         # Seek to beginning
         image_file.seek(0)
@@ -159,8 +155,7 @@ class WillowImageWrapper(object):
                 image_file.close()
 
 
-@python_2_unicode_compatible
-class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
+class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWrapper):
     title = models.CharField(max_length=255, verbose_name=_('title'))
     file = models.ImageField(
         verbose_name=_('file'), upload_to=get_upload_to, width_field='width', height_field='height'
@@ -227,6 +222,7 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
 
     search_fields = CollectionMember.search_fields + [
         index.SearchField('title', partial_match=True, boost=10),
+        index.FilterField('title'),
         index.RelatedFields('tags', [
             index.SearchField('name', partial_match=True, boost=10),
         ]),
@@ -305,10 +301,7 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
     @classmethod
     def get_rendition_model(cls):
         """ Get the Rendition model for this Image model """
-        if django.VERSION >= (1, 9):
-            return cls.renditions.rel.related_model
-        else:
-            return cls.renditions.related.related_model
+        return cls.renditions.rel.related_model
 
     def _get_rendition(self, renditions, filter, focal_point_key=''):
         filter_spec = filter.spec
@@ -343,14 +336,14 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
         return rendition
 
     def get_rendition(self, filter):
-        if isinstance(filter, string_types):
+        if isinstance(filter, str):
             filter = Filter(spec=filter)
 
         return self._get_rendition(self.renditions, filter,
                                    self.get_focal_point_key(filter))
 
     def get_user_rendition(self, filter):
-        if isinstance(filter, string_types):
+        if isinstance(filter, str):
             filter = Filter(spec=filter)
 
         return self._get_rendition(self.user_renditions, filter)
@@ -373,7 +366,7 @@ class AbstractImage(CollectionMember, index.Indexed, WillowImageWrapper):
         return self.title
 
     def is_editable_by_user(self, user):
-        from wagtail.wagtailimages.permissions import permission_policy
+        from wagtail.images.permissions import permission_policy
         return permission_policy.user_has_permission_for_instance(user, 'change', self)
 
     def get_focal_point_key(self, filter):
@@ -400,7 +393,7 @@ class Image(AbstractImage):
     )
 
 
-class Filter(object):
+class Filter:
     """
     Represents one or more operations that can be applied to an Image to produce a rendition
     appropriate for final display on the website. Usually this would be a resize operation,
@@ -466,6 +459,10 @@ class Filter(object):
                 else:
                     quality = 85
 
+                # If the image has an alpha channel, give it a white background
+                if willow.has_alpha():
+                    willow = willow.set_background_color_rgb((255, 255, 255))
+
                 return willow.save_as_jpeg(output, quality=quality, progressive=True, optimize=True)
             elif output_format == 'png':
                 return willow.save_as_png(output)
@@ -473,8 +470,10 @@ class Filter(object):
                 return willow.save_as_gif(output)
 
     def get_cache_key(self, image):
-        return hashlib.sha1(self.spec).hexdigest()[:8] + self.get_vary_key(image)
-
+        return (
+            hashlib.sha1(self.spec.encode('utf-8')).hexdigest()[:8] +
+            self.get_vary_key(image)
+        )
 
     def get_vary_key(self, image):
         vary_parts = []

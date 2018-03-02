@@ -1,1 +1,1 @@
-default_app_config = 'wagtail.contrib.wagtailfrontendcache.apps.WagtailFrontendCacheAppConfig'
+default_app_config = 'wagtail.contrib.frontend_cache.apps.WagtailFrontendCacheAppConfig'

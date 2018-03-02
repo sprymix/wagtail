@@ -1,8 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.core import mail
-from django.core.urlresolvers import reverse
 from django.test import TestCase, override_settings
+from django.urls import reverse
 
 from wagtail.tests.utils import WagtailTestUtils
 
@@ -13,11 +11,11 @@ class TestUserPasswordReset(TestCase, WagtailTestUtils):
     # need to clear urlresolver caches before/after tests, because we override ROOT_URLCONF
     # in some tests here
     def setUp(self):
-        from django.core.urlresolvers import clear_url_caches
+        from django.urls import clear_url_caches
         clear_url_caches()
 
     def tearDown(self):
-        from django.core.urlresolvers import clear_url_caches
+        from django.urls import clear_url_caches
         clear_url_caches()
 
     def test_login_has_password_reset_option(self):
@@ -43,7 +41,7 @@ class TestUserPasswordReset(TestCase, WagtailTestUtils):
         # Check that the user received a 404
         self.assertEqual(response.status_code, 404)
 
-    @override_settings(ROOT_URLCONF="wagtail.wagtailadmin.urls")
+    @override_settings(ROOT_URLCONF="wagtail.admin.urls")
     def test_email_found_default_url(self):
         response = self.client.post(reverse('wagtailadmin_password_reset'),
                                     {'email': 'siteeditor@example.com'})
@@ -51,7 +49,7 @@ class TestUserPasswordReset(TestCase, WagtailTestUtils):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("testserver", mail.outbox[0].body)
 
-    @override_settings(ROOT_URLCONF="wagtail.wagtailadmin.urls", BASE_URL='http://mysite.com')
+    @override_settings(ROOT_URLCONF="wagtail.admin.urls", BASE_URL='http://mysite.com')
     def test_email_found_base_url(self):
         response = self.client.post(reverse('wagtailadmin_password_reset'),
                                     {'email': 'siteeditor@example.com'})

@@ -36,7 +36,7 @@ function buildExpandingFormset(prefix, opts) {
 
         return newFormHtml;
     };
-    addButton.click(opts.doAdd);
+    addButton.on('click', opts.doAdd);
 
     if (opts.onMultiAdd) {
       multiButton.click(function() {

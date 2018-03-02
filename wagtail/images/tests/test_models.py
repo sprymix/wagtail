@@ -1,21 +1,19 @@
-from __future__ import absolute_import, unicode_literals
-
 import unittest
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
 from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.urls import reverse
 from willow.image import Image as WillowImage
 
+from wagtail.core.models import Collection, GroupCollectionPermission, Page
+from wagtail.images.models import Rendition, SourceImageIOError
+from wagtail.images.rect import Rect
 from wagtail.tests.testapp.models import EventPage, EventPageCarouselItem
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailcore.models import Collection, GroupCollectionPermission, Page
-from wagtail.wagtailimages.models import Rendition, SourceImageIOError
-from wagtail.wagtailimages.rect import Rect
 
 from .utils import Image, get_test_image_file
 
@@ -374,9 +372,9 @@ class TestIssue573(TestCase):
 class TestIssue613(TestCase, WagtailTestUtils):
     def get_elasticsearch_backend(self):
         from django.conf import settings
-        from wagtail.wagtailsearch.backends import get_search_backend
+        from wagtail.search.backends import get_search_backend
 
-        backend_path = 'wagtail.wagtailsearch.backends.elasticsearch'
+        backend_path = 'wagtail.search.backends.elasticsearch'
 
         # Search WAGTAILSEARCH_BACKENDS for an entry that uses the given backend path
         for backend_name, backend_conf in settings.WAGTAILSEARCH_BACKENDS.items():

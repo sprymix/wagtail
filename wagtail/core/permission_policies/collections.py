@@ -1,17 +1,14 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured
 from django.db.models import Q
 
-from wagtail.utils.compat import user_is_authenticated
-from wagtail.wagtailcore.models import Collection, GroupCollectionPermission
+from wagtail.core.models import Collection, GroupCollectionPermission
 
 from .base import BaseDjangoAuthPermissionPolicy
 
 
-class CollectionPermissionLookupMixin(object):
+class CollectionPermissionLookupMixin:
     def _get_permission_objects_for_actions(self, actions):
         """
         Get a queryset of the Permission objects for the given actions
@@ -29,7 +26,7 @@ class CollectionPermissionLookupMixin(object):
         If collection is specified, only consider GroupCollectionPermission records
         that apply to that collection.
         """
-        if not (user.is_active and user_is_authenticated(user)):
+        if not (user.is_active and user.is_authenticated):
             return False
 
         if user.is_superuser:
@@ -165,7 +162,7 @@ class CollectionPermissionPolicy(CollectionPermissionLookupMixin, BaseDjangoAuth
         Return a queryset of all instances of this model for which the given user has
         permission to perform any of the given actions
         """
-        if not (user.is_active and user_is_authenticated(user)):
+        if not (user.is_active and user.is_authenticated):
             return self.model.objects.none()
         elif user.is_superuser:
             return self.model.objects.all()
@@ -192,7 +189,7 @@ class CollectionPermissionPolicy(CollectionPermissionLookupMixin, BaseDjangoAuth
             # in any collection
             return Collection.objects.all()
 
-        elif not user_is_authenticated(user):
+        elif not user.is_authenticated:
             return Collection.objects.none()
 
         else:
@@ -210,7 +207,7 @@ class CollectionOwnershipPermissionPolicy(
     (see permission_policies.base.OwnershipPermissionPolicy)
     """
     def __init__(self, model, auth_model=None, owner_field_name='owner'):
-        super(CollectionOwnershipPermissionPolicy, self).__init__(model, auth_model=auth_model)
+        super().__init__(model, auth_model=auth_model)
         self.owner_field_name = owner_field_name
 
         # make sure owner_field_name is a field that exists on the model
@@ -275,7 +272,7 @@ class CollectionOwnershipPermissionPolicy(
             # active superusers can perform any action (including unrecognised ones)
             # on any instance
             return self.model.objects.all()
-        elif not user_is_authenticated(user):
+        elif not user.is_authenticated:
             return self.model.objects.none()
         elif 'change' in actions or 'delete' in actions:
             # return instances which are:
@@ -333,7 +330,7 @@ class CollectionOwnershipPermissionPolicy(
             # in any collection
             return Collection.objects.all()
 
-        elif not user_is_authenticated(user):
+        elif not user.is_authenticated:
             return Collection.objects.none()
 
         elif 'change' in actions or 'delete' in actions:

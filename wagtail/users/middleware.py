@@ -1,14 +1,16 @@
 import pytz
 
 from django.utils import timezone
-from wagtail.wagtailusers.models import UserProfile
+from django.utils.deprecation import MiddlewareMixin
+
+from wagtail.users.models import UserProfile
 
 
-class TimezoneMiddleware(object):
+class TimezoneMiddleware(MiddlewareMixin):
     def process_request(self, request):
         tzname = None
 
-        if request.user and not request.user.is_anonymous():
+        if request.user and not request.user.is_anonymous:
             up = UserProfile.get_for_user(request.user)
             tzname = up.timezone
 

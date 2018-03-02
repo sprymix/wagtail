@@ -1,13 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
-from django.core.urlresolvers import NoReverseMatch
+import mock
 from django.test import RequestFactory, TestCase
+from django.urls.exceptions import NoReverseMatch
 
-from wagtail.contrib.wagtailroutablepage.templatetags.wagtailroutablepage_tags import \
-    routablepageurl
+from wagtail.contrib.routable_page.templatetags.wagtailroutablepage_tags import routablepageurl
+from wagtail.core.models import Page, Site
 from wagtail.tests.routablepage.models import (
     RoutablePageTest, RoutablePageWithOverriddenIndexRouteTest)
-from wagtail.wagtailcore.models import Page, Site
 
 
 class TestRoutablePage(TestCase):
@@ -134,7 +132,7 @@ class TestRoutablePage(TestCase):
         # This descriptor pretends that it does not exist in the class, hence
         # it raises an AttributeError when class bound. This is, for instance,
         # the behavior of django's FileFields.
-        class InstanceDescriptor(object):
+        class InstanceDescriptor:
             def __get__(self, instance, cls=None):
                 if instance is None:
                     raise AttributeError
@@ -185,3 +183,11 @@ class TestRoutablePageTemplateTag(TestCase):
                               'external_view', 'joe-bloggs')
 
         self.assertEqual(url, self.routable_page.url + 'external/joe-bloggs/')
+
+    def test_templatetag_reverse_external_view_without_append_slash(self):
+        with mock.patch('wagtail.core.models.WAGTAIL_APPEND_SLASH', False):
+            url = routablepageurl(self.context, self.routable_page,
+                                  'external_view', 'joe-bloggs')
+            expected = self.routable_page.url + '/' + 'external/joe-bloggs/'
+
+        self.assertEqual(url, expected)

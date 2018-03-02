@@ -1,16 +1,14 @@
-from __future__ import absolute_import, unicode_literals
-
 import posixpath
 from collections import defaultdict
 
-from django import VERSION as DJANGO_VERSION
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import CharField, Q
 from django.db.models.functions import Length, Substr
+from django.db.models.query import BaseIterable
 from treebeard.mp_tree import MP_NodeQuerySet
 
-from wagtail.wagtailsearch.queryset import SearchableQuerySetMixin
+from wagtail.search.queryset import SearchableQuerySetMixin
 
 
 class TreeQuerySet(MP_NodeQuerySet):
@@ -213,7 +211,7 @@ class PageQuerySet(SearchableQuerySetMixin, TreeQuerySet):
         return self.exclude(self.exact_type_q(model))
 
     def public_q(self):
-        from wagtail.wagtailcore.models import PageViewRestriction
+        from wagtail.core.models import PageViewRestriction
 
         q = Q()
         for restriction in PageViewRestriction.objects.all():
@@ -235,7 +233,7 @@ class PageQuerySet(SearchableQuerySetMixin, TreeQuerySet):
     def first_common_ancestor(self, include_self=False, strict=False):
         """
         Find the first ancestor that all pages in this queryset have in common.
-        For example, consider a page heirarchy like::
+        For example, consider a page hierarchy like::
 
             - Home/
                 - Foo Event Index/
@@ -343,12 +341,9 @@ class PageQuerySet(SearchableQuerySetMixin, TreeQuerySet):
         This efficiently gets all the specific pages for the queryset, using
         the minimum number of queries.
         """
-        if DJANGO_VERSION >= (1, 9):
-            clone = self._clone()
-            clone._iterable_class = SpecificIterable
-            return clone
-        else:
-            return self._clone(klass=SpecificQuerySet)
+        clone = self._clone()
+        clone._iterable_class = SpecificIterable
+        return clone
 
     def in_site(self, site):
         """
@@ -387,17 +382,6 @@ def specific_iterator(qs):
         yield pages_by_type[content_type][pk]
 
 
-# Django 1.9 changed how extending QuerySets with different iterators behaved
-# considerably, in a way that is not easily compatible between the two versions
-if DJANGO_VERSION >= (1, 9):
-    from django.db.models.query import BaseIterable
-
-    class SpecificIterable(BaseIterable):
-        def __iter__(self):
-            return specific_iterator(self.queryset)
-
-else:
-    from django.db.models.query import QuerySet
-
-    class SpecificQuerySet(QuerySet):
-        iterator = specific_iterator
+class SpecificIterable(BaseIterable):
+    def __iter__(self):
+        return specific_iterator(self.queryset)

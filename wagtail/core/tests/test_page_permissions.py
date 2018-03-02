@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase
 
+from wagtail.core.models import GroupPagePermission, Page, UserPagePermissionsProxy
 from wagtail.tests.testapp.models import BusinessSubIndex, EventIndex, EventPage
-from wagtail.wagtailcore.models import GroupPagePermission, Page, UserPagePermissionsProxy
 
 
 class TestPagePermission(TestCase):

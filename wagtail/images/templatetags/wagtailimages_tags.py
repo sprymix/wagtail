@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 import re
 
 from django import template
 from django.utils.functional import cached_property
 
-from wagtail.wagtailimages.models import Filter
-from wagtail.wagtailimages.shortcuts import get_rendition_or_not_found
+from wagtail.images.models import Filter
+from wagtail.images.shortcuts import get_rendition_or_not_found
 
 register = template.Library()
 allowed_filter_pattern = re.compile("^[A-Za-z0-9_\-\.]+$")
@@ -55,6 +53,18 @@ def image(parser, token):
     if output_var_name and attrs:
         # attributes are not valid when using the 'as img' form of the tag
         is_valid = False
+
+    if len(filter_specs) == 0:
+        # there must always be at least one filter spec provided
+        is_valid = False
+
+    if len(bits) == 0:
+        # no resize rule provided eg. {% image page.image %}
+        raise template.TemplateSyntaxError(
+            "no resize rule provided. "
+            "'image' tag should be of the form {% image self.photo max-320x200 [ custom-attr=\"value\" ... ] %} "
+            "or {% image self.photo max-320x200 as img %}"
+        )
 
     if is_valid:
         return ImageNode(image_expr, '|'.join(filter_specs), attrs=attrs, output_var_name=output_var_name)

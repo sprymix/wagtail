@@ -1,1 +1,1 @@
-default_app_config = 'wagtail.wagtailforms.apps.WagtailFormsAppConfig'
+default_app_config = 'wagtail.contrib.forms.apps.WagtailFormsAppConfig'

@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
 
-default_app_config = 'wagtail.wagtailimages.apps.WagtailImagesAppConfig'
+default_app_config = 'wagtail.images.apps.WagtailImagesAppConfig'
 
 
 def get_image_model_string():
@@ -20,7 +18,7 @@ def get_image_model():
     """
     Get the image model from the ``WAGTAILIMAGES_IMAGE_MODEL`` setting.
     Useful for developers making Wagtail plugins that need the image model.
-    Defaults to the standard :class:`~wagtail.wagtailimages.models.Image` model
+    Defaults to the standard :class:`~wagtail.images.models.Image` model
     if no custom model is defined.
     """
     from django.apps import apps

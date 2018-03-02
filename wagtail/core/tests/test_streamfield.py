@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*
-from __future__ import absolute_import, unicode_literals
-
 import json
 
 from django.apps import apps
@@ -8,15 +6,14 @@ from django.db import models
 from django.template import Context, Template, engines
 from django.test import TestCase
 from django.utils.safestring import SafeText
-from django.utils.six import text_type
 
+from wagtail.core import blocks
+from wagtail.core.blocks import StreamValue
+from wagtail.core.fields import StreamField
+from wagtail.core.rich_text import RichText
+from wagtail.images.models import Image
+from wagtail.images.tests.utils import get_test_image_file
 from wagtail.tests.testapp.models import StreamModel
-from wagtail.wagtailcore import blocks
-from wagtail.wagtailcore.blocks import StreamValue
-from wagtail.wagtailcore.fields import StreamField
-from wagtail.wagtailcore.rich_text import RichText
-from wagtail.wagtailimages.models import Image
-from wagtail.wagtailimages.tests.utils import get_test_image_file
 
 
 class TestLazyStreamField(TestCase):
@@ -119,7 +116,7 @@ class TestSystemCheck(TestCase):
     def tearDown(self):
         # unregister InvalidStreamModel from the overall model registry
         # so that it doesn't break tests elsewhere
-        for package in ('wagtailcore', 'wagtail.wagtailcore.tests'):
+        for package in ('wagtailcore', 'wagtail.core.tests'):
             try:
                 del apps.all_models[package]['invalidstreammodel']
             except KeyError:
@@ -189,7 +186,7 @@ class TestStreamFieldRenderingBase(TestCase):
 
 class TestStreamFieldRendering(TestStreamFieldRenderingBase):
     def test_to_string(self):
-        rendered = text_type(self.instance.body)
+        rendered = str(self.instance.body)
         self.assertHTMLEqual(rendered, self.expected)
         self.assertIsInstance(rendered, SafeText)
 
@@ -211,7 +208,7 @@ class TestStreamFieldDjangoRendering(TestStreamFieldRenderingBase):
 
 class TestStreamFieldJinjaRendering(TestStreamFieldRenderingBase):
     def setUp(self):
-        super(TestStreamFieldJinjaRendering, self).setUp()
+        super().setUp()
         self.engine = engines['jinja2']
 
     def render(self, string, context):

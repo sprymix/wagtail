@@ -1,25 +1,22 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.forms import Media, MediaDefiningClass
 from django.forms.utils import flatatt
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
-from django.utils.six import text_type, with_metaclass
 from django.utils.html import format_html
 from django.utils.text import slugify
 
-from wagtail.wagtailcore import hooks
+from wagtail.core import hooks
 
 
-class MenuItem(with_metaclass(MediaDefiningClass)):
+class MenuItem(metaclass=MediaDefiningClass):
     template = 'wagtailadmin/shared/menu_item.html'
 
     def __init__(self, label, url, name=None, classnames='', attrs=None, order=1000):
         self.label = label
         self.url = url
         self.classnames = classnames
-        self.name = (name or slugify(text_type(label)))
+        self.name = (name or slugify(str(label)))
         self.order = order
 
         if attrs:
@@ -35,7 +32,7 @@ class MenuItem(with_metaclass(MediaDefiningClass)):
         return True
 
     def is_active(self, request):
-        return request.path.startswith(text_type(self.url))
+        return request.path.startswith(str(self.url))
 
     def get_context(self, request):
         """Defines context for the template, overridable to use more data"""
@@ -53,7 +50,7 @@ class MenuItem(with_metaclass(MediaDefiningClass)):
         return render_to_string(self.template, context, request=request)
 
 
-class PageActionButton(object):
+class PageActionButton:
     def __init__(self, label, url, classnames='button button-small'):
         self.label = label
         self.url = url
@@ -72,7 +69,7 @@ class PageActionButton(object):
             url, self.classnames, self.label)
 
 
-class Menu(object):
+class Menu:
     def __init__(self, register_hook_name, construct_hook_name=None):
         self.register_hook_name = register_hook_name
         self.construct_hook_name = construct_hook_name
@@ -126,7 +123,7 @@ class SubmenuMenuItem(MenuItem):
     """A MenuItem which wraps an inner Menu object"""
     def __init__(self, label, menu, **kwargs):
         self.menu = menu
-        super(SubmenuMenuItem, self).__init__(label, '#', **kwargs)
+        super().__init__(label, '#', **kwargs)
 
     @property
     def media(self):
@@ -140,7 +137,7 @@ class SubmenuMenuItem(MenuItem):
         return bool(self.menu.active_menu_items(request))
 
     def get_context(self, request):
-        context = super(SubmenuMenuItem, self).get_context(request)
+        context = super().get_context(request)
         context['menu_html'] = self.menu.render_html(request)
         context['request'] = request
         return context

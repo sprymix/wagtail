@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib import messages
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.template.loader import render_to_string
@@ -62,4 +60,6 @@ def validation_error(request, message, form, buttons=None):
 
 
 def button(url, text, new_window=False):
+    if url is None:
+        raise ValueError("Button URLs must not be None")
     return url, text, new_window

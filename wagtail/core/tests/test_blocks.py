@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*
-from __future__ import absolute_import, unicode_literals
-
 import base64
 import collections
 import json
@@ -9,7 +7,6 @@ from datetime import date, datetime
 from decimal import Decimal
 
 # non-standard import name for ugettext_lazy, to prevent strings from being picked up for translation
-import django
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.utils import ErrorList
@@ -19,13 +16,13 @@ from django.utils.html import format_html
 from django.utils.safestring import SafeData, mark_safe
 from django.utils.translation import ugettext_lazy as __
 
+from wagtail.core import blocks
+from wagtail.core.models import Page
+from wagtail.core.rich_text import RichText
 from wagtail.tests.testapp.blocks import LinkBlock as CustomLinkBlock
 from wagtail.tests.testapp.blocks import SectionBlock
 from wagtail.tests.testapp.models import EventPage, SimplePage
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailcore import blocks
-from wagtail.wagtailcore.models import Page
-from wagtail.wagtailcore.rich_text import RichText
 
 
 class FooStreamBlock(blocks.StreamBlock):
@@ -33,7 +30,7 @@ class FooStreamBlock(blocks.StreamBlock):
     error = 'At least one block must say "foo"'
 
     def clean(self, value):
-        value = super(FooStreamBlock, self).clean(value)
+        value = super().clean(value)
         if not any(block.value == 'foo' for block in value):
             raise blocks.StreamBlockValidationError(non_block_errors=ErrorList([self.error]))
         return value
@@ -184,7 +181,7 @@ class TestFieldBlock(WagtailTestUtils, SimpleTestCase):
         Actual real-world use case: A Youtube field that produces YoutubeVideo
         instances from IDs, but videos are entered using their full URLs.
         """
-        class PrefixWrapper(object):
+        class PrefixWrapper:
             prefix = 'http://example.com/'
 
             def __init__(self, value):
@@ -204,7 +201,7 @@ class TestFieldBlock(WagtailTestUtils, SimpleTestCase):
 
         class PrefixField(forms.Field):
             def clean(self, value):
-                value = super(PrefixField, self).clean(value)
+                value = super().clean(value)
                 return PrefixWrapper.from_prefixed(value)
 
             def prepare_value(self, value):
@@ -212,7 +209,7 @@ class TestFieldBlock(WagtailTestUtils, SimpleTestCase):
 
         class PrefixedBlock(blocks.FieldBlock):
             def __init__(self, required=True, help_text='', **kwargs):
-                super(PrefixedBlock, self).__init__(**kwargs)
+                super().__init__(**kwargs)
                 self.field = PrefixField(required=required, help_text=help_text)
 
         block = PrefixedBlock()
@@ -449,7 +446,7 @@ class TestRichTextBlock(TestCase):
         render_form should produce the editor-specific rendition of the rich text value
         (which includes e.g. 'data-linktype' attributes on <a> elements)
         """
-        block = blocks.RichTextBlock()
+        block = blocks.RichTextBlock(editor='hallo')
         value = RichText('<p>Merry <a linktype="page" id="4">Christmas</a>!</p>')
         result = block.render_form(value, prefix='richtext')
         self.assertIn(
@@ -654,7 +651,7 @@ class TestChoiceBlock(WagtailTestUtils, SimpleTestCase):
         self.assertEqual(
             block.deconstruct(),
             (
-                'wagtail.wagtailcore.blocks.ChoiceBlock',
+                'wagtail.core.blocks.ChoiceBlock',
                 [],
                 {
                     'choices': [('tea', 'Tea'), ('coffee', 'Coffee')],
@@ -747,7 +744,7 @@ class TestChoiceBlock(WagtailTestUtils, SimpleTestCase):
         self.assertEqual(
             block.deconstruct(),
             (
-                'wagtail.wagtailcore.blocks.ChoiceBlock',
+                'wagtail.core.blocks.ChoiceBlock',
                 [],
                 {
                     'choices': callable_choices,
@@ -809,7 +806,6 @@ class TestRawHTMLBlock(unittest.TestCase):
         self.assertEqual(result, '<blink>BÖÖM</blink>')
         self.assertIsInstance(result, SafeData)
 
-    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
     def test_value_omitted_from_data(self):
         block = blocks.RawHTMLBlock()
         self.assertFalse(block.value_omitted_from_data({'rawhtml': 'ohai'}, {}, 'rawhtml'))
@@ -1190,7 +1186,7 @@ class TestStructBlock(SimpleTestCase):
             'link': 'http://www.wagtail.io',
         }), prefix='mylink')
 
-        self.assertIn('<div class="object-help help">Self-promotion is encouraged</div>', html)
+        self.assertIn('<div class="sequence-member__help help"><span class="icon-help-inverse" aria-hidden="true"></span>Self-promotion is encouraged</div>', html)
 
         # check it can be overridden in the block constructor
         block = LinkBlock(help_text="Self-promotion is discouraged")
@@ -1199,7 +1195,7 @@ class TestStructBlock(SimpleTestCase):
             'link': 'http://www.wagtail.io',
         }), prefix='mylink')
 
-        self.assertIn('<div class="object-help help">Self-promotion is discouraged</div>', html)
+        self.assertIn('<div class="sequence-member__help help"><span class="icon-help-inverse" aria-hidden="true"></span>Self-promotion is discouraged</div>', html)
 
     def test_media_inheritance(self):
         class ScriptedCharBlock(blocks.CharBlock):
@@ -1253,7 +1249,6 @@ class TestStructBlock(SimpleTestCase):
         self.assertTrue(isinstance(struct_val, blocks.StructValue))
         self.assertTrue(isinstance(struct_val.bound_blocks['link'].block, blocks.URLBlock))
 
-    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
     def test_value_omitted_from_data(self):
         block = blocks.StructBlock([
             ('title', blocks.CharBlock()),
@@ -1340,7 +1335,7 @@ class TestStructBlock(SimpleTestCase):
         result = str(value)
         self.assertNotIn('<h1>', result)
         # The expected rendering should correspond to the native representation of an OrderedDict:
-        # "StructValue([('title', u'Hello'), ('body', <wagtail.wagtailcore.rich_text.RichText object at 0xb12d5eed>)])"
+        # "StructValue([('title', u'Hello'), ('body', <wagtail.core.rich_text.RichText object at 0xb12d5eed>)])"
         # - give or take some quoting differences between Python versions
         self.assertIn('StructValue', result)
         self.assertIn('title', result)
@@ -1351,6 +1346,173 @@ class TestStructBlock(SimpleTestCase):
         value = block.to_python({'title': 'Bonjour', 'body': 'monde <i>italique</i>'})
         result = value.render_as_block(context={'language': 'fr'})
         self.assertEqual(result, """<h1 lang="fr">Bonjour</h1><div class="rich-text">monde <i>italique</i></div>""")
+
+
+class TestStructBlockWithCustomStructValue(SimpleTestCase):
+
+    def test_initialisation(self):
+
+        class CustomStructValue(blocks.StructValue):
+            def joined(self):
+                return self.get('title', '') + self.get('link', '')
+
+        block = blocks.StructBlock([
+            ('title', blocks.CharBlock()),
+            ('link', blocks.URLBlock()),
+        ], value_class=CustomStructValue)
+
+        self.assertEqual(list(block.child_blocks.keys()), ['title', 'link'])
+
+        block_value = block.to_python({'title': 'Birthday party', 'link': 'https://myparty.co.uk'})
+        self.assertIsInstance(block_value, CustomStructValue)
+
+        default_value = block.get_default()
+        self.assertIsInstance(default_value, CustomStructValue)
+
+        value_from_datadict = block.value_from_datadict({
+            'mylink-title': "Torchbox",
+            'mylink-link': "http://www.torchbox.com"
+        }, {}, 'mylink')
+
+        self.assertIsInstance(value_from_datadict, CustomStructValue)
+
+        value = block.to_python({'title': 'Torchbox', 'link': 'http://www.torchbox.com/'})
+        clean_value = block.clean(value)
+        self.assertTrue(isinstance(clean_value, CustomStructValue))
+        self.assertEqual(clean_value['title'], 'Torchbox')
+
+        value = block.to_python({'title': 'Torchbox', 'link': 'not a url'})
+        with self.assertRaises(ValidationError):
+            block.clean(value)
+
+
+    def test_initialisation_from_subclass(self):
+
+        class LinkStructValue(blocks.StructValue):
+            def url(self):
+                return self.get('page') or self.get('link')
+
+        class LinkBlock(blocks.StructBlock):
+            title = blocks.CharBlock()
+            page = blocks.PageChooserBlock(required=False)
+            link = blocks.URLBlock(required=False)
+
+            class Meta:
+                value_class = LinkStructValue
+
+        block = LinkBlock()
+
+        self.assertEqual(list(block.child_blocks.keys()), ['title', 'page', 'link'])
+
+        block_value = block.to_python({'title': 'Website', 'link': 'https://website.com'})
+        self.assertIsInstance(block_value, LinkStructValue)
+
+        default_value = block.get_default()
+        self.assertIsInstance(default_value, LinkStructValue)
+
+
+    def test_initialisation_with_multiple_subclassses(self):
+        class LinkStructValue(blocks.StructValue):
+            def url(self):
+                return self.get('page') or self.get('link')
+
+        class LinkBlock(blocks.StructBlock):
+            title = blocks.CharBlock()
+            page = blocks.PageChooserBlock(required=False)
+            link = blocks.URLBlock(required=False)
+
+            class Meta:
+                value_class = LinkStructValue
+
+        class StyledLinkBlock(LinkBlock):
+            classname = blocks.CharBlock()
+
+        block = StyledLinkBlock()
+
+        self.assertEqual(list(block.child_blocks.keys()), ['title', 'page', 'link', 'classname'])
+
+        value_from_datadict = block.value_from_datadict({
+            'queen-title': "Torchbox",
+            'queen-link': "http://www.torchbox.com",
+            'queen-classname': "fullsize",
+        }, {}, 'queen')
+
+        self.assertIsInstance(value_from_datadict, LinkStructValue)
+
+    def test_initialisation_with_mixins(self):
+        class LinkStructValue(blocks.StructValue):
+            pass
+
+        class StylingMixinStructValue(blocks.StructValue):
+            pass
+
+        class LinkBlock(blocks.StructBlock):
+            title = blocks.CharBlock()
+            link = blocks.URLBlock()
+
+            class Meta:
+                value_class = LinkStructValue
+
+        class StylingMixin(blocks.StructBlock):
+            classname = blocks.CharBlock()
+
+        class StyledLinkBlock(StylingMixin, LinkBlock):
+            source = blocks.CharBlock()
+
+        block = StyledLinkBlock()
+
+        self.assertEqual(list(block.child_blocks.keys()),
+                         ['title', 'link', 'classname', 'source'])
+
+        block_value = block.to_python({
+            'title': 'Website', 'link': 'https://website.com',
+            'source': 'google', 'classname': 'full-size',
+        })
+        self.assertIsInstance(block_value, LinkStructValue)
+
+
+    def test_value_property(self):
+
+        class SectionStructValue(blocks.StructValue):
+            @property
+            def foo(self):
+                return 'bar %s' % self.get('title', '')
+
+        class SectionBlock(blocks.StructBlock):
+            title = blocks.CharBlock()
+            body = blocks.RichTextBlock()
+
+            class Meta:
+                value_class = SectionStructValue
+
+        block = SectionBlock()
+        struct_value = block.to_python({'title': 'hello', 'body': '<b>world</b>'})
+        value = struct_value.foo
+        self.assertEqual(value, 'bar hello')
+
+    def test_render_with_template(self):
+
+        class SectionStructValue(blocks.StructValue):
+            def title_with_suffix(self):
+                title = self.get('title')
+                if title:
+                    return 'SUFFIX %s' % title
+                return 'EMPTY TITLE'
+
+        class SectionBlock(blocks.StructBlock):
+            title = blocks.CharBlock(required=False)
+
+            class Meta:
+                value_class = SectionStructValue
+
+        block = SectionBlock(template='tests/blocks/struct_block_custom_value.html')
+        struct_value = block.to_python({'title': 'hello'})
+        html = block.render(struct_value)
+        self.assertEqual(html, '<div>SUFFIX hello</div>\n')
+
+        struct_value = block.to_python({})
+        html = block.render(struct_value)
+        self.assertEqual(html, '<div>EMPTY TITLE</div>\n')
 
 
 class TestListBlock(WagtailTestUtils, SimpleTestCase):
@@ -1598,7 +1760,6 @@ class TestListBlock(WagtailTestUtils, SimpleTestCase):
 
         self.assertEqual(content, ["Wagtail", "Django"])
 
-    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
     def test_value_omitted_from_data(self):
         block = blocks.ListBlock(blocks.CharBlock())
 
@@ -2024,7 +2185,6 @@ class TestStreamBlock(WagtailTestUtils, SimpleTestCase):
             html
         )
 
-    @unittest.skipIf(django.VERSION < (1, 10, 2), "value_omitted_from_data is not available")
     def test_value_omitted_from_data(self):
         block = blocks.StreamBlock([
             ('heading', blocks.CharBlock()),
@@ -2599,31 +2759,31 @@ class TestPageChooserBlock(TestCase):
     def test_deconstruct_target_model_default(self):
         block = blocks.PageChooserBlock()
         self.assertEqual(block.deconstruct(), (
-            'wagtail.wagtailcore.blocks.PageChooserBlock',
+            'wagtail.core.blocks.PageChooserBlock',
             (), {}))
 
     def test_deconstruct_target_model_string(self):
         block = blocks.PageChooserBlock(target_model='tests.SimplePage')
         self.assertEqual(block.deconstruct(), (
-            'wagtail.wagtailcore.blocks.PageChooserBlock',
+            'wagtail.core.blocks.PageChooserBlock',
             (), {'target_model': ['tests.SimplePage']}))
 
     def test_deconstruct_target_model_literal(self):
         block = blocks.PageChooserBlock(target_model=SimplePage)
         self.assertEqual(block.deconstruct(), (
-            'wagtail.wagtailcore.blocks.PageChooserBlock',
+            'wagtail.core.blocks.PageChooserBlock',
             (), {'target_model': ['tests.SimplePage']}))
 
     def test_deconstruct_target_model_multiple_strings(self):
         block = blocks.PageChooserBlock(target_model=['tests.SimplePage', 'tests.EventPage'])
         self.assertEqual(block.deconstruct(), (
-            'wagtail.wagtailcore.blocks.PageChooserBlock',
+            'wagtail.core.blocks.PageChooserBlock',
             (), {'target_model': ['tests.SimplePage', 'tests.EventPage']}))
 
     def test_deconstruct_target_model_multiple_literals(self):
         block = blocks.PageChooserBlock(target_model=[SimplePage, EventPage])
         self.assertEqual(block.deconstruct(), (
-            'wagtail.wagtailcore.blocks.PageChooserBlock',
+            'wagtail.core.blocks.PageChooserBlock',
             (), {'target_model': ['tests.SimplePage', 'tests.EventPage']}))
 
 
@@ -2983,3 +3143,19 @@ class TestIncludeBlockTag(TestCase):
             'language': 'fr',
         })
         self.assertIn('<body><h1 class="important">bonjour</h1></body>', result)
+
+
+class BlockUsingGetTemplateMethod(blocks.Block):
+
+    my_new_template = "my_super_awesome_dynamic_template.html"
+
+    def get_template(self):
+        return self.my_new_template
+
+
+class TestOverriddenGetTemplateBlockTag(TestCase):
+    def test_template_is_overriden_by_get_template(self):
+
+        block = BlockUsingGetTemplateMethod(template='tests/blocks/this_shouldnt_be_used.html')
+        template = block.get_template()
+        self.assertEquals(template, block.my_new_template)

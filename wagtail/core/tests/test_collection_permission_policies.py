@@ -1,15 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
-from wagtail.wagtailcore.models import Collection, GroupCollectionPermission
-from wagtail.wagtailcore.permission_policies.collections import (
+from wagtail.core.models import Collection, GroupCollectionPermission
+from wagtail.core.permission_policies.collections import (
     CollectionOwnershipPermissionPolicy, CollectionPermissionPolicy)
-from wagtail.wagtailcore.tests.test_permission_policies import PermissionPolicyTestUtils
-from wagtail.wagtaildocs.models import Document
+from wagtail.core.tests.test_permission_policies import PermissionPolicyTestUtils
+from wagtail.documents.models import Document
 
 
 class PermissionPolicyTestCase(PermissionPolicyTestUtils, TestCase):
@@ -124,7 +122,7 @@ class PermissionPolicyTestCase(PermissionPolicyTestUtils, TestCase):
 
 class TestCollectionPermissionPolicy(PermissionPolicyTestCase):
     def setUp(self):
-        super(TestCollectionPermissionPolicy, self).setUp()
+        super().setUp()
         self.policy = CollectionPermissionPolicy(Document)
 
     def test_user_has_permission(self):
@@ -514,7 +512,7 @@ class TestCollectionPermissionPolicy(PermissionPolicyTestCase):
 
 class TestCollectionOwnershipPermissionPolicy(PermissionPolicyTestCase):
     def setUp(self):
-        super(TestCollectionOwnershipPermissionPolicy, self).setUp()
+        super().setUp()
         self.policy = CollectionOwnershipPermissionPolicy(
             Document, owner_field_name='uploaded_by_user',
         )

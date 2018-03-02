@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-
-# Import block types defined in submodules into the wagtail.wagtailcore.blocks namespace
+# Import block types defined in submodules into the wagtail.core.blocks namespace
 from .base import *  # NOQA
 from .field_block import *  # NOQA
 from .struct_block import *  # NOQA

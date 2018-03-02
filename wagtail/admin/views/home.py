@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import permission_required
@@ -9,17 +7,17 @@ from django.http import Http404
 from django.shortcuts import render
 from django.template.loader import render_to_string
 
-from wagtail.wagtailadmin.navigation import get_explorable_root_page
-from wagtail.wagtailadmin.site_summary import SiteSummaryPanel
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Page, PageRevision, UserPagePermissionsProxy
+from wagtail.admin.navigation import get_explorable_root_page
+from wagtail.admin.site_summary import SiteSummaryPanel
+from wagtail.core import hooks
+from wagtail.core.models import Page, PageRevision, UserPagePermissionsProxy
 
 User = get_user_model()
 
 
 # Panels for the homepage
 
-class UpgradeNotificationPanel(object):
+class UpgradeNotificationPanel:
     name = 'upgrade_notification'
     order = 100
 
@@ -33,7 +31,7 @@ class UpgradeNotificationPanel(object):
             return ""
 
 
-class PagesForModerationPanel(object):
+class PagesForModerationPanel:
     name = 'pages_for_moderation'
     order = 200
 
@@ -49,7 +47,7 @@ class PagesForModerationPanel(object):
         }, request=self.request)
 
 
-class RecentEditsPanel(object):
+class RecentEditsPanel:
     name = 'recent_edits'
     order = 300
 

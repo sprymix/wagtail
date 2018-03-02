@@ -1,19 +1,10 @@
 'use strict';
 
-// registerHalloPlugin must be implemented here so it can be used by plugins
-// hooked in with insert_editor_js (and hallo-bootstrap.js runs too late)
-var halloPlugins = {
-    halloformat: {},
-    halloheadings: {formatBlocks: ['p', 'h2', 'h3', 'h4', 'h5']},
-    hallolists: {},
-    hallohr: {},
-    halloreundo: {},
-    hallowagtaillink: {},
-    hallorequireparagraphs: {}
-};
-
+var halloPlugins = {};
 function registerHalloPlugin(name, opts) {
-    halloPlugins[name] = (opts || {});
+    /* Obsolete - used on Wagtail <1.12 to register plugins for the hallo.js editor.
+    Defined here so that third-party plugins can continue to call it to provide Wagtail <1.12
+    compatibility, without throwing an error on later versions. */
 }
 
 // Compare two date objects. Ignore minutes and seconds.
@@ -115,7 +106,7 @@ function InlinePanel(opts) {
         //mark container as having children to identify fields in use from those not
         self.setHasContent();
 
-        $('#' + deleteInputId + '-button').click(function() {
+        $('#' + deleteInputId + '-button').on('click', function() {
             /* set 'deleted' form field to true */
             $('#' + deleteInputId).val('1');
             $('#' + childId).addClass('deleted').slideUp(function() {
@@ -126,7 +117,7 @@ function InlinePanel(opts) {
         });
 
         if (opts.canOrder) {
-            $('#' + prefix + '-move-up').click(function() {
+            $('#' + prefix + '-move-up').on('click', function() {
                 var currentChild = $('#' + childId);
                 var currentChildOrderElem = currentChild.find('input[name$="-ORDER"]');
                 var currentChildOrder = currentChildOrderElem.val();
@@ -147,7 +138,7 @@ function InlinePanel(opts) {
                 self.updateMoveButtonDisabledStates();
             });
 
-            $('#' + prefix + '-move-down').click(function() {
+            $('#' + prefix + '-move-down').on('click', function() {
                 var currentChild = $('#' + childId);
                 var currentChildOrderElem = currentChild.find('input[name$="-ORDER"]');
                 var currentChildOrder = currentChildOrderElem.val();
@@ -389,7 +380,7 @@ function initSlugAutoPopulate() {
 }
 
 function initSlugCleaning() {
-    $('#id_slug').blur(function() {
+    $('#id_slug').on('blur', function() {
         // if a user has just set the slug themselves, don't remove stop words etc, just illegal characters
         $(this).val(cleanForSlug($(this).val(), false));
     });
@@ -426,7 +417,7 @@ function initCollapsibleBlocks(root) {
             $fieldset.hide();
         }
 
-        $li.find('> h2').click(function() {
+        $li.find('> h2').on('click', function() {
             if (!$li.hasClass('collapsed')) {
                 $li.addClass('collapsed');
                 $fieldset.hide('show');
@@ -521,11 +512,11 @@ $(function() {
             $form.on('change keyup DOMSubtreeModified', function () {
                 clearTimeout(autoUpdatePreviewDataTimeout);
                 autoUpdatePreviewDataTimeout = setTimeout(setPreviewData, 1000);
-            }).change();
+            }).trigger('change');
         }
     });
 
-    $previewButton.click(function(e) {
+    $previewButton.on('click', function(e) {
         e.preventDefault();
         var $this = $(this);
         var $icon = $this.filter('.icon'),
@@ -541,7 +532,7 @@ $(function() {
                 window.focus();
                 previewWindow.close();
                 // TODO: Stop sending the form, as it removes file data.
-                $form.submit();
+                $form.trigger('submit');
             }
         }).fail(function () {
             alert('Error while sending preview data.');
@@ -551,10 +542,4 @@ $(function() {
             $icon.addClass('icon-view').removeClass('icon-spinner');
         });
     });
-
-    var preview_b = $('form#page-edit-form .actions.preview .action-preview');
-
-    /* Set up behaviour of preview button */
-    preview_b.click(createPreviewButtonHandler(
-                                $('#page-edit-form'), $('.action-preview')));
 });

@@ -1,15 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.translation import ugettext_lazy
 
-from wagtail.wagtailadmin import messages
-from wagtail.wagtailadmin.forms import CollectionForm
-from wagtail.wagtailadmin.views.generic import CreateView, DeleteView, EditView, IndexView
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Collection
-from wagtail.wagtailcore.permissions import collection_permission_policy
+from wagtail.admin import messages
+from wagtail.admin.forms import CollectionForm
+from wagtail.admin.views.generic import CreateView, DeleteView, EditView, IndexView
+from wagtail.core import hooks
+from wagtail.core.models import Collection
+from wagtail.core.permissions import collection_permission_policy
 
 
 class Index(IndexView):
@@ -92,7 +90,7 @@ class Delete(DeleteView):
         return list(filter(is_nonempty, collection_contents))
 
     def get_context_data(self, **kwargs):
-        context = super(Delete, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         collection_contents = self.get_collection_contents()
 
         if collection_contents:

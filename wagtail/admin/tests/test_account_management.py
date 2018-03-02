@@ -1,16 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import mail
-from django.core.urlresolvers import reverse
 from django.test import TestCase, override_settings
+from django.urls import reverse
 
+from wagtail.admin.utils import WAGTAILADMIN_PROVIDED_LANGUAGES, get_available_admin_languages
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailadmin.utils import (
-    WAGTAILADMIN_PROVIDED_LANGUAGES, get_available_admin_languages)
-from wagtail.wagtailusers.models import UserProfile
+from wagtail.users.models import UserProfile
 
 
 class TestAuthentication(TestCase, WagtailTestUtils):
@@ -502,7 +499,7 @@ class TestPasswordReset(TestCase, WagtailTestUtils):
         self.assertEqual(len(mail.outbox), 0)
 
     def setup_password_reset_confirm_tests(self):
-        from django.utils.encoding import force_bytes
+        from django.utils.encoding import force_bytes, force_text
         from django.utils.http import urlsafe_base64_encode
 
         # Get user
@@ -512,7 +509,7 @@ class TestPasswordReset(TestCase, WagtailTestUtils):
         self.password_reset_token = PasswordResetTokenGenerator().make_token(self.user)
 
         # Generate a password reset uid
-        self.password_reset_uid = urlsafe_base64_encode(force_bytes(self.user.pk))
+        self.password_reset_uid = force_text(urlsafe_base64_encode(force_bytes(self.user.pk)))
 
         # Create url_args
         self.url_kwargs = dict(uidb64=self.password_reset_uid, token=self.password_reset_token)

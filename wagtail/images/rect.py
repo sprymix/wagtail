@@ -1,9 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import math
 
 
-class Vector(object):
+class Vector:
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -17,16 +15,13 @@ class Vector(object):
     def __eq__(self, other):
         return tuple(self) == tuple(other)
 
-    def __ne__(self, other):
-        return not (self == other)
-
     def __repr__(self):
         return 'Vector(x: %d, y: %d)' % (
             self.x, self.y
         )
 
 
-class Rect(object):
+class Rect:
     def __init__(self, left, top, right, bottom):
         self.left = left
         self.top = top
@@ -167,9 +162,6 @@ class Rect(object):
 
     def __eq__(self, other):
         return tuple(self) == tuple(other)
-
-    def __ne__(self, other):
-        return not (self == other)
 
     def __repr__(self):
         return 'Rect(left: %d, top: %d, right: %d, bottom: %d)' % (

@@ -1,16 +1,14 @@
-from __future__ import absolute_import, unicode_literals
-
-from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.forms import PasswordViewRestrictionForm
-from wagtail.wagtailcore.models import Page, PageViewRestriction
+from wagtail.core import hooks
+from wagtail.core.forms import PasswordViewRestrictionForm
+from wagtail.core.models import Page, PageViewRestriction
 
 
 def serve(request, path):
-    # we need a valid Site object corresponding to this request (set in wagtail.wagtailcore.middleware.SiteMiddleware)
+    # we need a valid Site object corresponding to this request (set in wagtail.core.middleware.SiteMiddleware)
     # in order to proceed
     if not request.site:
         raise Http404

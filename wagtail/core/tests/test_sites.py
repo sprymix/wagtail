@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.core.exceptions import ValidationError
 from django.http.request import HttpRequest
 from django.test import TestCase, override_settings
 
-from wagtail.wagtailcore.models import Page, Site
+from wagtail.core.models import Page, Site
 
 
 class TestSiteNaturalKey(TestCase):

@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import taggit.managers
 from django.conf import settings
 from django.db import migrations, models
 
-import wagtail.wagtailimages.models
-import wagtail.wagtailsearch.index
+import wagtail.images.models
+import wagtail.search.index
 
 
 class Migration(migrations.Migration):
@@ -33,7 +31,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(primary_key=True, serialize=False, auto_created=True, verbose_name='ID')),
                 ('title', models.CharField(verbose_name='Title', max_length=255)),
                 ('file', models.ImageField(
-                    width_field='width', upload_to=wagtail.wagtailimages.models.get_upload_to,
+                    width_field='width', upload_to=wagtail.images.models.get_upload_to,
                     verbose_name='File', height_field='height'
                 )),
                 ('width', models.IntegerField(editable=False)),
@@ -53,7 +51,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, wagtail.wagtailsearch.index.Indexed),
+            bases=(models.Model, wagtail.search.index.Indexed),
         ),
         migrations.CreateModel(
             name='Rendition',
@@ -78,13 +76,13 @@ class Migration(migrations.Migration):
             name='UserRendition',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file', models.ImageField(height_field='height', upload_to=wagtail.wagtailimages.models.get_rendition_upload_to, width_field='width')),
+                ('file', models.ImageField(height_field='height', upload_to=wagtail.images.models.get_rendition_upload_to, width_field='width')),
                 ('width', models.IntegerField(editable=False)),
                 ('height', models.IntegerField(editable=False)),
                 ('focal_point_key', models.CharField(blank=True, default='', editable=False, max_length=255)),
                 ('filter', models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='+', to='wagtailimages.Filter')),
                 ('image', models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='user_renditions', to='wagtailimages.Image')),
             ],
-            bases=(models.Model, wagtail.wagtailimages.models.WillowImageWrapper),
+            bases=(models.Model, wagtail.images.models.WillowImageWrapper),
         ),
     ]

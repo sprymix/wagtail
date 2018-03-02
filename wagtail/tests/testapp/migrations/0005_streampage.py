@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import wagtail.wagtailcore.fields
-import wagtail.wagtailcore.blocks
-import wagtail.wagtailimages.blocks
+import wagtail.core.fields
+import wagtail.core.blocks
+import wagtail.images.blocks
 
 
 class Migration(migrations.Migration):
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             name='StreamPage',
             fields=[
                 ('page_ptr', models.OneToOneField(auto_created=True, to='wagtailcore.Page', serialize=False, parent_link=True, primary_key=True)),
-                ('body', wagtail.wagtailcore.fields.StreamField((('text', wagtail.wagtailcore.blocks.CharBlock()), ('rich_text', wagtail.wagtailcore.blocks.RichTextBlock()), ('image', wagtail.wagtailimages.blocks.ImageChooserBlock())))),
+                ('body', wagtail.wagtailcore.fields.StreamField((('text', wagtail.wagtailcore.blocks.CharBlock()), ('rich_text', wagtail.wagtailcore.blocks.RichTextBlock()), ('image', wagtail.images.blocks.ImageChooserBlock())))),
             ],
             options={
                 'abstract': False,

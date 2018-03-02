@@ -1,16 +1,14 @@
 """
 Tests for the search box in the admin side menu, and the custom search hooks.
 """
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
 from django.template import Context, Template
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 
+from wagtail.admin.utils import user_has_any_page_permission
+from wagtail.core.models import Site
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailadmin.utils import user_has_any_page_permission
-from wagtail.wagtailcore.models import Site
 
 
 class BaseSearchAreaTestCase(WagtailTestUtils, TestCase):
@@ -33,7 +31,7 @@ class BaseSearchAreaTestCase(WagtailTestUtils, TestCase):
 
 class TestSearchAreas(BaseSearchAreaTestCase):
     def setUp(self):
-        super(TestSearchAreas, self).setUp()
+        super().setUp()
         self.user = self.login()
 
     def test_other_searches(self):
@@ -80,7 +78,7 @@ class TestSearchAreaNoPagePermissions(BaseSearchAreaTestCase):
         self.assertFalse(user_has_any_page_permission(self.user))
 
     def create_test_user(self):
-        user = super(TestSearchAreaNoPagePermissions, self).create_test_user()
+        user = super().create_test_user()
         user.is_superuser = False
         user.user_permissions.add(
             Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')

@@ -1,15 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 from django import template
 from django.core.cache import cache
 from django.http import HttpRequest
 from django.test import TestCase
 from django.utils.safestring import SafeText
 
+from wagtail.core.models import Page, Site
+from wagtail.core.templatetags.wagtailcore_tags import richtext
+from wagtail.core.utils import resolve_model_string
 from wagtail.tests.testapp.models import SimplePage
-from wagtail.wagtailcore.models import Page, Site
-from wagtail.wagtailcore.templatetags.wagtailcore_tags import richtext
-from wagtail.wagtailcore.utils import resolve_model_string
 
 
 class TestPageUrlTags(TestCase):
@@ -196,7 +194,7 @@ class TestResolveModelString(TestCase):
         self.assertEqual(model, Page)
 
     def test_resolve_from_string_invalid(self):
-        self.assertRaises(ValueError, resolve_model_string, 'wagtail.wagtailcore.Page')
+        self.assertRaises(ValueError, resolve_model_string, 'wagtail.core.Page')
 
     def test_resolve_from_string_with_incorrect_default_app(self):
         self.assertRaises(LookupError, resolve_model_string, 'Page', default_app='wagtailadmin')

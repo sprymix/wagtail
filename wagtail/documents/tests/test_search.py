@@ -1,24 +1,22 @@
-from __future__ import absolute_import, unicode_literals
-
 import unittest
 
 from django.core.files.base import ContentFile
-from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.urls import reverse
 from django.utils.six import b
 
+from wagtail.documents import models
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtaildocs import models
 
 
 @override_settings(_WAGTAILSEARCH_FORCE_AUTO_UPDATE=['elasticsearch'])
 class TestIssue613(TestCase, WagtailTestUtils):
     def get_elasticsearch_backend(self):
         from django.conf import settings
-        from wagtail.wagtailsearch.backends import get_search_backend
+        from wagtail.search.backends import get_search_backend
 
-        backend_path = 'wagtail.wagtailsearch.backends.elasticsearch'
+        backend_path = 'wagtail.search.backends.elasticsearch'
 
         # Search WAGTAILSEARCH_BACKENDS for an entry that uses the given backend path
         for backend_name, backend_conf in settings.WAGTAILSEARCH_BACKENDS.items():

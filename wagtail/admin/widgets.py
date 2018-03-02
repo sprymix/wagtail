@@ -1,26 +1,22 @@
-from __future__ import absolute_import, unicode_literals
-
 import itertools
 import json
 from functools import total_ordering
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.forms import widgets
 from django.forms.utils import flatatt
 from django.template.loader import render_to_string
-from django.utils.encoding import python_2_unicode_compatible
+from django.urls import reverse
 from django.utils.formats import get_format
 from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from taggit.forms import TagWidget
 
+from wagtail.admin.datetimepicker import to_datetimepicker_format
+from wagtail.core import hooks
+from wagtail.core.models import Page
 from wagtail.utils.widgets import WidgetWithScript
-from wagtail.wagtailadmin.datetimepicker import to_datetimepicker_format
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Page
-
 
 DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 DEFAULT_DATETIME_FORMAT = '%Y-%m-%d %H:%M'
@@ -33,7 +29,7 @@ class AdminAutoHeightTextInput(WidgetWithScript, widgets.Textarea):
         if attrs:
             default_attrs.update(attrs)
 
-        super(AdminAutoHeightTextInput, self).__init__(default_attrs)
+        super().__init__(default_attrs)
 
     def render_js_init(self, id_, name, value):
         return 'autosize($("#{0}"));'.format(id_)
@@ -45,7 +41,7 @@ class AdminDateInput(WidgetWithScript, widgets.DateInput):
         if fmt is None:
             fmt = getattr(settings, 'WAGTAIL_DATE_FORMAT', DEFAULT_DATE_FORMAT)
         self.js_format = to_datetimepicker_format(fmt)
-        super(AdminDateInput, self).__init__(attrs=attrs, format=fmt)
+        super().__init__(attrs=attrs, format=fmt)
 
     def render_js_init(self, id_, name, value):
         config = {
@@ -60,7 +56,7 @@ class AdminDateInput(WidgetWithScript, widgets.DateInput):
 
 class AdminTimeInput(WidgetWithScript, widgets.TimeInput):
     def __init__(self, attrs=None, format='%H:%M'):
-        super(AdminTimeInput, self).__init__(attrs=attrs, format=format)
+        super().__init__(attrs=attrs, format=format)
 
     def render_js_init(self, id_, name, value):
         return 'initTimeChooser({0});'.format(json.dumps(id_))
@@ -72,7 +68,7 @@ class AdminDateTimeInput(WidgetWithScript, widgets.DateTimeInput):
         if fmt is None:
             fmt = getattr(settings, 'WAGTAIL_DATETIME_FORMAT', DEFAULT_DATETIME_FORMAT)
         self.js_format = to_datetimepicker_format(fmt)
-        super(AdminDateTimeInput, self).__init__(attrs=attrs, format=fmt)
+        super().__init__(attrs=attrs, format=fmt)
 
     def render_js_init(self, id_, name, value):
         config = {
@@ -129,7 +125,7 @@ class AdminChooser(WidgetWithScript, widgets.Input):
 
     def value_from_datadict(self, data, files, name):
         # treat the empty string as None
-        result = super(AdminChooser, self).value_from_datadict(data, files, name)
+        result = super().value_from_datadict(data, files, name)
         if result == '':
             return None
         else:
@@ -147,7 +143,7 @@ class AdminChooser(WidgetWithScript, widgets.Input):
             self.link_to_chosen_text = kwargs.pop('link_to_chosen_text')
         if 'show_edit_link' in kwargs:
             self.show_edit_link = kwargs.pop('show_edit_link')
-        super(AdminChooser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class AdminPageChooser(AdminChooser):
@@ -156,7 +152,7 @@ class AdminPageChooser(AdminChooser):
     link_to_chosen_text = _('Edit this page')
 
     def __init__(self, target_models=None, can_choose_root=False, user_perms=None, **kwargs):
-        super(AdminPageChooser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if target_models:
             models = ', '.join([model._meta.verbose_name.title() for model in target_models if model is not Page])
@@ -183,7 +179,7 @@ class AdminPageChooser(AdminChooser):
 
         instance, value = self.get_instance_and_id(model_class, value)
 
-        original_field_html = super(AdminPageChooser, self).render_html(name, value, attrs)
+        original_field_html = super().render_html(name, value, attrs)
 
         return render_to_string("wagtailadmin/widgets/page_chooser.html", {
             'widget': self,
@@ -217,9 +213,8 @@ class AdminPageChooser(AdminChooser):
         )
 
 
-@python_2_unicode_compatible
 @total_ordering
-class Button(object):
+class Button:
     show = True
 
     def __init__(self, label, url, classes=set(), attrs={}, priority=1000):
@@ -258,12 +253,12 @@ class Button(object):
 class PageListingButton(Button):
     def __init__(self, label, url, classes=set(), **kwargs):
         classes = {'button', 'button-small', 'button-secondary'} | set(classes)
-        super(PageListingButton, self).__init__(label, url, classes=classes, **kwargs)
+        super().__init__(label, url, classes=classes, **kwargs)
 
 
 class BaseDropdownMenuButton(Button):
     def __init__(self, *args, **kwargs):
-        super(BaseDropdownMenuButton, self).__init__(*args, url=None, **kwargs)
+        super().__init__(*args, url=None, **kwargs)
 
     @cached_property
     def dropdown_buttons(self):
@@ -286,7 +281,7 @@ class ButtonWithDropdownFromHook(BaseDropdownMenuButton):
         self.page_perms = page_perms
         self.is_parent = is_parent
 
-        super(ButtonWithDropdownFromHook, self).__init__(label, **kwargs)
+        super().__init__(label, **kwargs)
 
     @property
     def show(self):

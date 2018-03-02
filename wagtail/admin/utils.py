@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import logging
 from functools import wraps
 
@@ -17,8 +15,8 @@ from django.utils.translation import override, ugettext_lazy
 from modelcluster.fields import ParentalKey
 from taggit.models import Tag
 
-from wagtail.wagtailcore.models import GroupPagePermission, Page, PageRevision
-from wagtail.wagtailusers.models import UserProfile
+from wagtail.core.models import GroupPagePermission, Page, PageRevision
+from wagtail.users.models import UserProfile
 
 logger = logging.getLogger('wagtail.admin')
 
@@ -45,7 +43,8 @@ WAGTAILADMIN_PROVIDED_LANGUAGES = [
     ('pt-pt', ugettext_lazy('Portuguese')),
     ('ro', ugettext_lazy('Romanian')),
     ('ru', ugettext_lazy('Russian')),
-    ('se', ugettext_lazy('Swedish')),
+    ('sv', ugettext_lazy('Swedish')),
+    ('sk', ugettext_lazy('Slovak')),
     ('zh-cn', ugettext_lazy('Chinese (China)')),
 ]
 
@@ -76,7 +75,7 @@ def get_object_usage(obj):
             # if the relation is between obj and an object that has a page as a
             # property, return the page
             for f in related_model._meta.fields:
-                if isinstance(f, ParentalKey) and issubclass(f.rel.to, Page):
+                if isinstance(f, ParentalKey) and issubclass(f.remote_field.model, Page):
                     pages |= Page.objects.filter(
                         id__in=related_model._base_manager.filter(
                             **{
@@ -118,7 +117,7 @@ def permission_denied(request):
     if request.is_ajax():
         raise PermissionDenied
 
-    from wagtail.wagtailadmin import messages
+    from wagtail.admin import messages
 
     messages.error(request, _('Sorry, you do not have permission to access this area.'))
     return redirect('wagtailadmin_home')
@@ -175,7 +174,7 @@ def any_permission_required(*perms):
     return user_passes_test(test)
 
 
-class PermissionPolicyChecker(object):
+class PermissionPolicyChecker:
     """
     Provides a view decorator that enforces the given permission policy,
     returning the wagtailadmin 'permission denied' response if permission not granted
@@ -215,7 +214,8 @@ def send_notification(page_revision_id, notification, excluded_user_id):
     # Get list of recipients
     if notification == 'submitted':
         # Get list of publishers
-        recipients = users_with_page_permission(revision.page, 'publish')
+        include_superusers = getattr(settings, 'WAGTAILADMIN_NOTIFICATION_INCLUDE_SUPERUSERS', True)
+        recipients = users_with_page_permission(revision.page, 'publish', include_superusers)
     elif notification in ['rejected', 'approved']:
         # Get submitter
         recipients = [revision.user]

@@ -1,9 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import url
 
-from wagtail.wagtailadmin.forms import PasswordResetForm
-from wagtail.wagtailadmin.views import account
+from wagtail.admin.forms import PasswordResetForm
+from wagtail.admin.views import account
 
 urlpatterns = [
     url(

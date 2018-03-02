@@ -18,7 +18,16 @@ var flatten = function(arrOfArr) {
 };
 
 var autoprefixerConfig = {
-    browsers: ['last 3 versions', 'ie 11'],
+    browsers: [
+      'Firefox ESR',
+      'ie 11',
+      'last 2 Chrome versions',
+      'last 2 ChromeAndroid versions',
+      'last 2 Edge versions',
+      'last 1 Firefox version',
+      'last 2 iOS versions',
+      'last 2 Safari versions',
+    ],
     cascade: false,
 };
 
@@ -40,7 +49,7 @@ gulp.task('styles:css', function() {
     });
 
     return gulp.src(sources, {base: '.'})
-        .pipe(config.isProduction ? cssnano(cssnanoConfig) : gutil.noop())
+        .pipe(cssnano(cssnanoConfig))
         .pipe(autoprefixer(autoprefixerConfig))
         .pipe(renameSrcToDest())
         .pipe(size({ title: 'Vendor CSS' }))
@@ -66,7 +75,7 @@ gulp.task('styles:sass', function () {
             includePaths: includePaths,
             outputStyle: 'expanded'
         }).on('error', sass.logError))
-        .pipe(config.isProduction ? cssnano(cssnanoConfig) : gutil.noop())
+        .pipe(cssnano(cssnanoConfig))
         .pipe(autoprefixer(autoprefixerConfig))
         .pipe(size({ title: 'Wagtail CSS' }))
         .pipe(config.isProduction ? gutil.noop() : sourcemaps.write())

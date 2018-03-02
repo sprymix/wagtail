@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.test import TestCase
 from django.test.utils import override_settings
 
+from wagtail.admin import widgets
+from wagtail.core.models import Page
 from wagtail.tests.testapp.models import EventPage, SimplePage
-from wagtail.wagtailadmin import widgets
-from wagtail.wagtailcore.models import Page
 
 
 class TestAdminPageChooserWidget(TestCase):

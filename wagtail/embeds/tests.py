@@ -1,30 +1,28 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import unittest
+import urllib.request
+from urllib.error import URLError
 
-import django.utils.six.moves.urllib.request
 from bs4 import BeautifulSoup
 from django import template
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse
 from django.test import TestCase, override_settings
-from django.utils.six.moves.urllib.error import URLError
+from django.urls import reverse
 from mock import patch
 
+from wagtail.core import blocks
+from wagtail.core.rich_text import expand_db_html
+from wagtail.embeds import oembed_providers
+from wagtail.embeds.blocks import EmbedBlock, EmbedValue
+from wagtail.embeds.embeds import get_embed
+from wagtail.embeds.exceptions import EmbedNotFoundException, EmbedUnsupportedProviderException
+from wagtail.embeds.finders import get_finders
+from wagtail.embeds.finders.embedly import EmbedlyFinder as EmbedlyFinder
+from wagtail.embeds.finders.embedly import AccessDeniedEmbedlyException, EmbedlyException
+from wagtail.embeds.finders.oembed import OEmbedFinder as OEmbedFinder
+from wagtail.embeds.models import Embed
+from wagtail.embeds.rich_text import MediaEmbedHandler, media_embedtype_handler
+from wagtail.embeds.templatetags.wagtailembeds_tags import embed_tag
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailcore import blocks
-from wagtail.wagtailembeds import oembed_providers
-from wagtail.wagtailembeds.blocks import EmbedBlock, EmbedValue
-from wagtail.wagtailembeds.embeds import get_embed
-from wagtail.wagtailembeds.exceptions import (
-    EmbedNotFoundException, EmbedUnsupportedProviderException)
-from wagtail.wagtailembeds.finders import get_finders
-from wagtail.wagtailembeds.finders.embedly import EmbedlyFinder as EmbedlyFinder
-from wagtail.wagtailembeds.finders.embedly import AccessDeniedEmbedlyException, EmbedlyException
-from wagtail.wagtailembeds.finders.oembed import OEmbedFinder as OEmbedFinder
-from wagtail.wagtailembeds.models import Embed
-from wagtail.wagtailembeds.rich_text import MediaEmbedHandler
-from wagtail.wagtailembeds.templatetags.wagtailembeds_tags import embed_tag
 
 try:
     import embedly  # noqa
@@ -44,7 +42,7 @@ class TestGetFinders(TestCase):
 
     @override_settings(WAGTAILEMBEDS_FINDERS=[
         {
-            'class': 'wagtail.wagtailembeds.finders.oembed'
+            'class': 'wagtail.embeds.finders.oembed'
         }
     ])
     def test_new_find_oembed(self):
@@ -55,7 +53,7 @@ class TestGetFinders(TestCase):
 
     @override_settings(WAGTAILEMBEDS_FINDERS=[
         {
-            'class': 'wagtail.wagtailembeds.finders.embedly',
+            'class': 'wagtail.embeds.finders.embedly',
             'key': 'foo',
         }
     ])
@@ -68,7 +66,7 @@ class TestGetFinders(TestCase):
 
     @override_settings(WAGTAILEMBEDS_FINDERS=[
         {
-            'class': 'wagtail.wagtailembeds.finders.oembed',
+            'class': 'wagtail.embeds.finders.oembed',
             'options': {'foo': 'bar'}
         }
     ])
@@ -78,91 +76,6 @@ class TestGetFinders(TestCase):
         self.assertEqual(len(finders), 1)
         self.assertIsInstance(finders[0], OEmbedFinder)
         self.assertEqual(finders[0].options, {'foo': 'bar'})
-
-    @override_settings(WAGTAILEMBEDS_FINDERS=[
-        {
-            'class': 'wagtail.wagtailembeds.finders.embedly',
-        }
-    ], WAGTAILEMBEDS_EMBEDLY_KEY='bar')
-    def test_new_find_embedly_still_uses_old_key_setting(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], EmbedlyFinder)
-        self.assertEqual(finders[0].get_key(), 'bar')
-
-    @override_settings(WAGTAILEMBEDS_FINDERS=[
-        {
-            'class': 'wagtail.wagtailembeds.finders.embedly',
-            'key': 'foo',
-        }
-    ], WAGTAILEMBEDS_EMBEDLY_KEY='bar')
-    def test_new_find_embedly_key_setting_precedence(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], EmbedlyFinder)
-        self.assertEqual(finders[0].get_key(), 'foo')
-
-    # Old settings
-
-    @override_settings(WAGTAILEMBEDS_EMBEDLY_KEY='test')
-    def test_defaults_to_embedly_when_embedly_key_set(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], EmbedlyFinder)
-        self.assertEqual(finders[0].get_key(), 'test')
-
-    @override_settings(WAGTAILEMBEDS_EMBED_FINDER='wagtail.wagtailembeds.finders.embedly.embedly')
-    def test_old_find_embedly(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], EmbedlyFinder)
-
-    @override_settings(WAGTAILEMBEDS_EMBED_FINDER='wagtail.wagtailembeds.finders.oembed.oembed')
-    def test_old_find_oembed(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], OEmbedFinder)
-
-    @override_settings(WAGTAILEMBEDS_EMBED_FINDER='wagtail.wagtailembeds.finders.embedly')
-    def test_old_find_embedly_from_module(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], EmbedlyFinder)
-
-    @override_settings(WAGTAILEMBEDS_EMBED_FINDER='wagtail.wagtailembeds.finders.oembed')
-    def test_old_find_oembed_from_module(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], OEmbedFinder)
-
-    @override_settings(WAGTAILEMBEDS_EMBED_FINDER='wagtail.wagtailembeds.embeds.embedly')
-    def test_old_find_old_embedly(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], EmbedlyFinder)
-
-    @override_settings(WAGTAILEMBEDS_EMBED_FINDER='wagtail.wagtailembeds.embeds.oembed')
-    def test_old_find_old_oembed(self):
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], OEmbedFinder)
-
-    @override_settings(WAGTAILEMBEDS_EMBEDLY_KEY='test', WAGTAILEMBEDS_EMBED_FINDER='wagtail.wagtailembeds.finders.oembed.oembed')
-    def test_old_find_oembed_when_embedly_key_set(self):
-        # WAGTAILEMBEDS_EMBED_FINDER always takes precedence
-        finders = get_finders()
-
-        self.assertEqual(len(finders), 1)
-        self.assertIsInstance(finders[0], OEmbedFinder)
 
 
 class TestEmbeds(TestCase):
@@ -261,7 +174,7 @@ class TestChooser(TestCase, WagtailTestUtils):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'value=\\"http://example2.com\\"')
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_submit_valid_embed(self, get_embed):
         get_embed.return_value = Embed(html='<img src="http://www.example.com" />', title="An example embed")
 
@@ -272,7 +185,7 @@ class TestChooser(TestCase, WagtailTestUtils):
         self.assertContains(response, """modal.respond('embedChosen'""")
         self.assertContains(response, """An example embed""")
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_submit_unrecognised_embed(self, get_embed):
         get_embed.side_effect = EmbedNotFoundException
 
@@ -387,7 +300,7 @@ class TestEmbedly(TestCase):
 
 class TestOembed(TestCase):
     def setUp(self):
-        class DummyResponse(object):
+        class DummyResponse:
             def read(self):
                 return b"foo"
         self.dummy_response = DummyResponse()
@@ -397,11 +310,11 @@ class TestOembed(TestCase):
 
     def test_oembed_invalid_request(self):
         config = {'side_effect': URLError('foo')}
-        with patch.object(django.utils.six.moves.urllib.request, 'urlopen', **config):
+        with patch.object(urllib.request, 'urlopen', **config):
             self.assertRaises(EmbedNotFoundException, OEmbedFinder().find_embed,
                               "http://www.youtube.com/watch/")
 
-    @patch('django.utils.six.moves.urllib.request.urlopen')
+    @patch('urllib.request.urlopen')
     @patch('json.loads')
     def test_oembed_photo_request(self, loads, urlopen):
         urlopen.return_value = self.dummy_response
@@ -412,7 +325,7 @@ class TestOembed(TestCase):
         self.assertEqual(result['html'], '<img src="http://www.example.com" />')
         loads.assert_called_with("foo")
 
-    @patch('django.utils.six.moves.urllib.request.urlopen')
+    @patch('urllib.request.urlopen')
     @patch('json.loads')
     def test_oembed_return_values(self, loads, urlopen):
         urlopen.return_value = self.dummy_response
@@ -447,7 +360,7 @@ class TestOembed(TestCase):
         finder = OEmbedFinder(providers=[oembed_providers.twitter])
         self.assertFalse(finder.accept("http://www.youtube.com/watch/"))
 
-    @patch('django.utils.six.moves.urllib.request.urlopen')
+    @patch('urllib.request.urlopen')
     @patch('json.loads')
     def test_endpoint_with_format_param(self, loads, urlopen):
         urlopen.return_value = self.dummy_response
@@ -460,7 +373,7 @@ class TestOembed(TestCase):
 
 
 class TestEmbedTag(TestCase):
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_direct_call(self, get_embed):
         get_embed.return_value = Embed(html='<img src="http://www.example.com" />')
 
@@ -468,7 +381,7 @@ class TestEmbedTag(TestCase):
 
         self.assertEqual(result, '<img src="http://www.example.com" />')
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_call_from_template(self, get_embed):
         get_embed.return_value = Embed(html='<img src="http://www.example.com" />')
 
@@ -477,7 +390,7 @@ class TestEmbedTag(TestCase):
 
         self.assertEqual(result, '<img src="http://www.example.com" />')
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_catches_embed_not_found(self, get_embed):
         get_embed.side_effect = EmbedNotFoundException
 
@@ -513,7 +426,7 @@ class TestEmbedBlock(TestCase):
         serialized_empty_val = block.get_prep_value(None)
         self.assertEqual(serialized_empty_val, '')
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_render(self, get_embed):
         get_embed.return_value = Embed(html='<h1>Hello world!</h1>')
 
@@ -530,7 +443,7 @@ class TestEmbedBlock(TestCase):
         # Check that get_embed was called correctly
         get_embed.assert_any_call('http://www.example.com/foo')
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_render_within_structblock(self, get_embed):
         """
         When rendering the value of an EmbedBlock directly in a template
@@ -628,7 +541,7 @@ class TestMediaEmbedHandler(TestCase):
         self.assertEqual(result,
                          {'url': 'test-url'})
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_expand_db_attributes_for_editor(self, get_embed):
         get_embed.return_value = Embed(
             url='http://www.youtube.com/watch/',
@@ -644,8 +557,7 @@ class TestMediaEmbedHandler(TestCase):
         )
 
         result = MediaEmbedHandler.expand_db_attributes(
-            {'url': 'http://www.youtube.com/watch/'},
-            True
+            {'url': 'http://www.youtube.com/watch/'}
         )
         self.assertIn(
             (
@@ -660,18 +572,17 @@ class TestMediaEmbedHandler(TestCase):
         self.assertIn('<p>Author: test author name</p>', result)
         self.assertIn('<img src="http://test/thumbnail.url" alt="test title">', result)
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_test_expand_db_attributes_for_editor_catches_embed_not_found(self, get_embed):
         get_embed.side_effect = EmbedNotFoundException
 
         result = MediaEmbedHandler.expand_db_attributes(
             {'url': 'http://www.youtube.com/watch/'},
-            True
         )
 
         self.assertEqual(result, '')
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_expand_db_attributes(self, get_embed):
         get_embed.return_value = Embed(
             url='http://www.youtube.com/watch/',
@@ -686,19 +597,36 @@ class TestMediaEmbedHandler(TestCase):
             height=1000,
         )
 
-        result = MediaEmbedHandler.expand_db_attributes(
-            {'url': 'http://www.youtube.com/watch/'},
-            False
+        result = media_embedtype_handler(
+            {'url': 'http://www.youtube.com/watch/'}
         )
         self.assertIn('test html', result)
 
-    @patch('wagtail.wagtailembeds.embeds.get_embed')
+    @patch('wagtail.embeds.embeds.get_embed')
     def test_expand_db_attributes_catches_embed_not_found(self, get_embed):
         get_embed.side_effect = EmbedNotFoundException
 
-        result = MediaEmbedHandler.expand_db_attributes(
-            {'url': 'http://www.youtube.com/watch/'},
-            False
+        result = media_embedtype_handler(
+            {'url': 'http://www.youtube.com/watch/'}
         )
 
         self.assertEqual(result, '')
+
+    @patch('wagtail.embeds.embeds.get_embed')
+    def test_expand_html_escaping_end_to_end(self, get_embed):
+        get_embed.return_value = Embed(
+            url='http://www.youtube.com/watch/',
+            max_width=None,
+            type='video',
+            html='test html',
+            title='test title',
+            author_name='test author name',
+            provider_name='test provider name',
+            thumbnail_url='htto://test/thumbnail.url',
+            width=1000,
+            height=1000,
+        )
+
+        result = expand_db_html('<p>1 2 <embed embedtype="media" url="https://www.youtube.com/watch?v=O7D-1RG-VRk&amp;t=25" /> 3 4</p>')
+        self.assertIn('test html', result)
+        get_embed.assert_called_with('https://www.youtube.com/watch?v=O7D-1RG-VRk&t=25')

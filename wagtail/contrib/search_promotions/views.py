@@ -1,17 +1,15 @@
-from __future__ import absolute_import, unicode_literals
-
-from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.translation import ugettext as _
 from django.views.decorators.vary import vary_on_headers
 
-from wagtail.contrib.wagtailsearchpromotions import forms
+from wagtail.admin import messages
+from wagtail.admin.forms import SearchForm
+from wagtail.admin.utils import any_permission_required, permission_required
+from wagtail.contrib.search_promotions import forms
+from wagtail.search import forms as search_forms
+from wagtail.search.models import Query
 from wagtail.utils.pagination import paginate
-from wagtail.wagtailadmin import messages
-from wagtail.wagtailadmin.forms import SearchForm
-from wagtail.wagtailadmin.utils import any_permission_required, permission_required
-from wagtail.wagtailsearch import forms as search_forms
-from wagtail.wagtailsearch.models import Query
 
 
 @any_permission_required(

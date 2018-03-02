@@ -1,33 +1,34 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib.staticfiles.templatetags.staticfiles import static
-from django.core import urlresolvers
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 from django.utils.translation import ugettext_lazy as _
-from django.utils.translation import ungettext
+from django.utils.translation import ugettext, ungettext
 
-from wagtail.wagtailadmin.menu import MenuItem
-from wagtail.wagtailadmin.rich_text import HalloPlugin
-from wagtail.wagtailadmin.search import SearchArea
-from wagtail.wagtailadmin.site_summary import SummaryItem
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import BaseViewRestriction
-from wagtail.wagtailcore.wagtail_hooks import require_wagtail_login
-from wagtail.wagtaildocs import admin_urls
-from wagtail.wagtaildocs.api.admin.endpoints import DocumentsAdminAPIEndpoint
-from wagtail.wagtaildocs.forms import GroupDocumentPermissionFormSet
-from wagtail.wagtaildocs.models import get_document_model
-from wagtail.wagtaildocs.permissions import permission_policy
-from wagtail.wagtaildocs.rich_text import DocumentLinkHandler
+import wagtail.admin.rich_text.editors.draftail.features as draftail_features
+from wagtail.admin.menu import MenuItem
+from wagtail.admin.rich_text import HalloPlugin
+from wagtail.admin.search import SearchArea
+from wagtail.admin.site_summary import SummaryItem
+from wagtail.core import hooks
+from wagtail.core.models import BaseViewRestriction
+from wagtail.core.wagtail_hooks import require_wagtail_login
+from wagtail.documents import admin_urls
+from wagtail.documents.api.admin.endpoints import DocumentsAdminAPIEndpoint
+from wagtail.documents.forms import GroupDocumentPermissionFormSet
+from wagtail.documents.models import get_document_model
+from wagtail.documents.permissions import permission_policy
+from wagtail.documents.rich_text import (
+    ContentstateDocumentLinkConversionRule, EditorHTMLDocumentLinkConversionRule,
+    document_linktype_handler)
 
 
 @hooks.register('register_admin_urls')
 def register_admin_urls():
     return [
-        url(r'^documents/', include(admin_urls, app_name='wagtaildocs', namespace='wagtaildocs')),
+        url(r'^documents/', include(admin_urls, namespace='wagtaildocs')),
     ]
 
 
@@ -47,7 +48,7 @@ class DocumentsMenuItem(MenuItem):
 def register_documents_menu_item():
     return DocumentsMenuItem(
         _('Documents'),
-        urlresolvers.reverse('wagtaildocs:index'),
+        reverse('wagtaildocs:index'),
         name='documents',
         classnames='icon icon-doc-full-inverse',
         order=400
@@ -71,15 +72,16 @@ def editor_js():
         """
         <script>
             window.chooserUrls.documentChooser = '{0}';
-            registerHalloPlugin('hallowagtaildoclink');
         </script>
         """,
-        urlresolvers.reverse('wagtaildocs:chooser')
+        reverse('wagtaildocs:chooser')
     )
 
 
 @hooks.register('register_rich_text_features')
-def register_embed_feature(features):
+def register_document_feature(features):
+    features.register_link_type('document', document_linktype_handler)
+
     features.register_editor_plugin(
         'hallo', 'document-link',
         HalloPlugin(
@@ -87,12 +89,22 @@ def register_embed_feature(features):
             js=['wagtaildocs/js/hallo-plugins/hallo-wagtaildoclink.js'],
         )
     )
+    features.register_editor_plugin(
+        'draftail', 'document-link', draftail_features.EntityFeature({
+            'type': 'DOCUMENT',
+            'icon': 'doc-full',
+            'description': ugettext('Document'),
+        })
+    )
+
+    features.register_converter_rule(
+        'editorhtml', 'document-link', EditorHTMLDocumentLinkConversionRule
+    )
+    features.register_converter_rule(
+        'contentstate', 'document-link', ContentstateDocumentLinkConversionRule
+    )
+
     features.default_features.append('document-link')
-
-
-@hooks.register('register_rich_text_link_handler')
-def register_document_link_handler():
-    return ('document', DocumentLinkHandler)
 
 
 class DocumentsSummaryItem(SummaryItem):
@@ -125,7 +137,7 @@ class DocsSearchArea(SearchArea):
 @hooks.register('register_admin_search_area')
 def register_documents_search_area():
     return DocsSearchArea(
-        _('Documents'), urlresolvers.reverse('wagtaildocs:index'),
+        _('Documents'), reverse('wagtaildocs:index'),
         name='documents',
         classnames='icon icon-doc-full-inverse',
         order=400)
@@ -140,7 +152,7 @@ def register_document_permissions_panel():
 def describe_collection_docs(collection):
     docs_count = get_document_model().objects.filter(collection=collection).count()
     if docs_count:
-        url = urlresolvers.reverse('wagtaildocs:index') + ('?collection_id=%d' % collection.id)
+        url = reverse('wagtaildocs:index') + ('?collection_id=%d' % collection.id)
         return {
             'count': docs_count,
             'count_text': ungettext(
@@ -164,10 +176,10 @@ def check_view_restrictions(document, request):
     for restriction in document.collection.get_view_restrictions():
         if not restriction.accept_request(request):
             if restriction.restriction_type == BaseViewRestriction.PASSWORD:
-                from wagtail.wagtailcore.forms import PasswordViewRestrictionForm
+                from wagtail.core.forms import PasswordViewRestrictionForm
                 form = PasswordViewRestrictionForm(instance=restriction,
                                                    initial={'return_url': request.get_full_path()})
-                action_url = urlresolvers.reverse('wagtaildocs_authenticate_with_password', args=[restriction.id])
+                action_url = reverse('wagtaildocs_authenticate_with_password', args=[restriction.id])
 
                 password_required_template = getattr(settings, 'DOCUMENT_PASSWORD_REQUIRED_TEMPLATE', 'wagtaildocs/password_required.html')
 

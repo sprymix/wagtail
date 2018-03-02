@@ -1,13 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
-from django.core.urlresolvers import reverse
 from django.test import TestCase
+from django.urls import reverse
 
-from wagtail.contrib.wagtailsearchpromotions.models import SearchPromotion
-from wagtail.contrib.wagtailsearchpromotions.templatetags.wagtailsearchpromotions_tags import \
+from wagtail.contrib.search_promotions.models import SearchPromotion
+from wagtail.contrib.search_promotions.templatetags.wagtailsearchpromotions_tags import \
     get_search_promotions
+from wagtail.search.models import Query
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailsearch.models import Query
 
 
 class TestSearchPromotions(TestCase):

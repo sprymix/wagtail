@@ -1,27 +1,25 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 
-from wagtail.wagtailadmin.widgets import AdminChooser
-from wagtail.wagtailimages.models import UserRendition
-from wagtail.wagtailimages import get_image_model
+from wagtail.admin.widgets import AdminChooser
+from wagtail.images import get_image_model
+from wagtail.images.models import UserRendition
 
 
 class AdminImageChooser(AdminChooser):
     choose_one_text = _('Choose an image')
-    choose_another_text = _('Choose another image')
+    choose_another_text = _('Change image')
     link_to_chosen_text = _('Edit this image')
 
     def __init__(self, **kwargs):
-        super(AdminImageChooser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.image_model = get_image_model()
 
     def render_html(self, name, value, attrs):
         instance, value = self.get_instance_and_id(self.image_model, value)
-        original_field_html = super(AdminImageChooser, self).render_html(name, value, attrs)
+        original_field_html = super().render_html(name, value, attrs)
 
         return render_to_string("wagtailimages/widgets/image_chooser.html", {
             'widget': self,
@@ -35,15 +33,18 @@ class AdminImageChooser(AdminChooser):
         return "createImageChooser({0});".format(json.dumps(id_))
 
 
-class AdminImageRenditionChooser(AdminImageChooser):
+class AdminImageRenditionChooser(AdminChooser):
+    choose_one_text = _('Choose an image')
+    choose_another_text = _('Change image')
+    link_to_chosen_text = _('Edit this image')
+
     def __init__(self, panel, **kwargs):
-        super(AdminImageChooser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.panel = panel
 
     def render_html(self, name, value, attrs):
         instance, value = self.get_instance_and_id(UserRendition, value)
-        original_field_html = super(AdminImageChooser, self).render_html(
-            name, value, attrs)
+        original_field_html = super().render_html(name, value, attrs)
 
         tpl = "wagtailimages/widgets/image_rendition_chooser.html"
         return render_to_string(tpl, {

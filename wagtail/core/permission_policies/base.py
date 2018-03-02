@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -7,10 +5,8 @@ from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured
 from django.db.models import Q
 from django.utils.functional import cached_property
 
-from wagtail.utils.compat import user_is_authenticated
 
-
-class BasePermissionPolicy(object):
+class BasePermissionPolicy:
     """
     A 'permission policy' is an object that handles all decisions about the actions
     users are allowed to perform on a given model. The mechanism by which it does this
@@ -151,10 +147,10 @@ class AuthenticationOnlyPermissionPolicy(BasePermissionPolicy):
     full permission over the given model
     """
     def user_has_permission(self, user, action):
-        return user_is_authenticated(user) and user.is_active
+        return user.is_authenticated and user.is_active
 
     def user_has_any_permission(self, user, actions):
-        return user_is_authenticated(user) and user.is_active
+        return user.is_authenticated and user.is_active
 
     def users_with_any_permission(self, actions):
         return get_user_model().objects.filter(is_active=True)
@@ -175,7 +171,7 @@ class BaseDjangoAuthPermissionPolicy(BasePermissionPolicy):
         # swappable models are in use - for example, an interface for editing user
         # records might use a custom User model but will typically still refer to the
         # permission records for auth.user.
-        super(BaseDjangoAuthPermissionPolicy, self).__init__(model)
+        super().__init__(model)
         self.auth_model = auth_model or self.model
         self.app_label = self.auth_model._meta.app_label
         self.model_name = self.auth_model._meta.model_name
@@ -251,7 +247,7 @@ class OwnershipPermissionPolicy(BaseDjangoAuthPermissionPolicy):
     (unless the user is an active superuser, in which case they can do everything).
     """
     def __init__(self, model, auth_model=None, owner_field_name='owner'):
-        super(OwnershipPermissionPolicy, self).__init__(model, auth_model=auth_model)
+        super().__init__(model, auth_model=auth_model)
         self.owner_field_name = owner_field_name
 
         # make sure owner_field_name is a field that exists on the model

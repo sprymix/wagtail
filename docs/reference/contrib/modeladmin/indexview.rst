@@ -91,7 +91,7 @@ You have three possible values that can be used in list_display:
 A few special cases to note about ``list_display``:
 
 -   If the field is a ``ForeignKey``, Django will display the output of
-    ``__str__()`` (``__unicode__()`` on Python 2) of the related object.
+    ``__str__()`` of the related object.
 
 -   If the string provided is a method of the model or ``ModelAdmin`` class,
     Django will HTML-escape the output by default. To escape user input and
@@ -160,10 +160,10 @@ A few special cases to note about ``list_display``:
                     return 'None given'
                 if field_name == 'likes_cat_gifs':
                     return 'Unanswered'
-                return super(self, PersonAdmin).get_empty_value_display(field_name)
+                return super().get_empty_value_display(field_name)
 
 
-    The ``__str__()`` (``__unicode__()`` on Python 2) method is just as valid
+    The ``__str__()`` method is just as valid
     in ``list_display`` as any other model method, so it’s perfectly OK to do
     this:
 
@@ -200,7 +200,7 @@ A few special cases to note about ``list_display``:
 
         class PersonAdmin(ModelAdmin):
             model = Person
-            list_display = ('first_name', 'colored_name')
+            list_display = ('colored_first_name', 'last_name')
 
 
     The above will tell Wagtail to order by the ``first_name`` field when
@@ -357,7 +357,7 @@ For example:
         list_display = ('first_name', 'last_name')
 
         def get_queryset(self, request):
-            qs = super(PersonAdmin, self).get_queryset(request)
+            qs = super().get_queryset(request)
             # Only show people managed by the current user
             return qs.filter(managed_by=request.user)
 
@@ -489,7 +489,7 @@ help give the value more context:
         list_display = ('name', 'likes_cat_gifs')
 
         def get_extra_attrs_for_field_col(self, obj, field_name=None):
-            attrs = super(PersonAdmin, self).get_extra_attrs_for_field_col(obj, field_name)
+            attrs = super().get_extra_attrs_for_field_col(obj, field_name)
             if field_name == 'likes_cat_gifs' and obj.likes_cat_gifs is None:
                 attrs.update({
                     'title': (
@@ -522,7 +522,7 @@ kind of interactivity using javascript:
         list_display = ('title', 'start_date', 'end_date')
 
         def get_extra_attrs_for_field_col(self, obj, field_name=None):
-            attrs = super(EventAdmin, self).get_extra_attrs_for_field_col(obj, field_name)
+            attrs = super().get_extra_attrs_for_field_col(obj, field_name)
             if field_name == 'start_date':
                 # Add the start time as data to the 'start_date' cell
                 attrs.update({ 'data-time': obj.start_time.strftime('%H:%M') })

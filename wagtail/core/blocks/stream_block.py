@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import collections
 import uuid
 
@@ -8,14 +6,11 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.forms.utils import ErrorList
 from django.template.loader import render_to_string
-# Must be imported from Django so we get the new implementation of with_metaclass
-from django.utils import six
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
-from wagtail.wagtailcore.utils import escape_script
+from wagtail.core.utils import escape_script
 
 from .base import Block, BoundBlock, DeclarativeSubBlocksMetaclass
 from .utils import indent, js_dict
@@ -30,7 +25,7 @@ class StreamBlockValidationError(ValidationError):
             params.update(block_errors)
         if non_block_errors:
             params[NON_FIELD_ERRORS] = non_block_errors
-        super(StreamBlockValidationError, self).__init__(
+        super().__init__(
             'Validation error in StreamBlock', params=params)
 
 
@@ -39,7 +34,7 @@ class BaseStreamBlock(Block):
     def __init__(self, local_blocks=None, **kwargs):
         self._constructor_kwargs = kwargs
 
-        super(BaseStreamBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # create a local (shallow) copy of base_blocks so that it can be supplemented by local_blocks
         self.child_blocks = self.base_blocks.copy()
@@ -297,13 +292,13 @@ class BaseStreamBlock(Block):
         This ensures that the field definitions get frozen into migrations, rather than leaving a reference
         to a custom subclass in the user's models.py that may or may not stick around.
         """
-        path = 'wagtail.wagtailcore.blocks.StreamBlock'
+        path = 'wagtail.core.blocks.StreamBlock'
         args = [self.child_blocks.items()]
         kwargs = self._constructor_kwargs
         return (path, args, kwargs)
 
     def check(self, **kwargs):
-        errors = super(BaseStreamBlock, self).check(**kwargs)
+        errors = super().check(**kwargs)
         for name, child_block in self.child_blocks.items():
             errors.extend(child_block.check(**kwargs))
             errors.extend(child_block._check_name(**kwargs))
@@ -322,11 +317,10 @@ class BaseStreamBlock(Block):
         block_counts = {}
 
 
-class StreamBlock(six.with_metaclass(DeclarativeSubBlocksMetaclass, BaseStreamBlock)):
+class StreamBlock(BaseStreamBlock, metaclass=DeclarativeSubBlocksMetaclass):
     pass
 
 
-@python_2_unicode_compatible  # provide equivalent __unicode__ and __str__ methods on Py2
 class StreamValue(collections.Sequence):
     """
     Custom type used to represent the value of a StreamBlock; behaves as a sequence of BoundBlocks
@@ -430,9 +424,6 @@ class StreamValue(collections.Sequence):
             return False
 
         return self.stream_data == other.stream_data
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def __len__(self):
         return len(self.stream_data)

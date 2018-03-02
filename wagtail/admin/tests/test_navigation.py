@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailadmin.navigation import (
+from wagtail.admin.navigation import (
     get_explorable_root_page, get_pages_with_direct_explore_permission)
+from wagtail.tests.utils import WagtailTestUtils
 
 
 class TestExplorablePages(TestCase, WagtailTestUtils):

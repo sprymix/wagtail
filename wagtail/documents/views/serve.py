@@ -1,20 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 from wsgiref.util import FileWrapper
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.http import BadHeaderError, Http404, HttpResponse, StreamingHttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
-from unidecode import unidecode
+from django.urls import reverse
 
+from wagtail.core import hooks
+from wagtail.core.forms import PasswordViewRestrictionForm
+from wagtail.core.models import CollectionViewRestriction
+from wagtail.documents.models import document_served, get_document_model
 from wagtail.utils import sendfile_streaming_backend
 from wagtail.utils.sendfile import sendfile
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.forms import PasswordViewRestrictionForm
-from wagtail.wagtailcore.models import CollectionViewRestriction
-from wagtail.wagtaildocs.models import document_served, get_document_model
 
 
 def serve(request, document_id, document_filename):
@@ -67,12 +64,7 @@ def serve(request, document_id, document_filename):
         wrapper = FileWrapper(doc.file)
         response = StreamingHttpResponse(wrapper, content_type='application/octet-stream')
 
-        try:
-            response['Content-Disposition'] = 'attachment; filename=%s' % doc.filename
-        except BadHeaderError:
-            # Unicode filenames can fail on Django <1.8, Python 2 due to
-            # https://code.djangoproject.com/ticket/20889 - try with an ASCIIfied version of the name
-            response['Content-Disposition'] = 'attachment; filename=%s' % unidecode(doc.filename)
+        response['Content-Disposition'] = 'attachment; filename=%s' % doc.filename
 
         # FIXME: storage backends are not guaranteed to implement 'size'
         response['Content-Length'] = doc.file.size

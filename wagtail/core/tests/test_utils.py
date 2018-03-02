@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*
-from __future__ import absolute_import, unicode_literals
-
 from django.test import TestCase
 from django.utils.text import slugify
 
-from wagtail.wagtailcore.utils import accepts_kwarg, cautious_slugify
+from wagtail.core.utils import accepts_kwarg, cautious_slugify
 
 
 class TestCautiousSlugify(TestCase):

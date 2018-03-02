@@ -1,13 +1,6 @@
-from __future__ import absolute_import, unicode_literals
+from django.utils.deprecation import MiddlewareMixin
 
-import django
-from wagtail.wagtailcore.models import Site
-
-
-if django.VERSION >= (1, 10):
-    from django.utils.deprecation import MiddlewareMixin
-else:
-    MiddlewareMixin = object
+from wagtail.core.models import Site
 
 
 class SiteMiddleware(MiddlewareMixin):

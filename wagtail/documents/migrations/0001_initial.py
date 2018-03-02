@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import taggit.managers
 from django.conf import settings
 from django.db import migrations, models
 
-import wagtail.wagtailsearch.index
+import wagtail.search.index
 
 
 class Migration(migrations.Migration):
@@ -46,6 +44,6 @@ class Migration(migrations.Migration):
             ],
             options={
             },
-            bases=(models.Model, wagtail.wagtailsearch.index.Indexed),
+            bases=(models.Model, wagtail.search.index.Indexed),
         ),
     ]

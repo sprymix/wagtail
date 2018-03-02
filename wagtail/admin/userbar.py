@@ -1,9 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.template.loader import render_to_string
 
 
-class BaseItem(object):
+class BaseItem:
     template = 'wagtailadmin/userbar/item_base.html'
 
     def render(self, request):
@@ -19,7 +17,7 @@ class AdminItem(BaseItem):
         if not request.user.has_perm('wagtailadmin.access_admin'):
             return ""
 
-        return super(AdminItem, self).render(request)
+        return super().render(request)
 
 
 class AddPageItem(BaseItem):
@@ -43,7 +41,7 @@ class AddPageItem(BaseItem):
         if not permission_checker.can_add_subpage():
             return ""
 
-        return super(AddPageItem, self).render(request)
+        return super().render(request)
 
 
 class ExplorePageItem(BaseItem):
@@ -67,7 +65,7 @@ class ExplorePageItem(BaseItem):
         if not permission_checker.can_edit() and not permission_checker.can_publish_subpage():
             return ""
 
-        return super(ExplorePageItem, self).render(request)
+        return super().render(request)
 
 
 class EditPageItem(BaseItem):
@@ -90,7 +88,7 @@ class EditPageItem(BaseItem):
         if not permission_checker.can_edit():
             return ""
 
-        return super(EditPageItem, self).render(request)
+        return super().render(request)
 
 
 class ModeratePageItem(BaseItem):
@@ -110,7 +108,7 @@ class ModeratePageItem(BaseItem):
         if not self.revision.page.permissions_for_user(request.user).can_publish():
             return ""
 
-        return super(ModeratePageItem, self).render(request)
+        return super().render(request)
 
 
 class ApproveModerationEditPageItem(ModeratePageItem):

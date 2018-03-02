@@ -1,26 +1,23 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.forms import Media, MediaDefiningClass
 from django.forms.utils import flatatt
 from django.template.loader import render_to_string
 from django.utils.functional import cached_property, total_ordering
 from django.utils.safestring import mark_safe
-from django.utils.six import text_type, with_metaclass
 from django.utils.text import slugify
 
-from wagtail.wagtailadmin.forms import SearchForm
-from wagtail.wagtailcore import hooks
+from wagtail.admin.forms import SearchForm
+from wagtail.core import hooks
 
 
 @total_ordering
-class SearchArea(with_metaclass(MediaDefiningClass)):
+class SearchArea(metaclass=MediaDefiningClass):
     template = 'wagtailadmin/shared/search_area.html'
 
     def __init__(self, label, url, name=None, classnames='', attrs=None, order=1000):
         self.label = label
         self.url = url
         self.classnames = classnames
-        self.name = (name or slugify(text_type(label)))
+        self.name = (name or slugify(str(label)))
         self.order = order
 
         if attrs:
@@ -59,7 +56,7 @@ class SearchArea(with_metaclass(MediaDefiningClass)):
         }, request=request)
 
 
-class Search(object):
+class Search:
     def __init__(self, register_hook_name, construct_hook_name=None):
         self.register_hook_name = register_hook_name
         self.construct_hook_name = construct_hook_name

@@ -1,1 +1,1 @@
-default_app_config = 'wagtail.wagtailembeds.apps.WagtailEmbedsAppConfig'
+default_app_config = 'wagtail.embeds.apps.WagtailEmbedsAppConfig'

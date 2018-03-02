@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import collections
 from importlib import import_module
 
@@ -7,8 +5,7 @@ from django import forms
 from django.core import checks
 from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
-from django.utils import six
-from django.utils.encoding import force_text, python_2_unicode_compatible
+from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 
@@ -39,13 +36,13 @@ class BaseBlock(type):
         return cls
 
 
-class Block(six.with_metaclass(BaseBlock, object)):
+class Block(metaclass=BaseBlock):
     name = ''
     creation_counter = 0
 
     TEMPLATE_VAR = 'value'
 
-    class Meta(object):
+    class Meta:
         label = None
         icon = "placeholder"
         classname = None
@@ -224,13 +221,20 @@ class Block(six.with_metaclass(BaseBlock, object)):
         })
         return context
 
+    def get_template(self, context=None):
+        """
+        Return the template to use for rendering the block if specified on meta class.
+        This extraction was added to make dynamic templates possible if you override this method
+        """
+        return getattr(self.meta, 'template', None)
+
     def render(self, value, context=None):
         """
         Return a text rendering of 'value', suitable for display on templates. By default, this will
         use a template (with the passed context, supplemented by the result of get_context) if a
         'template' property is specified on the block, and fall back on render_basic otherwise.
         """
-        template = getattr(self.meta, 'template', None)
+        template = self.get_template(context=context)
         if not template:
             return self.render_basic(value, context=context)
 
@@ -390,7 +394,7 @@ class Block(six.with_metaclass(BaseBlock, object)):
             # in all of these cases, including reporting StructBlock as the path:
             #
             # FooBlock().deconstruct() == (
-            #     'wagtail.wagtailcore.blocks.StructBlock',
+            #     'wagtail.core.blocks.StructBlock',
             #     [('first_name', CharBlock()), ('surname': CharBlock())],
             #     {}
             # )
@@ -401,18 +405,8 @@ class Block(six.with_metaclass(BaseBlock, object)):
 
         return (self.name == other.name) and (self.deconstruct() == other.deconstruct())
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
-    # Making block instances hashable in a way that's consistent with __eq__ is non-trivial, because
-    # self.deconstruct() is liable to contain unhashable data (e.g. lists and dicts). So let's set
-    # Block to be explicitly unhashable - Python 3 will do this automatically when defining __eq__,
-    # but Python 2 won't, and we'd like the behaviour to be consistent on both.
-    __hash__ = None
-
-
-@python_2_unicode_compatible
-class BoundBlock(object):
+class BoundBlock:
     def __init__(self, block, value, prefix=None, errors=None):
         self.block = block
         self.value = value
@@ -487,13 +481,8 @@ class DeclarativeSubBlocksMetaclass(BaseBlock):
 class BlockWidget(forms.Widget):
     """Wraps a block object as a widget so that it can be incorporated into a Django form"""
 
-    # Flag used by Django 1.10.1 (only) to indicate that this widget will not necessarily submit
-    # a postdata item with a name that matches the field name -
-    # see https://github.com/django/django/pull/7068, https://github.com/wagtail/wagtail/issues/2994
-    dont_use_model_field_default_for_empty_data = True
-
     def __init__(self, block_def, attrs=None):
-        super(BlockWidget, self).__init__(attrs=attrs)
+        super().__init__(attrs=attrs)
         self.block_def = block_def
 
     def render_with_errors(self, name, value, attrs=None, errors=None):
@@ -536,12 +525,12 @@ class BlockField(forms.Field):
         if 'widget' not in kwargs:
             kwargs['widget'] = BlockWidget(block)
 
-        super(BlockField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def clean(self, value):
         return self.block.clean(value)
 
 
 DECONSTRUCT_ALIASES = {
-    Block: 'wagtail.wagtailcore.blocks.Block',
+    Block: 'wagtail.core.blocks.Block',
 }

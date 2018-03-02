@@ -1,11 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
+from wagtail.core.models import Page, PageViewRestriction, Site
+from wagtail.core.signals import page_unpublished
+from wagtail.search.query import MATCH_ALL
 from wagtail.tests.testapp.models import EventPage, SimplePage, SingleEventPage
-from wagtail.wagtailcore.models import Page, PageViewRestriction, Site
-from wagtail.wagtailcore.signals import page_unpublished
 
 
 class TestPageQuerySet(TestCase):
@@ -304,7 +303,7 @@ class TestPageQuerySet(TestCase):
         self.assertTrue(pages.filter(id=event.id).exists())
 
     def test_type_includes_subclasses(self):
-        from wagtail.wagtailforms.models import AbstractEmailForm
+        from wagtail.contrib.forms.models import AbstractEmailForm
         pages = Page.objects.type(AbstractEmailForm)
 
         # Check that all objects are instances of AbstractEmailForm
@@ -593,7 +592,8 @@ class TestSpecificQuery(TestCase):
         # 1276 - The database search backend didn't return results with the
         # specific type when searching a specific queryset.
 
-        pages = list(Page.objects.specific().live().in_menu().search(None, backend='wagtail.wagtailsearch.backends.db'))
+        pages = list(Page.objects.specific().live().in_menu().search(
+            MATCH_ALL, backend='wagtail.search.backends.db'))
 
         # Check that each page is in the queryset with the correct type.
         # We don't care about order here

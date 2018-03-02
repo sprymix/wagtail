@@ -31,14 +31,21 @@
 
             wagtailConfig.STRINGS = {
                 EDIT: "{% trans 'Edit' %}",
+                DELETE: "{% trans 'Delete' %}",
                 PAGE: "{% trans 'Page' %}",
                 PAGES: "{% trans 'Pages' %}",
-                LOADING: "{% trans 'Loading...' %}",
+                LOADING: "{% trans 'Loading…' %}",
                 NO_RESULTS: "{% trans 'No results' %}",
                 SERVER_ERROR: "{% trans 'Server Error' %}",
                 SEE_CHILDREN: "{% trans 'See children' %}",
                 SEE_ALL: "{% trans 'See all' %}",
                 CLOSE_EXPLORER: "{% trans 'Close explorer' %}",
+                ALT_TEXT: "{% trans 'Alt text' %}",
+                WRITE_HERE: "{% trans 'Write here…' %}",
+                HORIZONTAL_LINE: "{% trans 'Horizontal line' %}",
+                LINE_BREAK: "{% trans 'Line break' %}",
+                UNDO: "{% trans 'Undo' %}",
+                REDO: "{% trans 'Redo' %}",
             };
 
             wagtailConfig.ADMIN_URLS = {
@@ -46,8 +53,8 @@
             };
         })(document, window);
     </script>
-    <script src="{% static 'wagtailadmin/js/vendor/jquery-2.2.1.min.js' %}"></script>
-    <script src="{% static 'wagtailadmin/js/vendor/jquery-ui-1.10.3.min.js' %}"></script>
+    <script src="{% static 'wagtailadmin/js/vendor/jquery-3.2.1.min.js' %}"></script>
+    <script src="{% static 'wagtailadmin/js/vendor/jquery-ui-1.12.1.min.js' %}"></script>
     <script src="{% static 'wagtailadmin/js/vendor/jquery.datetimepicker.js' %}"></script>
     <script src="{% static 'wagtailadmin/js/vendor/jquery.autosize.js' %}"></script>
     <script src="{% static 'wagtailadmin/js/vendor/bootstrap-transition.js' %}"></script>

@@ -1,9 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
 # Imported for historical reasons
 from wagtail import __semver__, __version__  # noqa
 
-default_app_config = 'wagtail.wagtailcore.apps.WagtailCoreAppConfig'
+default_app_config = 'wagtail.core.apps.WagtailCoreAppConfig'
 
 
 def setup():

@@ -1,9 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth.models import Group
 from django.test import TestCase
 
-from wagtail.wagtailcore.models import Page, PageViewRestriction
+from wagtail.core.models import Page, PageViewRestriction
 
 
 class TestPagePrivacy(TestCase):

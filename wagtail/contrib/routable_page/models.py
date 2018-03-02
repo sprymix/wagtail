@@ -1,12 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
+import django
 from django.conf.urls import url
-from django.core.urlresolvers import RegexURLResolver
 from django.http import Http404
 from django.template.response import TemplateResponse
 
-from wagtail.wagtailcore.models import Page
-from wagtail.wagtailcore.url_routing import RouteResult
+from wagtail.core.models import Page
+from wagtail.core.url_routing import RouteResult
+
+if django.VERSION >= (2, 0):
+    from django.urls import URLResolver
+    from django.urls.resolvers import RegexPattern
+else:
+    from django.urls.resolvers import RegexURLResolver
+
 
 _creation_counter = 0
 
@@ -31,7 +36,7 @@ def route(pattern, name=None):
     return decorator
 
 
-class RoutablePageMixin(object):
+class RoutablePageMixin:
     """
     This class can be mixed in to a Page model, allowing extra routes to be
     added to it.
@@ -71,7 +76,10 @@ class RoutablePageMixin(object):
     def get_resolver(cls):
         if '_routablepage_urlresolver' not in cls.__dict__:
             subpage_urls = cls.get_subpage_urls()
-            cls._routablepage_urlresolver = RegexURLResolver(r'^/', subpage_urls)
+            if django.VERSION >= (2, 0):
+                cls._routablepage_urlresolver = URLResolver(RegexPattern(r'^/'), subpage_urls)
+            else:  # Django 1.11 fallback
+                cls._routablepage_urlresolver = RegexURLResolver(r'^/', subpage_urls)
 
         return cls._routablepage_urlresolver
 
@@ -110,7 +118,7 @@ class RoutablePageMixin(object):
             except Http404:
                 pass
 
-        return super(RoutablePageMixin, self).route(request, path_components)
+        return super().route(request, path_components)
 
     def serve(self, request, view=None, args=None, kwargs=None):
         if args is None:
@@ -118,7 +126,7 @@ class RoutablePageMixin(object):
         if kwargs is None:
             kwargs = {}
         if view is None:
-            return super(RoutablePageMixin, self).serve(request, *args, **kwargs)
+            return super().serve(request, *args, **kwargs)
         return view(request, *args, **kwargs)
 
     def serve_preview(self, request, mode_name):

@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 
 from django.core.management.base import BaseCommand
 from django.utils import dateparse, timezone
 
-from wagtail.wagtailcore.models import Page, PageRevision
+from wagtail.core.models import Page, PageRevision
 
 
 def revision_date_expired(r):

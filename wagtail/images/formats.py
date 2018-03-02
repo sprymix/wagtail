@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 
@@ -8,7 +6,7 @@ from wagtail.utils.apps import get_app_submodules
 from .shortcuts import get_rendition_or_not_found
 
 
-class Format(object):
+class Format:
     def __init__(self, name, label, classnames, filter_spec):
         self.name = name
         self.label = label
@@ -21,7 +19,7 @@ class Format(object):
         when outputting this image within a rich text editor field
         """
         return 'data-embedtype="image" data-id="%d" data-format="%s" data-alt="%s" ' % (
-            image.id, self.name, alt_text
+            image.id, self.name, escape(alt_text)
         )
 
     def image_to_editor_html(self, image, alt_text):
@@ -39,7 +37,7 @@ class Format(object):
 
         return '<img %s%ssrc="%s" width="%d" height="%d" alt="%s">' % (
             extra_attributes, class_attr,
-            escape(rendition.url), rendition.width, rendition.height, alt_text
+            escape(rendition.url), rendition.width, rendition.height, escape(alt_text)
         )
 
 

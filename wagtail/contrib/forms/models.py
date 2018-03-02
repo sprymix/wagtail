@@ -1,24 +1,19 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 import os
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.shortcuts import render
-from django.utils.encoding import python_2_unicode_compatible
-from django.utils.six import text_type
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from unidecode import unidecode
 
-from wagtail.wagtailadmin.edit_handlers import FieldPanel
-from wagtail.wagtailadmin.utils import send_mail
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Orderable, Page, UserPagePermissionsProxy, get_page_models
+from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.admin.utils import send_mail
+from wagtail.core.models import Orderable, Page
 
 from .forms import FormBuilder, WagtailAdminFormPageForm
+from .views import SubmissionsListView
 
 FORM_FIELD_CHOICES = (
     ('singleline', _('Single line text')),
@@ -33,10 +28,10 @@ FORM_FIELD_CHOICES = (
     ('radio', _('Radio buttons')),
     ('date', _('Date')),
     ('datetime', _('Date/time')),
+    ('hidden', _('Hidden field')),
 )
 
 
-@python_2_unicode_compatible
 class AbstractFormSubmission(models.Model):
     """
     Data for a form submission.
@@ -105,7 +100,7 @@ class AbstractFormField(Orderable):
         # unidecode will return an ascii string while slugify wants a
         # unicode string on the other hand, slugify returns a safe-string
         # which will be converted to a normal str
-        return str(slugify(text_type(unidecode(self.label))))
+        return str(slugify(str(unidecode(self.label))))
 
     panels = [
         FieldPanel('label'),
@@ -121,48 +116,19 @@ class AbstractFormField(Orderable):
         ordering = ['sort_order']
 
 
-_FORM_CONTENT_TYPES = None
-
-
-def get_form_types():
-    global _FORM_CONTENT_TYPES
-    if _FORM_CONTENT_TYPES is None:
-        form_models = [
-            model for model in get_page_models()
-            if issubclass(model, AbstractForm)
-        ]
-
-        _FORM_CONTENT_TYPES = list(
-            ContentType.objects.get_for_models(*form_models).values()
-        )
-    return _FORM_CONTENT_TYPES
-
-
-def get_forms_for_user(user):
-    """
-    Return a queryset of form pages that this user is allowed to access the submissions for
-    """
-    editable_forms = UserPagePermissionsProxy(user).editable_pages()
-    editable_forms = editable_forms.filter(content_type__in=get_form_types())
-
-    # Apply hooks
-    for fn in hooks.get_hooks('filter_form_submissions_for_user'):
-        editable_forms = fn(user, editable_forms)
-
-    return editable_forms
-
-
 class AbstractForm(Page):
     """
     A Form Page. Pages implementing a form should inherit from it
     """
 
-    form_builder = FormBuilder
-
     base_form_class = WagtailAdminFormPageForm
 
+    form_builder = FormBuilder
+
+    submissions_list_view_class = SubmissionsListView
+
     def __init__(self, *args, **kwargs):
-        super(AbstractForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not hasattr(self, 'landing_page_template'):
             name, ext = os.path.splitext(self.template)
             self.landing_page_template = name + '_landing' + ext
@@ -235,20 +201,38 @@ class AbstractForm(Page):
             page=self,
         )
 
+    def render_landing_page(self, request, form_submission=None, *args, **kwargs):
+        """
+        Renders the landing page.
+
+        You can override this method to return a different HttpResponse as
+        landing page. E.g. you could return a redirect to a separate page.
+        """
+        context = self.get_context(request)
+        context['form_submission'] = form_submission
+        return render(
+            request,
+            self.get_landing_page_template(request),
+            context
+        )
+
+    def serve_submissions_list_view(self, request, *args, **kwargs):
+        """
+        Returns list submissions view for admin.
+
+        `list_submissions_view_class` can bse set to provide custom view class.
+        Your class must be inherited from SubmissionsListView.
+        """
+        view = self.submissions_list_view_class.as_view()
+        return view(request, form_page=self, *args, **kwargs)
+
     def serve(self, request, *args, **kwargs):
         if request.method == 'POST':
             form = self.get_form(request.POST, request.FILES, page=self, user=request.user)
 
             if form.is_valid():
-                self.process_form_submission(form)
-
-                # render the landing_page
-                # TODO: It is much better to redirect to it
-                return render(
-                    request,
-                    self.get_landing_page_template(request),
-                    self.get_context(request)
-                )
+                form_submission = self.process_form_submission(form)
+                return self.render_landing_page(request, form_submission, *args, **kwargs)
         else:
             form = self.get_form(page=self, user=request.user)
 
@@ -268,14 +252,9 @@ class AbstractForm(Page):
     def serve_preview(self, request, mode):
         if mode == 'landing':
             request.is_preview = True
-
-            return render(
-                request,
-                self.get_landing_page_template(request),
-                self.get_context(request)
-            )
+            return self.render_landing_page(request)
         else:
-            return super(AbstractForm, self).serve_preview(request, mode)
+            return super().serve_preview(request, mode)
 
 
 class AbstractEmailForm(AbstractForm):
@@ -291,7 +270,7 @@ class AbstractEmailForm(AbstractForm):
     subject = models.CharField(verbose_name=_('subject'), max_length=255, blank=True)
 
     def process_form_submission(self, form):
-        submission = super(AbstractEmailForm, self).process_form_submission(form)
+        submission = super().process_form_submission(form)
         if self.to_address:
             self.send_mail(form)
         return submission

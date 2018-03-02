@@ -8,7 +8,7 @@
 # Fred Zeng <979738295@qq.com>, 2016
 # hanfeng <appweb.cn@gmail.com>, 2014
 # listeng, 2016
-# Vincent Zhao <zhaopu2008@gmail.com>, 2017
+# Vincent Zhao <zhaopu2008@gmail.com>, 2017-2018
 # jszsj <zhushajun@gmail.com>, 2017
 # 汇民 王 <whuim@qq.com>, 2017
 # 飘 赵 <275980464@qq.com>, 2016
@@ -16,8 +16,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-10-06 15:05+0000\n"
-"PO-Revision-Date: 2017-10-06 15:06+0000\n"
+"POT-Creation-Date: 2018-02-16 11:28+0000\n"
+"PO-Revision-Date: 2018-02-16 11:33+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/torchbox/wagtail/"
 "language/zh_CN/)\n"
@@ -149,6 +149,15 @@ msgstr "过期日期/时间必须是未来时间。"
 msgid "You cannot have multiple permission records for the same collection."
 msgstr "对于同一个集合你不能设置多重权限"
 
+msgid "Error 404: Page not found"
+msgstr "404错误：没有找到页面"
+
+msgid "Error 404"
+msgstr "404错误"
+
+msgid "The requested page could not be found."
+msgstr "找不到请求的页面。"
+
 msgid "Go to Wagtail admin"
 msgstr "转到管理界面"
 
@@ -230,13 +239,16 @@ msgstr "重设密码"
 msgid "Edit"
 msgstr "编辑"
 
+msgid "Delete"
+msgstr "删除"
+
 msgid "Page"
 msgstr "页面"
 
 msgid "Pages"
 msgstr "页面"
 
-msgid "Loading..."
+msgid "Loading…"
 msgstr "正在载入..."
 
 msgid "No results"
@@ -254,6 +266,24 @@ msgstr "查看全部"
 msgid "Close explorer"
 msgstr "关闭资源管理"
 
+msgid "Alt text"
+msgstr "Alt标签"
+
+msgid "Write here…"
+msgstr "写在这里..."
+
+msgid "Horizontal line"
+msgstr "横线"
+
+msgid "Line break"
+msgstr "换行"
+
+msgid "Undo"
+msgstr "撤销"
+
+msgid "Redo"
+msgstr "重复"
+
 msgid "Dashboard"
 msgstr "控制面板"
 
@@ -268,9 +298,6 @@ msgstr "上移"
 
 msgid "Move down"
 msgstr "下移"
-
-msgid "Delete"
-msgstr "删除"
 
 msgid "Explorer"
 msgstr "资源管理"
@@ -368,8 +395,8 @@ msgstr ""
 "没有创建任何集合，为何不<a href=\"%(add_collection_url)s\">创建一个</a>"
 
 #, python-format
-msgid "Add %(heading)s"
-msgstr "添加%(heading)s"
+msgid "Add %(label)s"
+msgstr "增加 %(label)s"
 
 msgid "Yes, delete"
 msgstr "是的， 删除"
@@ -459,8 +486,8 @@ msgstr "登录Wagtail"
 msgid "Forgotten it?"
 msgstr "不记得了？"
 
-msgid "Signing in..."
-msgstr "登录中……"
+msgid "Signing in…"
+msgstr "正在登录..."
 
 #, python-format
 msgid "The page \"%(title)s\" has been approved."
@@ -646,14 +673,14 @@ msgstr "新%(page_type)s页面类型"
 msgid "New"
 msgstr "新"
 
-msgid "Saving..."
-msgstr "正在保存……"
+msgid "Saving…"
+msgstr "正在保存..."
 
 msgid "Save draft"
 msgstr "保存草稿"
 
-msgid "Publishing..."
-msgstr "正在发布……"
+msgid "Publishing…"
+msgstr "正在发布..."
 
 msgid "Publish"
 msgstr "发布"
@@ -948,6 +975,9 @@ msgstr "没有页面使用"
 msgid "Collection"
 msgstr "集合"
 
+msgid "Root"
+msgstr "根"
+
 msgid "Home"
 msgstr "主页"
 
@@ -1010,11 +1040,6 @@ msgstr "周五"
 
 msgid "Sat"
 msgstr "周六"
-
-#, python-format
-msgid "Used %(useage_count)s time"
-msgid_plural "Used %(useage_count)s times"
-msgstr[0] "已使用%(useage_count)s次"
 
 msgid "Edit your account"
 msgstr "编辑账户"
@@ -1183,12 +1208,12 @@ msgstr "正在编辑"
 msgid "Page '{0}' created and scheduled for publishing."
 msgstr "页面 {0} 已创建并计划发布中。"
 
+msgid "View live"
+msgstr "实时查看"
+
 #, python-brace-format
 msgid "Page '{0}' created and published."
 msgstr "页面'{0}'已创建并发布。"
-
-msgid "View live"
-msgstr "实时查看"
 
 #, python-brace-format
 msgid "Page '{0}' created and submitted for moderation."
@@ -1349,6 +1374,25 @@ msgstr "取消发布页面 '{title}'"
 #, python-brace-format
 msgid "View revision history for '{title}'"
 msgstr "查看 '{title}' 的修订历史"
+
+#, python-brace-format
+msgid "Heading {level}"
+msgstr "标题{level}"
+
+msgid "Bulleted list"
+msgstr "项目列表"
+
+msgid "Numbered list"
+msgstr "编号列表"
+
+msgid "Bold"
+msgstr "粗体"
+
+msgid "Italic"
+msgstr "斜体"
+
+msgid "Link"
+msgstr "链接"
 
 msgid "Choose an item"
 msgstr "选择一项"

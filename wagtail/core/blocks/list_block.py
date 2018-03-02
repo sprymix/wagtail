@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from django import forms
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.core.exceptions import ValidationError
@@ -8,7 +6,7 @@ from django.template.loader import render_to_string
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 
-from wagtail.wagtailcore.utils import escape_script
+from wagtail.core.utils import escape_script
 
 from .base import Block
 from .utils import js_dict
@@ -19,7 +17,7 @@ __all__ = ['ListBlock']
 class ListBlock(Block):
 
     def __init__(self, child_block, **kwargs):
-        super(ListBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if isinstance(child_block, type):
             # child_block was passed as a class, so convert it to a block instance
@@ -169,7 +167,7 @@ class ListBlock(Block):
         return content
 
     def check(self, **kwargs):
-        errors = super(ListBlock, self).check(**kwargs)
+        errors = super().check(**kwargs)
         errors.extend(self.child_block.check(**kwargs))
         return errors
 
@@ -181,5 +179,5 @@ class ListBlock(Block):
 
 
 DECONSTRUCT_ALIASES = {
-    ListBlock: 'wagtail.wagtailcore.blocks.ListBlock',
+    ListBlock: 'wagtail.core.blocks.ListBlock',
 }

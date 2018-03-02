@@ -8,30 +8,31 @@ from urllib import parse as urlparse
 import urllib3
 
 from django.core.files import uploadedfile
-from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import ugettext as _
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 from wagtail.utils.pagination import paginate
-from wagtail.wagtailadmin.forms import SearchForm
-from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
-from wagtail.wagtailadmin.utils import PermissionPolicyChecker
-from wagtail.wagtailadmin.utils import permission_required
-from wagtail.wagtailadmin.utils import popular_tags_for_model
-from wagtail.wagtailcore.models import Collection
-from wagtail.wagtailimages import get_image_model
-from wagtail.wagtailimages.formats import get_image_format
-from wagtail.wagtailimages.forms import ImageInsertionForm, get_image_form
-from wagtail.wagtailimages.forms import ImageCropperForm
-from wagtail.wagtailimages.permissions import permission_policy
-from wagtail.wagtailimages.fields import ALLOWED_EXTENSIONS
+from wagtail.admin.forms import SearchForm
+from wagtail.admin.modal_workflow import render_modal_workflow
+from wagtail.admin.utils import PermissionPolicyChecker
+from wagtail.admin.utils import permission_required
+from wagtail.admin.utils import popular_tags_for_model
+from wagtail.core import hooks
+from wagtail.core.models import Collection
+from wagtail.images import get_image_model
+from wagtail.images.formats import get_image_format
+from wagtail.images.forms import ImageInsertionForm, get_image_form
+from wagtail.images.forms import ImageCropperForm
+from wagtail.images.permissions import permission_policy
+from wagtail.images.fields import ALLOWED_EXTENSIONS
 
-from wagtail.wagtailsearch import index as search_index
+from wagtail.search import index as search_index
 
 permission_checker = PermissionPolicyChecker(permission_policy)
 
@@ -108,7 +109,7 @@ def get_cropper_params(request):
         if val is not None:
             params[name] = val
 
-    return urllib.urlencode(params)
+    return urlparse.urlencode(params)
 
 
 @permission_required('wagtailadmin.access_admin')
@@ -451,7 +452,7 @@ def chooser_select_rendition(request, image_id):
             'id': rendition.id,
             'title': image.title,
             'original_id': image.id,
-            'spec': rendition.filter.spec,
+            'spec': rendition.filter_spec,
             'html': rendition.img_tag(),
             'preview': {
                 'url': preview_image.url,

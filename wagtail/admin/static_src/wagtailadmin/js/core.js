@@ -59,7 +59,7 @@ function enableDirtyFormCheck(formSelector, options) {
     var initialData = $form.serialize();
     var formSubmitted = false;
 
-    $form.submit(function() {
+    $form.on('submit', function() {
         formSubmitted = true;
     });
 
@@ -106,7 +106,7 @@ $(function() {
 
     fitNav();
 
-    $(window).resize(function() {
+    $(window).on('resize', function() {
         fitNav();
     });
 
@@ -129,7 +129,7 @@ $(function() {
             $logoContainer.removeClass('logo-playful').addClass('logo-serious');
         }
 
-        $logoContainer.mousemove(function(event) {
+        $logoContainer.on('mousemove', function(event) {
             mouseX = event.pageX;
 
             if (mouseX > lastMouseX) {
@@ -150,7 +150,7 @@ $(function() {
             lastDir = dir;
         });
 
-        $logoContainer.mouseleave(function() {
+        $logoContainer.on('mouseleave', function() {
             dirChangeCount = 0;
             disableWag();
         });
@@ -180,7 +180,7 @@ $(function() {
 
     $(document).on('click', '.tab-toggle', function(e) {
         e.preventDefault();
-        $('.tab-nav a[href="' + $(this).attr('href') + '"]').click();
+        $('.tab-nav a[href="' + $(this).attr('href') + '"]').trigger('click');
     });
 
     $('.dropdown').each(function() {
@@ -218,7 +218,9 @@ $(function() {
     if (window.headerSearch) {
         var searchCurrentIndex = 0;
         var searchNextIndex = 0;
-        var form = $(window.headerSearch.termInput).closest('form');
+        var $input = $(window.headerSearch.termInput);
+        var $inputContainer = $input.parent();
+        var form = $input.closest('form');
         var inputs = form.find(':input:not([type=submit])');
 
         inputs.each(function() {
@@ -236,12 +238,12 @@ $(function() {
         });
 
         // auto focus on search box
-        $(window.headerSearch.termInput).trigger('focus');
+        $input.trigger('focus');
 
         function search() {
             var workingClasses = 'icon-spinner';
 
-            $(window.headerSearch.termInput).parent().addClass(workingClasses);
+            $inputContainer.addClass(workingClasses);
             searchNextIndex++;
             var index = searchNextIndex;
             var args = form.serialize();
@@ -254,13 +256,18 @@ $(function() {
                         $(window.headerSearch.targetOutput).html(data).slideDown(800);
                         window.history.pushState(null, 'Search results', '?' + args);
                     }
-                },
-
-                complete: function() {
-                    $(window.headerSearch.termInput).parent().removeClass(workingClasses);
                 }
             });
         }
+
+        function getURLParam(name) {
+            var results = new RegExp('[\?&]' + name + '=([^]*)').exec(window.location.search);
+            if (results) {
+                return results[1];
+            }
+            return '';
+        }
+
     }
 
     /* Functions that need to run/rerun when active tabs are changed */

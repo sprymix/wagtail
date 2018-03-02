@@ -1,17 +1,16 @@
-from __future__ import absolute_import, unicode_literals
+from io import BytesIO
 
 from django.test import TestCase, override_settings
-from django.utils.six import BytesIO
 from mock import Mock, patch
 
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailimages import image_operations
-from wagtail.wagtailimages.exceptions import InvalidFilterSpecError
-from wagtail.wagtailimages.models import Filter, Image
-from wagtail.wagtailimages.tests.utils import get_test_image_file, get_test_image_file_jpeg
+from wagtail.core import hooks
+from wagtail.images import image_operations
+from wagtail.images.exceptions import InvalidFilterSpecError
+from wagtail.images.models import Filter, Image
+from wagtail.images.tests.utils import get_test_image_file, get_test_image_file_jpeg
 
 
-class WillowOperationRecorder(object):
+class WillowOperationRecorder:
     """
     This class pretends to be a Willow image but instead, it records
     the operations that have been performed on the image for testing
@@ -545,3 +544,44 @@ class TestJPEGQualityFilter(TestCase):
             fil.run(image, f)
 
         save.assert_called_with(f, 'JPEG', quality=40, optimize=True, progressive=True)
+
+
+class TestBackgroundColorFilter(TestCase):
+    def test_original_has_alpha(self):
+        # Checks that the test image we're using has alpha
+        fil = Filter(spec='width-400')
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(),
+        )
+        out = fil.run(image, BytesIO())
+
+        self.assertTrue(out.has_alpha())
+
+    def test_3_digit_hex(self):
+        fil = Filter(spec='width-400|bgcolor-fff')
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(),
+        )
+        out = fil.run(image, BytesIO())
+
+        self.assertFalse(out.has_alpha())
+
+    def test_6_digit_hex(self):
+        fil = Filter(spec='width-400|bgcolor-ffffff')
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(),
+        )
+        out = fil.run(image, BytesIO())
+
+        self.assertFalse(out.has_alpha())
+
+    def test_invalid(self):
+        fil = Filter(spec='width-400|bgcolor-foo')
+        image = Image.objects.create(
+            title="Test image",
+            file=get_test_image_file(),
+        )
+        self.assertRaises(ValueError, fil.run, image, BytesIO())

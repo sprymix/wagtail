@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from django.conf import settings
@@ -25,7 +23,7 @@ def get_backends(backend_settings=None, backends=None):
         if cache_location is not None:
             backend_settings = {
                 'default': {
-                    'BACKEND': 'wagtail.contrib.wagtailfrontendcache.backends.HTTPBackend',
+                    'BACKEND': 'wagtail.contrib.frontend_cache.backends.HTTPBackend',
                     'LOCATION': cache_location,
                 },
             }
@@ -93,7 +91,7 @@ def purge_pages_from_cache(pages, backend_settings=None, backends=None):
         purge_urls_from_cache(urls, backend_settings, backends)
 
 
-class PurgeBatch(object):
+class PurgeBatch:
     """Represents a list of URLs to be purged in a single request"""
     def __init__(self, urls=None):
         self.urls = []

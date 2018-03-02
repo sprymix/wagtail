@@ -1,19 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import include, url
 from django.contrib.auth.models import Permission
-from django.core import urlresolvers
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from wagtail.contrib.wagtailsearchpromotions import admin_urls
-from wagtail.wagtailadmin.menu import MenuItem
-from wagtail.wagtailcore import hooks
+from wagtail.admin.menu import MenuItem
+from wagtail.contrib.search_promotions import admin_urls
+from wagtail.core import hooks
 
 
 @hooks.register('register_admin_urls')
 def register_admin_urls():
     return [
-        url(r'^searchpicks/', include(admin_urls, app_name='wagtailsearchpromotions', namespace='wagtailsearchpromotions')),
+        url(r'^searchpicks/', include(admin_urls, namespace='wagtailsearchpromotions')),
     ]
 
 
@@ -30,7 +28,7 @@ class SearchPicksMenuItem(MenuItem):
 def register_search_picks_menu_item():
     return SearchPicksMenuItem(
         _('Promoted search results'),
-        urlresolvers.reverse('wagtailsearchpromotions:index'),
+        reverse('wagtailsearchpromotions:index'),
         classnames='icon icon-pick', order=900
     )
 

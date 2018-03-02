@@ -1,13 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 from django import template
 from django.template.loader import render_to_string
 
-from wagtail.wagtailadmin.userbar import (
+from wagtail.admin.userbar import (
     AddPageItem, AdminItem, ApproveModerationEditPageItem, EditPageItem, ExplorePageItem,
     RejectModerationEditPageItem)
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import PAGE_TEMPLATE_VAR, Page, PageRevision
+from wagtail.core import hooks
+from wagtail.core.models import PAGE_TEMPLATE_VAR, Page, PageRevision
 
 # from django.contrib.auth.decorators import permission_required
 

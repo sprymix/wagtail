@@ -1,15 +1,14 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import inspect
 
-from wagtail.wagtailimages.exceptions import InvalidFilterSpecError
-from wagtail.wagtailimages.rect import Rect
+from wagtail.images.exceptions import InvalidFilterSpecError
+from wagtail.images.rect import Rect
+from wagtail.images.utils import parse_color_string
 
 from willow.registry import registry
 from willow.plugins.pillow import PillowImage
 
 
-class Operation(object):
+class Operation:
     def __init__(self, method, *args):
         self.method = method
         self.args = args
@@ -308,3 +307,11 @@ class FormatOperation(Operation):
 
     def run(self, willow, image, env):
         env['output-format'] = self.format
+
+
+class BackgroundColorOperation(Operation):
+    def construct(self, color_string):
+        self.color = parse_color_string(color_string)
+
+    def run(self, willow, image, env):
+        return willow.set_background_color_rgb(self.color)

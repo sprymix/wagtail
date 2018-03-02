@@ -1,51 +1,27 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.template.loader import render_to_string
 
-from wagtail.wagtailadmin.compare import ForeignObjectComparison
-from wagtail.wagtailadmin.edit_handlers import BaseChooserPanel
+from wagtail.admin.compare import ForeignObjectComparison
+from wagtail.admin.edit_handlers import BaseChooserPanel
 
 from .widgets import AdminImageChooser, AdminImageRenditionChooser
 
 
-class BaseImageChooserPanel(BaseChooserPanel):
+class ImageChooserPanel(BaseChooserPanel):
     object_type_name = "image"
 
-    @classmethod
-    def widget_overrides(cls):
-        return {cls.field_name: AdminImageChooser}
+    def widget_overrides(self):
+        return {self.field_name: AdminImageChooser}
 
-    @classmethod
-    def get_comparison_class(cls):
+    def get_comparison_class(self):
         return ImageFieldComparison
 
 
-class ImageChooserPanel(object):
-    def __init__(self, field_name, classname=''):
-        self.field_name = field_name
-        self.classname = classname
+class RenditionChooserPanel(ImageChooserPanel):
 
-    def bind_to_model(self, model):
-        return type(str('_ImageChooserPanel'), (BaseImageChooserPanel,), {
-            'model': model,
-            'field_name': self.field_name,
-            'classname': self.classname,
-        })
-
-
-class BaseRenditionChooserPanel(BaseImageChooserPanel):
-    object_type_name = "image"
-
-    @classmethod
-    def widget_overrides(cls):
-        return {cls.field_name: AdminImageRenditionChooser(panel=cls)}
-
-
-class RenditionChooserPanel(object):
-    def __init__(self, field_name, classname='', help_text=None,
-                       heading=None, crop=None, ratios=None,
-                       default_ratio=None, disable_selection=False,
-                       force_selection=False, post_processing_spec=None):
+    def __init__(self, *args, crop=None, ratios=None,
+                 default_ratio=None, disable_selection=False,
+                 force_selection=False, post_processing_spec=None,
+                 **kwargs):
         '''Create a panel that allows selecting and customizing an image.
 
             :param field_name:  the field this panel is rendering
@@ -66,19 +42,15 @@ class RenditionChooserPanel(object):
             :param post_processing_spec:  additional processing to be applied
                                           to the selected rendition
         '''
+        super().__init__(*args, **kwargs)
 
         # convert extra parameters into strings that will be used in templates
-        #
         if crop and len(crop) == 4:
             crop = ','.join(str(c) for c in crop)
 
-        if ratios:
+        if ratios and not isinstance(ratios, str):
             ratios = ','.join(ratios)
 
-        self.field_name = field_name
-        self.classname = classname
-        self.help_text = help_text
-        self.heading = heading
         self.crop = crop
         self.ratios = ratios
         self.default_ratio = default_ratio
@@ -86,21 +58,23 @@ class RenditionChooserPanel(object):
         self.force_selection = force_selection
         self.post_processing_spec = post_processing_spec
 
-    def bind_to_model(self, model):
-        return type(str('_RenditionChooserPanel'),
-                    (BaseRenditionChooserPanel,), {
-                        'model': model,
-                        'field_name': self.field_name,
-                        'classname': self.classname,
-                        'heading': self.heading,
-                        'help_text': self.help_text,
-                        'crop': self.crop,
-                        'ratios': self.ratios,
-                        'default_ratio': self.default_ratio,
-                        'disable_selection': self.disable_selection,
-                        'force_selection': self.force_selection,
-                        'post_processing_spec': self.post_processing_spec,
-                    })
+    def widget_overrides(self):
+        return {self.field_name: AdminImageRenditionChooser(panel=self)}
+
+    def clone(self):
+        return self.__class__(
+            field_name=self.field_name,
+            widget=self.widget if hasattr(self, 'widget') else None,
+            heading=self.heading,
+            classname=self.classname,
+            help_text=self.help_text,
+            crop=self.crop,
+            ratios=self.ratios,
+            default_ratio=self.default_ratio,
+            disable_selection=self.disable_selection,
+            force_selection=self.force_selection,
+            post_processing_spec=self.post_processing_spec,
+        )
 
 
 class ImageFieldComparison(ForeignObjectComparison):

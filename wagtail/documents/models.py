@@ -1,27 +1,23 @@
-from __future__ import absolute_import, unicode_literals
-
 import os.path
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse
 from django.db import models
 from django.dispatch import Signal
-from django.utils.encoding import python_2_unicode_compatible
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from taggit.managers import TaggableManager
 
-from wagtail.wagtailadmin.utils import get_object_usage
-from wagtail.wagtailcore.models import CollectionMember
-from wagtail.wagtailsearch import index
-from wagtail.wagtailsearch.queryset import SearchableQuerySetMixin
+from wagtail.admin.utils import get_object_usage
+from wagtail.core.models import CollectionMember
+from wagtail.search import index
+from wagtail.search.queryset import SearchableQuerySetMixin
 
 
 class DocumentQuerySet(SearchableQuerySetMixin, models.QuerySet):
     pass
 
 
-@python_2_unicode_compatible
 class AbstractDocument(CollectionMember, index.Indexed, models.Model):
     title = models.CharField(max_length=255, verbose_name=_('title'))
     file = models.FileField(upload_to='documents', verbose_name=_('file'))
@@ -41,6 +37,7 @@ class AbstractDocument(CollectionMember, index.Indexed, models.Model):
 
     search_fields = CollectionMember.search_fields + [
         index.SearchField('title', partial_match=True, boost=10),
+        index.FilterField('title'),
         index.RelatedFields('tags', [
             index.SearchField('name', partial_match=True, boost=10),
         ]),
@@ -71,7 +68,7 @@ class AbstractDocument(CollectionMember, index.Indexed, models.Model):
                        args=(self.id,))
 
     def is_editable_by_user(self, user):
-        from wagtail.wagtaildocs.permissions import permission_policy
+        from wagtail.documents.permissions import permission_policy
         return permission_policy.user_has_permission_for_instance(user, 'change', self)
 
     class Meta:
@@ -91,7 +88,7 @@ class Document(AbstractDocument):
 def get_document_model():
     """
     Get the document model from the ``WAGTAILDOCS_DOCUMENT_MODEL`` setting.
-    Defauts to the standard :class:`~wagtail.wagtaildocs.models.Document` model
+    Defauts to the standard :class:`~wagtail.documents.models.Document` model
     if no custom model is defined.
     """
     from django.conf import settings

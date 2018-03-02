@@ -1,24 +1,24 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 import uuid
 
-from django.core.urlresolvers import reverse
+from django import http
 from django.shortcuts import get_object_or_404, render
-from django.http import JsonResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
+from django.urls import reverse
 
+from wagtail.admin.forms import SearchForm
+from wagtail.admin.modal_workflow import render_modal_workflow
+from wagtail.admin.utils import PermissionPolicyChecker
+from wagtail.core import hooks
+from wagtail.core.models import Collection
+from wagtail.documents.forms import get_document_form
+from wagtail.documents.models import get_document_model
+from wagtail.documents.permissions import permission_policy
+from wagtail.search import index as search_index
 from wagtail.utils.pagination import paginate
-from wagtail.wagtailadmin.forms import SearchForm
-from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
-from wagtail.wagtailadmin.utils import PermissionPolicyChecker
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Collection
-from wagtail.wagtaildocs.forms import get_document_form
-from wagtail.wagtaildocs.forms import get_document_multi_form
-from wagtail.wagtaildocs.models import get_document_model
-from wagtail.wagtaildocs.permissions import permission_policy
-from wagtail.wagtailsearch import index as search_index
+
+from ..forms import get_document_multi_form
+
 
 permission_checker = PermissionPolicyChecker(permission_policy)
 
@@ -33,6 +33,7 @@ def get_document_json(document):
         'id': document.id,
         'title': document.title,
         'url': document.url,
+        'filename': document.filename,
         'edit_link': reverse('wagtaildocs:edit', args=(document.id,)),
     })
 
@@ -105,7 +106,8 @@ def document_chosen(request, document_id):
     # handle some updated data if this is a POST
     if request.POST:
         if not request.is_ajax():
-            return HttpResponseBadRequest("Cannot POST to this view without AJAX")
+            return http.HttpResponseBadRequest(
+                "Cannot POST to this view without AJAX")
 
         form = DocumentMultiForm(
             request.POST, request.FILES, instance=doc, prefix='doc-' + document_id, user=request.user
@@ -131,19 +133,24 @@ def chooser_upload(request):
 
     if request.method == 'POST':
         if not request.is_ajax():
-            return HttpResponseBadRequest("Cannot POST to this view without AJAX")
+            return http.HttpResponseBadRequest(
+                "Cannot POST to this view without AJAX")
 
         if not request.FILES:
-            return HttpResponseBadRequest("Must upload a file")
+            return http.HttpResponseBadRequest("Must upload a file")
 
         # Save it
-        document = Document(uploaded_by_user=request.user, title=request.FILES['files[]'].name, file=request.FILES['files[]'])
+        document = Document(uploaded_by_user=request.user,
+                            title=request.FILES['files[]'].name,
+                            file=request.FILES['files[]'])
         document.save()
 
         # Success! Send back an edit form for this image to the user
-        form = DocumentMultiForm(instance=document, prefix='doc-%d' % document.id, user=request.user)
+        form = DocumentMultiForm(instance=document,
+                                 prefix='doc-%d' % document.id,
+                                 user=request.user)
 
-        return JsonResponse({
+        return http.JsonResponse({
             'success': True,
             'doc_id': int(document.id),
             'form': render_to_string('wagtaildocs/chooser/update.html', {

@@ -1,31 +1,37 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext
+from draftjs_exporter.dom import DOM
 
-from wagtail.wagtailadmin.menu import MenuItem, SubmenuMenuItem, settings_menu
-from wagtail.wagtailadmin.navigation import get_explorable_root_page
-from wagtail.wagtailadmin.rich_text import (
-    HalloFormatPlugin, HalloHeadingPlugin, HalloListPlugin, HalloPlugin
-)
-from wagtail.wagtailadmin.search import SearchArea
-from wagtail.wagtailadmin.utils import user_has_any_page_permission
-from wagtail.wagtailadmin.viewsets import viewsets
-from wagtail.wagtailadmin.widgets import Button, ButtonWithDropdownFromHook, PageListingButton
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.permissions import collection_permission_policy
-from wagtail.wagtailcore.permissions import user_can_edit_any_pages
+import wagtail.admin.rich_text.editors.draftail.features as draftail_features
+from wagtail.admin.menu import MenuItem, SubmenuMenuItem, settings_menu
+from wagtail.admin.navigation import get_explorable_root_page
+from wagtail.admin.rich_text import (
+    HalloFormatPlugin, HalloHeadingPlugin, HalloListPlugin, HalloPlugin)
+from wagtail.admin.rich_text.converters.contentstate import link_entity
+from wagtail.admin.rich_text.converters.editor_html import LinkTypeRule, WhitelistRule
+from wagtail.admin.rich_text.converters.html_to_contentstate import (
+    BlockElementHandler, ExternalLinkElementHandler, HorizontalRuleHandler,
+    InlineStyleElementHandler, ListElementHandler, ListItemElementHandler, PageLinkElementHandler)
+from wagtail.admin.search import SearchArea
+from wagtail.admin.utils import user_has_any_page_permission
+from wagtail.admin.viewsets import viewsets
+from wagtail.admin.widgets import Button, ButtonWithDropdownFromHook, PageListingButton
+from wagtail.core import hooks
+from wagtail.core.permissions import collection_permission_policy
+from wagtail.core.rich_text.pages import PageLinkHandler
+from wagtail.core.whitelist import allow_without_attributes, attribute_rule, check_url
 
 
 class ExplorerMenuItem(MenuItem):
     template = 'wagtailadmin/shared/explorer_menu_item.html'
 
     def is_shown(self, request):
-        return user_can_edit_any_pages(request.user)
+        return user_has_any_page_permission(request.user)
 
     def get_context(self, request):
-        context = super(ExplorerMenuItem, self).get_context(request)
+        context = super().get_context(request)
         start_page = get_explorable_root_page(request.user)
 
         if start_page:
@@ -60,7 +66,7 @@ def register_permissions():
 
 class PageSearchArea(SearchArea):
     def __init__(self):
-        super(PageSearchArea, self).__init__(
+        super().__init__(
             _('Pages'), reverse('wagtailadmin_pages:search'),
             name='pages',
             classnames='icon icon-folder-open-inverse',
@@ -147,9 +153,7 @@ def page_listing_more_buttons(page, page_perms, is_parent=False):
             attrs={"title": _("Move page '{title}'").format(title=page.get_admin_display_title())},
             priority=10
         )
-    if (not page.is_root() and
-            page.get_parent().permissions_for_user(
-                page_perms.user).can_publish_subpage()):
+    if not page.is_root():
         yield Button(
             _('Copy'),
             reverse('wagtailadmin_pages:copy', args=[page.id]),
@@ -187,6 +191,7 @@ def register_viewsets_urls():
 
 @hooks.register('register_rich_text_features')
 def register_core_features(features):
+    # Hallo.js
     features.register_editor_plugin(
         'hallo', 'hr',
         HalloPlugin(
@@ -195,7 +200,9 @@ def register_core_features(features):
             order=45,
         )
     )
-    features.default_features.append('hr')
+    features.register_converter_rule('editorhtml', 'hr', [
+        WhitelistRule('hr', allow_without_attributes)
+    ])
 
     features.register_editor_plugin(
         'hallo', 'link',
@@ -204,30 +211,240 @@ def register_core_features(features):
             js=['wagtailadmin/js/hallo-plugins/hallo-wagtaillink.js'],
         )
     )
-    features.default_features.append('link')
+    features.register_converter_rule('editorhtml', 'link', [
+        WhitelistRule('a', attribute_rule({'href': check_url})),
+        LinkTypeRule('page', PageLinkHandler),
+    ])
 
     features.register_editor_plugin(
         'hallo', 'bold', HalloFormatPlugin(format_name='bold')
     )
-    features.default_features.append('bold')
+    features.register_converter_rule('editorhtml', 'bold', [
+        WhitelistRule('b', allow_without_attributes),
+        WhitelistRule('strong', allow_without_attributes),
+    ])
 
     features.register_editor_plugin(
         'hallo', 'italic', HalloFormatPlugin(format_name='italic')
     )
-    features.default_features.append('italic')
+    features.register_converter_rule('editorhtml', 'italic', [
+        WhitelistRule('i', allow_without_attributes),
+        WhitelistRule('em', allow_without_attributes),
+    ])
 
     for element in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
         features.register_editor_plugin(
             'hallo', element, HalloHeadingPlugin(element=element)
         )
-    features.default_features.extend(['h2', 'h3', 'h4'])
+        features.register_converter_rule('editorhtml', element, [
+            WhitelistRule(element, allow_without_attributes)
+        ])
 
     features.register_editor_plugin(
         'hallo', 'ol', HalloListPlugin(list_type='ordered')
     )
-    features.default_features.append('ol')
+    features.register_converter_rule('editorhtml', 'ol', [
+        WhitelistRule('ol', allow_without_attributes),
+        WhitelistRule('li', allow_without_attributes),
+    ])
 
     features.register_editor_plugin(
         'hallo', 'ul', HalloListPlugin(list_type='unordered')
     )
-    features.default_features.append('ul')
+    features.register_converter_rule('editorhtml', 'ul', [
+        WhitelistRule('ul', allow_without_attributes),
+        WhitelistRule('li', allow_without_attributes),
+    ])
+
+    # Draftail
+    features.register_editor_plugin(
+        'draftail', 'hr', draftail_features.BooleanFeature('enableHorizontalRule')
+    )
+    features.register_converter_rule('contentstate', 'hr', {
+        'from_database_format': {
+            'hr': HorizontalRuleHandler(),
+        },
+        'to_database_format': {
+            'entity_decorators': {'HORIZONTAL_RULE': lambda props: DOM.create_element('hr')}
+        }
+    })
+
+    features.register_editor_plugin(
+        'draftail', 'h1', draftail_features.BlockFeature({
+            'label': 'H1',
+            'type': 'header-one',
+            'description': ugettext('Heading {level}').format(level=1),
+        })
+    )
+    features.register_converter_rule('contentstate', 'h1', {
+        'from_database_format': {
+            'h1': BlockElementHandler('header-one'),
+        },
+        'to_database_format': {
+            'block_map': {'header-one': 'h1'}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'h2', draftail_features.BlockFeature({
+            'label': 'H2',
+            'type': 'header-two',
+            'description': ugettext('Heading {level}').format(level=2),
+        })
+    )
+    features.register_converter_rule('contentstate', 'h2', {
+        'from_database_format': {
+            'h2': BlockElementHandler('header-two'),
+        },
+        'to_database_format': {
+            'block_map': {'header-two': 'h2'}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'h3', draftail_features.BlockFeature({
+            'label': 'H3',
+            'type': 'header-three',
+            'description': ugettext('Heading {level}').format(level=3),
+        })
+    )
+    features.register_converter_rule('contentstate', 'h3', {
+        'from_database_format': {
+            'h3': BlockElementHandler('header-three'),
+        },
+        'to_database_format': {
+            'block_map': {'header-three': 'h3'}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'h4', draftail_features.BlockFeature({
+            'label': 'H4',
+            'type': 'header-four',
+            'description': ugettext('Heading {level}').format(level=4),
+        })
+    )
+    features.register_converter_rule('contentstate', 'h4', {
+        'from_database_format': {
+            'h4': BlockElementHandler('header-four'),
+        },
+        'to_database_format': {
+            'block_map': {'header-four': 'h4'}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'h5', draftail_features.BlockFeature({
+            'label': 'H5',
+            'type': 'header-five',
+            'description': ugettext('Heading {level}').format(level=5),
+        })
+    )
+    features.register_converter_rule('contentstate', 'h5', {
+        'from_database_format': {
+            'h5': BlockElementHandler('header-five'),
+        },
+        'to_database_format': {
+            'block_map': {'header-five': 'h5'}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'h6', draftail_features.BlockFeature({
+            'label': 'H6',
+            'type': 'header-six',
+            'description': ugettext('Heading {level}').format(level=6),
+        })
+    )
+    features.register_converter_rule('contentstate', 'h6', {
+        'from_database_format': {
+            'h6': BlockElementHandler('header-six'),
+        },
+        'to_database_format': {
+            'block_map': {'header-six': 'h6'}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'ul', draftail_features.BlockFeature({
+            'type': 'unordered-list-item',
+            'icon': 'list-ul',
+            'description': ugettext('Bulleted list'),
+        })
+    )
+    features.register_converter_rule('contentstate', 'ul', {
+        'from_database_format': {
+            'ul': ListElementHandler('unordered-list-item'),
+            'li': ListItemElementHandler(),
+        },
+        'to_database_format': {
+            'block_map': {'unordered-list-item': {'element': 'li', 'wrapper': 'ul'}}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'ol', draftail_features.BlockFeature({
+            'type': 'ordered-list-item',
+            'icon': 'list-ol',
+            'description': ugettext('Numbered list'),
+        })
+    )
+    features.register_converter_rule('contentstate', 'ol', {
+        'from_database_format': {
+            'ol': ListElementHandler('ordered-list-item'),
+            'li': ListItemElementHandler(),
+        },
+        'to_database_format': {
+            'block_map': {'ordered-list-item': {'element': 'li', 'wrapper': 'ol'}}
+        }
+    })
+
+    features.register_editor_plugin(
+        'draftail', 'bold', draftail_features.InlineStyleFeature({
+            'type': 'BOLD',
+            'icon': 'bold',
+            'description': ugettext('Bold'),
+        })
+    )
+    features.register_converter_rule('contentstate', 'bold', {
+        'from_database_format': {
+            'b': InlineStyleElementHandler('BOLD'),
+            'strong': InlineStyleElementHandler('BOLD'),
+        },
+        'to_database_format': {
+            'style_map': {'BOLD': 'b'}
+        }
+    })
+    features.register_editor_plugin(
+        'draftail', 'italic', draftail_features.InlineStyleFeature({
+            'type': 'ITALIC',
+            'icon': 'italic',
+            'description': ugettext('Italic'),
+        })
+    )
+    features.register_converter_rule('contentstate', 'italic', {
+        'from_database_format': {
+            'i': InlineStyleElementHandler('ITALIC'),
+            'em': InlineStyleElementHandler('ITALIC'),
+        },
+        'to_database_format': {
+            'style_map': {'ITALIC': 'i'}
+        }
+    })
+
+    features.register_editor_plugin(
+        'draftail', 'link', draftail_features.EntityFeature({
+            'type': 'LINK',
+            'icon': 'link',
+            'description': ugettext('Link'),
+            # We want to enforce constraints on which links can be pasted into rich text.
+            # Keep only the attributes Wagtail needs.
+            'attributes': ['url', 'id', 'parentId'],
+            'whitelist': {
+                # Keep pasted links with http/https protocol, and not-pasted links (href = undefined).
+                'href': "^(http:|https:|undefined$)",
+            }
+        })
+    )
+    features.register_converter_rule('contentstate', 'link', {
+        'from_database_format': {
+            'a[href]': ExternalLinkElementHandler('LINK'),
+            'a[linktype="page"]': PageLinkElementHandler('LINK'),
+        },
+        'to_database_format': {
+            'entity_decorators': {'LINK': link_entity}
+        }
+    })

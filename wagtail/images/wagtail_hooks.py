@@ -1,28 +1,28 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import include, url
 from django.contrib.staticfiles.templatetags.staticfiles import static
-from django.core import urlresolvers
+from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 from django.utils.translation import ugettext_lazy as _
-from django.utils.translation import ungettext
+from django.utils.translation import ugettext, ungettext
 
-from wagtail.wagtailadmin.menu import MenuItem
-from wagtail.wagtailadmin.rich_text import HalloPlugin
-from wagtail.wagtailadmin.search import SearchArea
-from wagtail.wagtailadmin.site_summary import SummaryItem
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailimages import admin_urls, get_image_model, image_operations
-from wagtail.wagtailimages.api.admin.endpoints import ImagesAdminAPIEndpoint
-from wagtail.wagtailimages.forms import GroupImagePermissionFormSet
-from wagtail.wagtailimages.permissions import permission_policy
-from wagtail.wagtailimages.rich_text import ImageEmbedHandler
+import wagtail.admin.rich_text.editors.draftail.features as draftail_features
+from wagtail.admin.menu import MenuItem
+from wagtail.admin.rich_text import HalloPlugin
+from wagtail.admin.search import SearchArea
+from wagtail.admin.site_summary import SummaryItem
+from wagtail.core import hooks
+from wagtail.images import admin_urls, get_image_model, image_operations
+from wagtail.images.api.admin.endpoints import ImagesAdminAPIEndpoint
+from wagtail.images.forms import GroupImagePermissionFormSet
+from wagtail.images.permissions import permission_policy
+from wagtail.images.rich_text import (
+    ContentstateImageConversionRule, EditorHTMLImageConversionRule, image_embedtype_handler)
 
 
 @hooks.register('register_admin_urls')
 def register_admin_urls():
     return [
-        url(r'^images/', include(admin_urls, namespace='wagtailimages', app_name='wagtailimages')),
+        url(r'^images/', include(admin_urls, namespace='wagtailimages')),
     ]
 
 
@@ -41,7 +41,7 @@ class ImagesMenuItem(MenuItem):
 @hooks.register('register_admin_menu_item')
 def register_images_menu_item():
     return ImagesMenuItem(
-        _('Images'), urlresolvers.reverse('wagtailimages:index'),
+        _('Images'), reverse('wagtailimages:index'),
         name='images', classnames='icon icon-image', order=300
     )
 
@@ -68,15 +68,18 @@ def editor_js():
         """
         <script>
             window.chooserUrls.imageChooser = '{0}';
-            registerHalloPlugin('hallowagtailimage');
         </script>
         """,
-        urlresolvers.reverse('wagtailimages:chooser')
+        reverse('wagtailimages:chooser')
     )
 
 
 @hooks.register('register_rich_text_features')
 def register_image_feature(features):
+    # define a handler for converting <embed embedtype="image"> tags into frontend HTML
+    features.register_embed_type('image', image_embedtype_handler)
+
+    # define a hallo.js plugin to use when the 'image' feature is active
     features.register_editor_plugin(
         'hallo', 'image',
         HalloPlugin(
@@ -84,6 +87,32 @@ def register_image_feature(features):
             js=['wagtailimages/js/hallo-plugins/hallo-wagtailimage.js'],
         )
     )
+
+    # define how to convert between editorhtml's representation of images and
+    # the database representation
+    features.register_converter_rule('editorhtml', 'image', EditorHTMLImageConversionRule)
+
+    # define a draftail plugin to use when the 'image' feature is active
+    features.register_editor_plugin(
+        'draftail', 'image', draftail_features.EntityFeature({
+            'type': 'IMAGE',
+            'icon': 'image',
+            'description': ugettext('Image'),
+            # We do not want users to be able to copy-paste hotlinked images into rich text.
+            # Keep only the attributes Wagtail needs.
+            'attributes': ['id', 'src', 'alt', 'format'],
+            # Keep only images which are from Wagtail.
+            'whitelist': {
+                'id': True,
+            }
+        })
+    )
+
+    # define how to convert between contentstate's representation of images and
+    # the database representation
+    features.register_converter_rule('contentstate', 'image', ContentstateImageConversionRule)
+
+    # add 'image' to the set of on-by-default rich text features
     features.default_features.append('image')
 
 
@@ -102,13 +131,9 @@ def register_image_operations():
         ('forcefit', image_operations.ForceFitOperation),
         ('jpegquality', image_operations.JPEGQualityOperation),
         ('format', image_operations.FormatOperation),
+        ('bgcolor', image_operations.BackgroundColorOperation),
         ('quantize', image_operations.QuantizeOperation),
     ]
-
-
-@hooks.register('register_rich_text_embed_handler')
-def register_image_embed_handler():
-    return ('image', ImageEmbedHandler)
 
 
 class ImagesSummaryItem(SummaryItem):
@@ -142,7 +167,7 @@ class ImagesSearchArea(SearchArea):
 @hooks.register('register_admin_search_area')
 def register_images_search_area():
     return ImagesSearchArea(
-        _('Images'), urlresolvers.reverse('wagtailimages:index'),
+        _('Images'), reverse('wagtailimages:index'),
         name='images',
         classnames='icon icon-image',
         order=200)
@@ -157,7 +182,7 @@ def register_image_permissions_panel():
 def describe_collection_docs(collection):
     images_count = get_image_model().objects.filter(collection=collection).count()
     if images_count:
-        url = urlresolvers.reverse('wagtailimages:index') + ('?collection_id=%d' % collection.id)
+        url = reverse('wagtailimages:index') + ('?collection_id=%d' % collection.id)
         return {
             'count': images_count,
             'count_text': ungettext(

@@ -4,13 +4,13 @@
 #
 # Translators:
 # Maris Serzans <maris.serzans@gmail.com>, 2015
-# Reinis Rozenbergs <reinisr@gmail.com>, 2016
+# Reinis Rozenbergs <reinisr@gmail.com>, 2016-2017
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-10-06 15:05+0000\n"
-"PO-Revision-Date: 2017-10-06 15:06+0000\n"
+"POT-Creation-Date: 2018-02-16 11:28+0000\n"
+"PO-Revision-Date: 2018-02-16 11:33+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Latvian (http://www.transifex.com/torchbox/wagtail/language/"
 "lv/)\n"
@@ -117,14 +117,27 @@ msgstr[2] ""
 "%(count)s lapas kopijas ir publicētas. Vai vēlaties publicēt arī tās kopijas?"
 
 #, python-format
+msgid "You do not have permission to copy to page \"%(page_title)s\""
+msgstr "Jums nav tiesību kopēt uz lapu \"%(page_title)s\""
+
+#, python-format
 msgid ""
 "This slug is already in use within the context of its parent page \"%s\""
 msgstr ""
 "Šis tekstuālais identifikators jau lietots kontekstā ar augstāka līmeņa lapu "
 "\"%s\""
 
+msgid "You cannot copy a page into itself when copying subpages"
+msgstr "Kopējot apakšlapas nav iespējams kopēt lapu uz sevi pašu"
+
+msgid "Visibility"
+msgstr "Redzamība"
+
 msgid "This field is required."
 msgstr "Šis lauks ir nepieciešams"
+
+msgid "Please select at least one group."
+msgstr "Lūdzu izvēlieties vismaz vienu grupu"
 
 msgid "This slug is already in use"
 msgstr "Šis tekstuālais identifikators jau tiek lietots"
@@ -137,6 +150,15 @@ msgstr "Beigu datumam/laikam jābūt nākotnē"
 
 msgid "You cannot have multiple permission records for the same collection."
 msgstr "Vienai kolekcijai nevar būt vairāki tiesību ieraksti."
+
+msgid "Error 404: Page not found"
+msgstr "Kļūda 404: lapa nav atrasta"
+
+msgid "Error 404"
+msgstr "Kļūda 404"
+
+msgid "The requested page could not be found."
+msgstr "Pieprasīto lapu nav iespējams atrast"
 
 msgid "Go to Wagtail admin"
 msgstr "Doties uz Wagtail administrāciju"
@@ -168,9 +190,18 @@ msgstr "Paziņojumu iestatījumi"
 msgid "Choose which email notifications to receive."
 msgstr "Izvēlēties e-pasta paziņojumus"
 
+msgid "Language preferences"
+msgstr "Valodas uzstādījumi"
+
+msgid "Choose the language you want to use here."
+msgstr "Izvēlieties valodu, kādu vēlaties lietot."
+
 msgid ""
 "Your password can't be changed here. Please contact a site administrator."
 msgstr "Šeit nav iespējams mainīt jūsu paroli. Sazinieties are administratoru."
+
+msgid "Language Preferences"
+msgstr "Valodas uzstādījumi"
 
 msgid "Update"
 msgstr "Atjaunot"
@@ -211,8 +242,29 @@ msgstr "Atjaunot paroli"
 msgid "Edit"
 msgstr "Labot"
 
+msgid "Delete"
+msgstr "Dzēst"
+
+msgid "Page"
+msgstr "Lapa"
+
 msgid "Pages"
 msgstr "Lapas"
+
+msgid "No results"
+msgstr "Nav rezultātu"
+
+msgid "Server Error"
+msgstr "Servera kļūda"
+
+msgid "See children"
+msgstr "Skatīt zemāka līmeņa ierakstus"
+
+msgid "See all"
+msgstr "Apskatīt visu"
+
+msgid "Close explorer"
+msgstr "Aizvērt pārlūku"
 
 msgid "Dashboard"
 msgstr "Informācijas panelis"
@@ -228,9 +280,6 @@ msgstr "Uz augšu"
 
 msgid "Move down"
 msgstr "Uz leju"
-
-msgid "Delete"
-msgstr "Dzēst"
 
 msgid "Explorer"
 msgstr "Pārlūks"
@@ -280,10 +329,6 @@ msgstr "Nevar izdzēst šo kolekciju, jo tā nac tukša. Tā satur:"
 
 msgid "Name"
 msgstr "Nosaukums"
-
-#, python-format
-msgid "Add %(heading)s"
-msgstr "Pievienot %(heading)s"
 
 msgid "Yes, delete"
 msgstr "Dzēst"
@@ -475,14 +520,8 @@ msgstr "Jauns %(page_type)s"
 msgid "New"
 msgstr "Jauns"
 
-msgid "Saving..."
-msgstr "Saglabā..."
-
 msgid "Save draft"
 msgstr "Saglabāt melnrakstu"
-
-msgid "Publishing..."
-msgstr "Publicē..."
 
 msgid "Publish"
 msgstr "Publicēt"
@@ -690,13 +729,6 @@ msgstr "Pk"
 msgid "Sat"
 msgstr "S"
 
-#, python-format
-msgid "Used %(useage_count)s time"
-msgid_plural "Used %(useage_count)s times"
-msgstr[0] "Lietots %(useage_count)s reizi"
-msgstr[1] "Lietots %(useage_count)s reizi"
-msgstr[2] "Lietots %(useage_count)s reizes"
-
 msgid "Edit your account"
 msgstr "Mainīt konta iestatījumus"
 
@@ -777,12 +809,12 @@ msgstr "Labo"
 msgid "Page '{0}' created and scheduled for publishing."
 msgstr "'{0}' lapa izveidota un plānota publicēšanai."
 
+msgid "View live"
+msgstr "Skatīt tekošo versiju"
+
 #, python-brace-format
 msgid "Page '{0}' created and published."
 msgstr "Lapa '{0}' izveidota un publicēta."
-
-msgid "View live"
-msgstr "Skatīt tekošo versiju"
 
 #, python-brace-format
 msgid "Page '{0}' created and submitted for moderation."

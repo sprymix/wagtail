@@ -37,9 +37,9 @@ Middleware (``settings.py``)
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 
-    'wagtail.wagtailcore.middleware.SiteMiddleware',
+    'wagtail.core.middleware.SiteMiddleware',
 
-    'wagtail.wagtailredirects.middleware.RedirectMiddleware',
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
   ]
 
 Wagtail requires several common Django middleware modules to work and cover basic security. Wagtail provides its own middleware to cover these tasks:
@@ -60,17 +60,17 @@ Apps (``settings.py``)
 
     'myapp',  # your own app
 
-    'wagtail.wagtailforms',
-    'wagtail.wagtailredirects',
-    'wagtail.wagtailembeds',
-    'wagtail.wagtailsites',
-    'wagtail.wagtailusers',
-    'wagtail.wagtailsnippets',
-    'wagtail.wagtaildocs',
-    'wagtail.wagtailimages',
-    'wagtail.wagtailsearch',
-    'wagtail.wagtailadmin',
-    'wagtail.wagtailcore',
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail.core',
 
     'taggit',
     'modelcluster',
@@ -179,7 +179,7 @@ Search
 
   WAGTAILSEARCH_BACKENDS = {
       'default': {
-          'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch2',
+          'BACKEND': 'wagtail.search.backends.elasticsearch2',
           'INDEX': 'myapp'
       }
   }
@@ -222,6 +222,13 @@ Dashboard
     WAGTAILADMIN_RECENT_EDITS_LIMIT = 5
 
 This setting lets you change the number of items shown at 'Your most recent edits' on the dashboard.
+
+
+.. code-block:: python
+
+  WAGTAILADMIN_USER_LOGIN_FORM = 'users.forms.LoginForm'
+
+Allows the default ``LoginForm`` to be extended with extra fields.
 
 
 Images
@@ -272,6 +279,8 @@ This specifies whether password fields are shown when creating or editing users 
 This specifies whether password is a required field when creating a new user. True by default; ignored if ``WAGTAILUSERS_PASSWORD_ENABLED`` is false. If this is set to False, and the password field is left blank when creating a user, then that user will have no usable password, and will not be able to log in unless an alternative authentication system such as LDAP is set up.
 
 
+.. _email_notifications:
+
 Email Notifications
 -------------------
 
@@ -281,17 +290,17 @@ Email Notifications
 
 Wagtail sends email notifications when content is submitted for moderation, and when the content is accepted or rejected. This setting lets you pick which email address these automatic notifications will come from. If omitted, Django will fall back to using the ``DEFAULT_FROM_EMAIL`` variable if set, and ``webmaster@localhost`` if not.
 
-.. _email_notifications_format:
-
-Email Notifications format
---------------------------
-
 .. code-block:: python
 
   WAGTAILADMIN_NOTIFICATION_USE_HTML = True
 
 Notification emails are sent in `text/plain` by default, change this to use HTML formatting.
 
+.. code-block:: python
+
+  WAGTAILADMIN_NOTIFICATION_INCLUDE_SUPERUSERS = False
+
+Notification emails are sent to moderators and superusers by default. You can change this to exclude superusers and only notify moderators.
 
 .. _update_notifications:
 
@@ -345,7 +354,7 @@ Unicode Page Slugs
 
   WAGTAIL_ALLOW_UNICODE_SLUGS = True
 
-By default, page slugs can contain any alphanumeric characters, including non-Latin alphabets (except on Django 1.8, where only ASCII characters are supported). Set this to False to limit slugs to ASCII characters.
+By default, page slugs can contain any alphanumeric characters, including non-Latin alphabets. Set this to False to limit slugs to ASCII characters.
 
 .. _WAGTAIL_AUTO_UPDATE_PREVIEW:
 
@@ -394,7 +403,13 @@ Usage for images, documents and snippets
 
     WAGTAIL_USAGE_COUNT_ENABLED = True
 
-When enabled Wagtail shows where a particular image, document or snippet is being used on your site (disabled by default). A link will appear on the edit page showing you which pages they have been used on.
+When enabled Wagtail shows where a particular image, document or snippet is being used on your site.
+This is disabled by default because it generates a query which may run slowly on sites with large numbers of pages.
+
+A link will appear on the edit page (in the rightmost column) showing you how many times the item is used.
+Clicking this link takes you to the "Usage" page, which shows you where the snippet, document or image is used.
+
+The link is also shown on the delete page, above the "Delete" button.
 
 .. note::
 
@@ -441,10 +456,10 @@ URL Patterns
 
   from django.contrib import admin
 
-  from wagtail.wagtailcore import urls as wagtail_urls
-  from wagtail.wagtailadmin import urls as wagtailadmin_urls
-  from wagtail.wagtaildocs import urls as wagtaildocs_urls
-  from wagtail.wagtailsearch import urls as wagtailsearch_urls
+  from wagtail.core import urls as wagtail_urls
+  from wagtail.admin import urls as wagtailadmin_urls
+  from wagtail.documents import urls as wagtaildocs_urls
+  from wagtail.search import urls as wagtailsearch_urls
 
   urlpatterns = [
       url(r'^django-admin/', include(admin.site.urls)),
@@ -496,17 +511,17 @@ These two files should reside in your project directory (``myproject/myproject/`
   INSTALLED_APPS = [
       'myapp',
 
-      'wagtail.wagtailforms',
-      'wagtail.wagtailredirects',
-      'wagtail.wagtailembeds',
-      'wagtail.wagtailsites',
-      'wagtail.wagtailusers',
-      'wagtail.wagtailsnippets',
-      'wagtail.wagtaildocs',
-      'wagtail.wagtailimages',
-      'wagtail.wagtailsearch',
-      'wagtail.wagtailadmin',
-      'wagtail.wagtailcore',
+      'wagtail.contrib.forms',
+      'wagtail.contrib.redirects',
+      'wagtail.embeds',
+      'wagtail.sites',
+      'wagtail.users',
+      'wagtail.snippets',
+      'wagtail.documents',
+      'wagtail.images',
+      'wagtail.search',
+      'wagtail.admin',
+      'wagtail.core',
 
       'taggit',
       'modelcluster',
@@ -528,8 +543,8 @@ These two files should reside in your project directory (``myproject/myproject/`
       'django.middleware.clickjacking.XFrameOptionsMiddleware',
       'django.middleware.security.SecurityMiddleware',
 
-      'wagtail.wagtailcore.middleware.SiteMiddleware',
-      'wagtail.wagtailredirects.middleware.RedirectMiddleware',
+      'wagtail.core.middleware.SiteMiddleware',
+      'wagtail.contrib.redirects.middleware.RedirectMiddleware',
   ]
 
   ROOT_URLCONF = 'myproject.urls'
@@ -552,13 +567,13 @@ These two files should reside in your project directory (``myproject/myproject/`
       },
   ]
 
-  WSGI_APPLICATION = 'wagtaildemo.wsgi.application'
+  WSGI_APPLICATION = 'myproject.wsgi.application'
 
   # Database
 
   DATABASES = {
       'default': {
-          'ENGINE': 'django.db.backends.postgresql_psycopg2',
+          'ENGINE': 'django.db.backends.postgresql',
           'NAME': 'myprojectdb',
           'USER': 'postgres',
           'PASSWORD': '',
@@ -657,7 +672,7 @@ These two files should reside in your project directory (``myproject/myproject/`
   # Replace the search backend
   #WAGTAILSEARCH_BACKENDS = {
   #  'default': {
-  #    'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch2',
+  #    'BACKEND': 'wagtail.search.backends.elasticsearch2',
   #    'INDEX': 'myapp'
   #  }
   #}
@@ -667,10 +682,6 @@ These two files should reside in your project directory (``myproject/myproject/`
 
   # Wagtail email notification format
   # WAGTAILADMIN_NOTIFICATION_USE_HTML = True
-
-  # If you want to use Embedly for embeds, supply a key
-  # (this key doesn't work, get your own!)
-  # WAGTAILEMBEDS_EMBEDLY_KEY = '253e433d59dc4d2xa266e9e0de0cb830'
 
   # Reverse the default case-sensitive handling of tags
   TAGGIT_CASE_INSENSITIVE = True
@@ -688,10 +699,10 @@ These two files should reside in your project directory (``myproject/myproject/`
   from django.conf import settings
   import os.path
 
-  from wagtail.wagtailcore import urls as wagtail_urls
-  from wagtail.wagtailadmin import urls as wagtailadmin_urls
-  from wagtail.wagtaildocs import urls as wagtaildocs_urls
-  from wagtail.wagtailsearch import urls as wagtailsearch_urls
+  from wagtail.core import urls as wagtail_urls
+  from wagtail.admin import urls as wagtailadmin_urls
+  from wagtail.documents import urls as wagtaildocs_urls
+  from wagtail.search import urls as wagtailsearch_urls
 
 
   urlpatterns = [

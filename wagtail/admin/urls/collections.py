@@ -1,9 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import url
 
-from wagtail.wagtailadmin.views import collection_privacy, collections
+from wagtail.admin.views import collection_privacy, collections
 
+app_name = 'wagtailadmin_collections'
 urlpatterns = [
     url(r'^$', collections.Index.as_view(), name='index'),
     url(r'^add/$', collections.Create.as_view(), name='add'),

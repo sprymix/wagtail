@@ -1,20 +1,19 @@
 import functools
 
-import django
 from django.conf.urls import url, include
 from django.views.decorators.cache import cache_control
 from django.views.generic import TemplateView
 from django.http import Http404
 from django.views.defaults import page_not_found
 
-from wagtail.wagtailadmin.urls import pages as wagtailadmin_pages_urls
-from wagtail.wagtailadmin.urls import collections as wagtailadmin_collections_urls
-from wagtail.wagtailadmin.urls import password_reset as wagtailadmin_password_reset_urls
-from wagtail.wagtailadmin.views import account, chooser, home, pages, tags, userbar
-from wagtail.wagtailadmin.api import urls as api_urls
-from wagtail.wagtailcore import hooks
+from wagtail.admin.urls import pages as wagtailadmin_pages_urls
+from wagtail.admin.urls import collections as wagtailadmin_collections_urls
+from wagtail.admin.urls import password_reset as wagtailadmin_password_reset_urls
+from wagtail.admin.views import account, chooser, home, pages, tags, userbar
+from wagtail.admin.api import urls as api_urls
+from wagtail.core import hooks
 from wagtail.utils.urlpatterns import decorate_urlpatterns
-from wagtail.wagtailadmin.decorators import require_admin_access
+from wagtail.admin.decorators import require_admin_access
 
 
 urlpatterns = [
@@ -30,7 +29,7 @@ urlpatterns = [
     url(r'^pages/$', pages.index, name='wagtailadmin_explore_root'),
     url(r'^pages/(\d+)/$', pages.index, name='wagtailadmin_explore'),
 
-    url(r'^pages/', include(wagtailadmin_pages_urls, app_name='wagtailadmin_pages', namespace='wagtailadmin_pages')),
+    url(r'^pages/', include(wagtailadmin_pages_urls, namespace='wagtailadmin_pages')),
 
     # TODO: Move into wagtailadmin_pages namespace
     url(r'^choose-page/$', chooser.browse, name='wagtailadmin_choose_page'),
@@ -95,10 +94,7 @@ def display_custom_404(view_func):
         try:
             return view_func(request, *args, **kwargs)
         except Http404:
-            if django.VERSION < (1, 9):
-                return page_not_found(request, template_name='wagtailadmin/404.html')
-            else:
-                return page_not_found(request, '', template_name='wagtailadmin/404.html')
+            return page_not_found(request, '', template_name='wagtailadmin/404.html')
 
     return wrapper
 

@@ -1,19 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 from django import forms
 from django.forms.models import inlineformset_factory
 from django.utils.translation import ugettext_lazy as _
 
-from wagtail.contrib.wagtailsearchpromotions.models import SearchPromotion
-from wagtail.wagtailadmin.widgets import AdminPageChooser
-from wagtail.wagtailsearch.models import Query
+from wagtail.admin.widgets import AdminPageChooser
+from wagtail.contrib.search_promotions.models import SearchPromotion
+from wagtail.search.models import Query
 
 
 class SearchPromotionForm(forms.ModelForm):
     sort_order = forms.IntegerField(required=False)
 
     def __init__(self, *args, **kwargs):
-        super(SearchPromotionForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['page'].widget = AdminPageChooser()
 
     class Meta:
@@ -35,7 +33,7 @@ class SearchPromotionsFormSet(SearchPromotionsFormSetBase):
     minimum_forms_message = _("Please specify at least one recommendation for this search term.")
 
     def add_fields(self, form, *args, **kwargs):
-        super(SearchPromotionsFormSet, self).add_fields(form, *args, **kwargs)
+        super().add_fields(form, *args, **kwargs)
 
         # Hide delete and order fields
         form.fields['DELETE'].widget = forms.HiddenInput()

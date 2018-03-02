@@ -1,9 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import url
 
-from wagtail.wagtailimages.views import chooser, images, multiple
+from wagtail.images.views import chooser, images, multiple
 
+app_name = 'wagtailimages'
 urlpatterns = [
     url(r'^$', images.index, name='index'),
     url(r'^(\d+)/$', images.edit, name='edit'),

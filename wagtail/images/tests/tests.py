@@ -1,26 +1,23 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 import unittest
 
 from django import forms, template
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse
 from django.test import TestCase, override_settings
-from django.utils import six
+from django.urls import reverse
 from mock import MagicMock
 from taggit.forms import TagField, TagWidget
 
+from wagtail.images import get_image_model, get_image_model_string
+from wagtail.images.fields import WagtailImageField
+from wagtail.images.formats import Format, get_image_format, register_image_format
+from wagtail.images.forms import get_image_form
+from wagtail.images.models import Image as WagtailImage
+from wagtail.images.rect import Rect, Vector
+from wagtail.images.views.serve import ServeView, generate_signature, verify_signature
 from wagtail.tests.testapp.models import CustomImage, CustomImageFilePath
 from wagtail.tests.utils import WagtailTestUtils
-from wagtail.wagtailimages import get_image_model, get_image_model_string
-from wagtail.wagtailimages.fields import WagtailImageField
-from wagtail.wagtailimages.formats import Format, get_image_format, register_image_format
-from wagtail.wagtailimages.forms import get_image_form
-from wagtail.wagtailimages.models import Image as WagtailImage
-from wagtail.wagtailimages.rect import Rect, Vector
-from wagtail.wagtailimages.views.serve import ServeView, generate_signature, verify_signature
 
 from .utils import Image, get_test_image_file
 
@@ -123,6 +120,33 @@ class TestImageTag(TestCase):
             context = template.Context({'image_obj': self.image})
             temp.render(context)
 
+    def test_no_image_filter_provided(self):
+        # if image template gets the image but no filters
+        with self.assertRaises(template.TemplateSyntaxError):
+            temp = template.Template(
+                '{% load wagtailimages_tags %}{% image image_obj %}'
+            )
+            context = template.Context({'image_obj': self.image})
+            temp.render(context)
+
+    def test_no_image_filter_provided_when_using_as(self):
+        # if image template gets the image but no filters
+        with self.assertRaises(template.TemplateSyntaxError):
+            temp = template.Template(
+                '{% load wagtailimages_tags %}{% image image_obj as foo %}'
+            )
+            context = template.Context({'image_obj': self.image})
+            temp.render(context)
+
+    def test_no_image_filter_provided_but_attributes_provided(self):
+        # if image template gets the image but no filters
+        with self.assertRaises(template.TemplateSyntaxError):
+            temp = template.Template(
+                '{% load wagtailimages_tags %}{% image image_obj class="cover-image"%}'
+            )
+            context = template.Context({'image_obj': self.image})
+            temp.render(context)
+
 
 class TestMissingImage(TestCase):
     """
@@ -178,20 +202,38 @@ class TestFormat(TestCase):
             self.image,
             'test alt text'
         )
-        six.assertRegex(
-            self, result,
+        self.assertRegex(
+            result,
             '<img data-embedtype="image" data-id="0" data-format="test name" '
             'data-alt="test alt text" class="test classnames" src="[^"]+" width="1" height="1" alt="test alt text">',
+        )
+
+    def test_image_to_editor_html_with_quoting(self):
+        result = self.format.image_to_editor_html(
+            self.image,
+            'Arthur "two sheds" Jackson'
+        )
+        self.assertRegex(
+            result,
+            '<img data-embedtype="image" data-id="0" data-format="test name" '
+            'data-alt="Arthur &quot;two sheds&quot; Jackson" class="test classnames" src="[^"]+" width="1" height="1" alt="Arthur &quot;two sheds&quot; Jackson">',
         )
 
     def test_image_to_html_no_classnames(self):
         self.format.classnames = None
         result = self.format.image_to_html(self.image, 'test alt text')
-        six.assertRegex(
-            self, result,
+        self.assertRegex(
+            result,
             '<img src="[^"]+" width="1" height="1" alt="test alt text">'
         )
         self.format.classnames = 'test classnames'
+
+    def test_image_to_html_with_quoting(self):
+        result = self.format.image_to_html(self.image, 'Arthur "two sheds" Jackson')
+        self.assertRegex(
+            result,
+            '<img class="test classnames" src="[^"]+" width="1" height="1" alt="Arthur &quot;two sheds&quot; Jackson">'
+        )
 
     def test_get_image_format(self):
         register_image_format(self.format)
@@ -201,16 +243,16 @@ class TestFormat(TestCase):
 
 class TestSignatureGeneration(TestCase):
     def test_signature_generation(self):
-        self.assertEqual(generate_signature(100, 'fill-800x600'), b'xnZOzQyUg6pkfciqcfRJRosOrGg=')
+        self.assertEqual(generate_signature(100, 'fill-800x600'), 'xnZOzQyUg6pkfciqcfRJRosOrGg=')
 
     def test_signature_verification(self):
-        self.assertTrue(verify_signature(b'xnZOzQyUg6pkfciqcfRJRosOrGg=', 100, 'fill-800x600'))
+        self.assertTrue(verify_signature('xnZOzQyUg6pkfciqcfRJRosOrGg=', 100, 'fill-800x600'))
 
     def test_signature_changes_on_image_id(self):
-        self.assertFalse(verify_signature(b'xnZOzQyUg6pkfciqcfRJRosOrGg=', 200, 'fill-800x600'))
+        self.assertFalse(verify_signature('xnZOzQyUg6pkfciqcfRJRosOrGg=', 200, 'fill-800x600'))
 
     def test_signature_changes_on_filter_spec(self):
-        self.assertFalse(verify_signature(b'xnZOzQyUg6pkfciqcfRJRosOrGg=', 100, 'fill-800x700'))
+        self.assertFalse(verify_signature('xnZOzQyUg6pkfciqcfRJRosOrGg=', 100, 'fill-800x700'))
 
 
 class TestFrontendServeView(TestCase):
@@ -276,7 +318,7 @@ class TestFrontendServeView(TestCase):
         signature = generate_signature(self.image.id, 'fill-800x600')
         response = self.client.get(reverse('wagtailimages_serve_action_redirect', args=(signature, self.image.id, 'fill-800x600')))
 
-        expected_redirect_url = 'http://testserver/media/images/{filename[0]}.2e16d0ba.fill-800x600{filename[1]}'.format(
+        expected_redirect_url = '/media/images/{filename[0]}.2e16d0ba.fill-800x600{filename[1]}'.format(
             filename=os.path.splitext(os.path.basename(self.image.file.path))
         )
 
@@ -599,7 +641,7 @@ class TestGetImageModel(WagtailTestUtils, TestCase):
     def test_standard_get_image_model(self):
         """Test get_image_model with no WAGTAILIMAGES_IMAGE_MODEL"""
         del settings.WAGTAILIMAGES_IMAGE_MODEL
-        from wagtail.wagtailimages.models import Image
+        from wagtail.images.models import Image
         self.assertIs(get_image_model(), Image)
 
     @override_settings()

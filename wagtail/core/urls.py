@@ -1,12 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf import settings
 from django.conf.urls import url
 from django.contrib.auth import views as auth_views
 
-from wagtail.wagtailcore import views
-from wagtail.wagtailcore.utils import WAGTAIL_APPEND_SLASH
-
+from wagtail.core import views
+from wagtail.core.utils import WAGTAIL_APPEND_SLASH
 
 if WAGTAIL_APPEND_SLASH:
     # If WAGTAIL_APPEND_SLASH is True (the default value), we match a

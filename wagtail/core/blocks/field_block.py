@@ -1,20 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 
 from django import forms
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.forms.fields import CallableChoiceIterator
 from django.template.loader import render_to_string
-from django.utils import six
 from django.utils.dateparse import parse_date, parse_datetime, parse_time
 from django.utils.encoding import force_text
 from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from wagtail.wagtailcore.rich_text import RichText
-from wagtail.wagtailcore.utils import resolve_model_string
+from wagtail.core.rich_text import RichText
+from wagtail.core.utils import resolve_model_string
 
 from .base import Block
 
@@ -108,7 +105,7 @@ class CharBlock(FieldBlock):
             max_length=max_length,
             min_length=min_length
         )
-        super(CharBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_searchable_content(self, value):
         return [force_text(value)]
@@ -124,11 +121,11 @@ class TextBlock(FieldBlock):
             'min_length': min_length
         }
         self.rows = rows
-        super(TextBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @cached_property
     def field(self):
-        from wagtail.wagtailadmin.widgets import AdminAutoHeightTextInput
+        from wagtail.admin.widgets import AdminAutoHeightTextInput
         field_kwargs = {'widget': AdminAutoHeightTextInput(attrs={'rows': self.rows})}
         field_kwargs.update(self.field_options)
         return forms.CharField(**field_kwargs)
@@ -161,7 +158,7 @@ class FloatBlock(FieldBlock):
             max_value=max_value,
             min_value=min_value,
         )
-        super(FloatBlock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     class Meta:
         icon = "plus-inverse"
@@ -179,7 +176,7 @@ class DecimalBlock(FieldBlock):
             max_digits=max_digits,
             decimal_places=decimal_places,
         )
-        super(DecimalBlock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     class Meta:
         icon = "plus-inverse"
@@ -197,7 +194,7 @@ class RegexBlock(FieldBlock):
             min_length=min_length,
             error_messages=error_messages,
         )
-        super(RegexBlock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     class Meta:
         icon = "code"
@@ -212,7 +209,7 @@ class URLBlock(FieldBlock):
             max_length=max_length,
             min_length=min_length
         )
-        super(URLBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     class Meta:
         icon = "site"
@@ -226,7 +223,7 @@ class BooleanBlock(FieldBlock):
         # conditions" box). To get the conventional yes/no behaviour, you must explicitly pass
         # required=False.
         self.field = forms.BooleanField(required=required, help_text=help_text)
-        super(BooleanBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     class Meta:
         icon = "tick-inverse"
@@ -241,11 +238,11 @@ class DateBlock(FieldBlock):
         except KeyError:
             pass
         self.format = format
-        super(DateBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @cached_property
     def field(self):
-        from wagtail.wagtailadmin.widgets import AdminDateInput
+        from wagtail.admin.widgets import AdminDateInput
         field_kwargs = {
             'widget': AdminDateInput(format=self.format),
         }
@@ -269,11 +266,11 @@ class TimeBlock(FieldBlock):
 
     def __init__(self, required=True, help_text=None, **kwargs):
         self.field_options = {'required': required, 'help_text': help_text}
-        super(TimeBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @cached_property
     def field(self):
-        from wagtail.wagtailadmin.widgets import AdminTimeInput
+        from wagtail.admin.widgets import AdminTimeInput
         field_kwargs = {'widget': AdminTimeInput}
         field_kwargs.update(self.field_options)
         return forms.TimeField(**field_kwargs)
@@ -293,11 +290,11 @@ class DateTimeBlock(FieldBlock):
     def __init__(self, required=True, help_text=None, format=None, **kwargs):
         self.field_options = {'required': required, 'help_text': help_text}
         self.format = format
-        super(DateTimeBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @cached_property
     def field(self):
-        from wagtail.wagtailadmin.widgets import AdminDateTimeInput
+        from wagtail.admin.widgets import AdminDateTimeInput
         field_kwargs = {
             'widget': AdminDateTimeInput(format=self.format),
         }
@@ -320,7 +317,7 @@ class EmailBlock(FieldBlock):
             required=required,
             help_text=help_text,
         )
-        super(EmailBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     class Meta:
         icon = "mail"
@@ -336,7 +333,7 @@ class IntegerBlock(FieldBlock):
             min_value=min_value,
             max_value=max_value
         )
-        super(IntegerBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     class Meta:
         icon = "plus-inverse"
@@ -379,7 +376,7 @@ class ChoiceBlock(FieldBlock):
         callable_choices = self.get_callable_choices(choices, blank_choice=not(default and required))
 
         self.field = forms.ChoiceField(choices=callable_choices, required=required, help_text=help_text)
-        super(ChoiceBlock, self).__init__(default=default, **kwargs)
+        super().__init__(default=default, **kwargs)
 
     def get_callable_choices(self, choices, blank_choice=True):
         """
@@ -427,7 +424,7 @@ class ChoiceBlock(FieldBlock):
         users to define subclasses of ChoiceBlock in their models.py, with specific choice lists
         passed in, without references to those classes ending up frozen into migrations.
         """
-        return ('wagtail.wagtailcore.blocks.ChoiceBlock', [], self._constructor_kwargs)
+        return ('wagtail.core.blocks.ChoiceBlock', [], self._constructor_kwargs)
 
     def get_searchable_content(self, value):
         # Return the display value as the searchable value
@@ -456,7 +453,7 @@ class RichTextBlock(FieldBlock):
         self.field_options = {'required': required, 'help_text': help_text}
         self.editor = editor
         self.features = features
-        super(RichTextBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_default(self):
         if isinstance(self.meta.default, RichText):
@@ -476,7 +473,7 @@ class RichTextBlock(FieldBlock):
 
     @cached_property
     def field(self):
-        from wagtail.wagtailadmin.rich_text import get_rich_text_editor_widget
+        from wagtail.admin.rich_text import get_rich_text_editor_widget
         return forms.CharField(
             widget=get_rich_text_editor_widget(self.editor, features=self.features),
             **self.field_options
@@ -504,7 +501,7 @@ class RawHTMLBlock(FieldBlock):
         self.field = forms.CharField(
             required=required, help_text=help_text, max_length=max_length, min_length=min_length,
             widget=forms.Textarea)
-        super(RawHTMLBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_default(self):
         return mark_safe(self.meta.default or '')
@@ -515,11 +512,11 @@ class RawHTMLBlock(FieldBlock):
     def get_prep_value(self, value):
         # explicitly convert to a plain string, just in case we're using some serialisation method
         # that doesn't cope with SafeText values correctly
-        return six.text_type(value)
+        return str(value) + ''
 
     def value_for_form(self, value):
         # need to explicitly mark as unsafe, or it'll output unescaped HTML in the textarea
-        return six.text_type(value)
+        return str(value) + ''
 
     def value_from_form(self, value):
         return mark_safe(value)
@@ -533,7 +530,7 @@ class ChooserBlock(FieldBlock):
     def __init__(self, required=True, help_text=None, **kwargs):
         self._required = required
         self._help_text = help_text
-        super(ChooserBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     """Abstract superclass for fields that implement a chooser interface (page, image, snippet etc)"""
     @cached_property
@@ -587,7 +584,7 @@ class ChooserBlock(FieldBlock):
         # around that...
         if isinstance(value, self.target_model):
             value = value.pk
-        return super(ChooserBlock, self).clean(value)
+        return super().clean(value)
 
     class Meta:
         # No icon specified here, because that depends on the purpose that the
@@ -610,7 +607,7 @@ class PageChooserBlock(ChooserBlock):
 
         self._target_models = target_model
         self.can_choose_root = can_choose_root
-        super(PageChooserBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @cached_property
     def target_model(self):
@@ -638,7 +635,7 @@ class PageChooserBlock(ChooserBlock):
 
     @cached_property
     def widget(self):
-        from wagtail.wagtailadmin.widgets import AdminPageChooser
+        from wagtail.admin.widgets import AdminPageChooser
         return AdminPageChooser(target_models=self.target_models,
                                 can_choose_root=self.can_choose_root)
 
@@ -649,7 +646,7 @@ class PageChooserBlock(ChooserBlock):
             return ''
 
     def deconstruct(self):
-        name, args, kwargs = super(PageChooserBlock, self).deconstruct()
+        name, args, kwargs = super().deconstruct()
 
         if 'target_model' in kwargs:
             target_models = []
@@ -677,7 +674,7 @@ block_classes = [
     DecimalBlock, RegexBlock, BlockQuoteBlock
 ]
 DECONSTRUCT_ALIASES = {
-    cls: 'wagtail.wagtailcore.blocks.%s' % cls.__name__
+    cls: 'wagtail.core.blocks.%s' % cls.__name__
     for cls in block_classes
 }
 __all__ = [cls.__name__ for cls in block_classes]

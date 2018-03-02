@@ -1,29 +1,26 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 
-from django.core.urlresolvers import NoReverseMatch, reverse
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.urls.exceptions import NoReverseMatch
 from django.utils.translation import ugettext as _
 from django.views.decorators.vary import vary_on_headers
 from django.db.models import deletion
 from django.db import router
 
+from wagtail.admin import messages
+from wagtail.admin.forms import SearchForm
+from wagtail.admin.utils import PermissionPolicyChecker, permission_denied, popular_tags_for_model
+from wagtail.core.models import Collection, Site
+from wagtail.images import get_image_model
+from wagtail.images.exceptions import InvalidFilterSpecError
+from wagtail.images.forms import URLGeneratorForm, get_image_form
+from wagtail.images.models import Filter
+from wagtail.images.permissions import permission_policy
+from wagtail.images.views.serve import generate_signature
+from wagtail.search import index as search_index
 from wagtail.utils.pagination import paginate
-from wagtail.wagtailadmin import messages
-from wagtail.wagtailadmin.forms import SearchForm
-from wagtail.wagtailadmin.utils import (
-    PermissionPolicyChecker, permission_denied, popular_tags_for_model)
-from wagtail.wagtailcore.models import Collection, Site
-from wagtail.wagtailimages import get_image_model
-from wagtail.wagtailimages.exceptions import InvalidFilterSpecError
-from wagtail.wagtailimages.forms import URLGeneratorForm, get_image_form
-from wagtail.wagtailimages.models import AbstractRendition
-from wagtail.wagtailimages.models import Filter
-from wagtail.wagtailimages.permissions import permission_policy
-from wagtail.wagtailimages.views.serve import generate_signature
-from wagtail.wagtailsearch import index as search_index
 
 permission_checker = PermissionPolicyChecker(permission_policy)
 

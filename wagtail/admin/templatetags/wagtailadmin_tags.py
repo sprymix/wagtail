@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 import itertools
 
-import django
 from django import template
 from django.conf import settings
+from django.contrib.admin.utils import quote
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.messages.constants import DEFAULT_TAGS as MESSAGE_TAGS
 from django.template.defaultfilters import stringfilter
@@ -12,27 +10,19 @@ from django.template.loader import render_to_string
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
+from wagtail.admin.menu import admin_menu
+from wagtail.admin.navigation import get_explorable_root_page
+from wagtail.admin.search import admin_search_areas
+from wagtail.core import hooks
+from wagtail.core.models import (
+    CollectionViewRestriction, Page, PageViewRestriction, UserPagePermissionsProxy)
+from wagtail.core.utils import cautious_slugify as _cautious_slugify
+from wagtail.core.utils import camelcase_to_underscore, escape_script
 from wagtail.utils.pagination import DEFAULT_PAGE_KEY, replace_page_in_query
-from wagtail.wagtailadmin.menu import admin_menu
-from wagtail.wagtailadmin.navigation import get_explorable_root_page
-from wagtail.wagtailadmin.search import admin_search_areas
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import (
-    CollectionViewRestriction,
-    Page, PageViewRestriction,
-    UserPagePermissionsProxy
-)
-from wagtail.wagtailcore.utils import cautious_slugify as _cautious_slugify
-from wagtail.wagtailcore.utils import camelcase_to_underscore, escape_script
 
 register = template.Library()
 
 register.filter('intcomma', intcomma)
-
-if django.VERSION >= (1, 9):
-    assignment_tag = register.simple_tag
-else:
-    assignment_tag = register.assignment_tag
 
 
 @register.simple_tag(takes_context=True)
@@ -95,7 +85,7 @@ def ellipsistrim(value, max_length):
         truncd_val = value[:max_length]
         if not len(value) == (max_length + 1) and value[max_length + 1] != " ":
             truncd_val = truncd_val[:truncd_val.rfind(" ")]
-        return truncd_val + "..."
+        return truncd_val + "…"
     return value
 
 
@@ -121,7 +111,7 @@ def widgettype(bound_field):
             return ""
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def page_permissions(context, page):
     """
     Usage: {% page_permissions page as page_perms %}
@@ -137,7 +127,7 @@ def page_permissions(context, page):
     return context['user_page_permissions'].for_page(page)
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def test_collection_is_public(context, collection):
     """
     Usage: {% test_collection_is_public collection as is_public %}
@@ -156,7 +146,7 @@ def test_collection_is_public(context, collection):
     return not is_private
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def test_page_is_public(context, page):
     """
     Usage: {% test_page_is_public page as is_public %}
@@ -190,26 +180,22 @@ def hook_output(hook_name):
     return mark_safe(''.join(snippets))
 
 
-@assignment_tag
+@register.simple_tag
 def usage_count_enabled():
     return getattr(settings, 'WAGTAIL_USAGE_COUNT_ENABLED', False)
 
 
-@assignment_tag
+@register.simple_tag
 def base_url_setting():
     return getattr(settings, 'BASE_URL', None)
 
 
-@assignment_tag
+@register.simple_tag
 def allow_unicode_slugs():
-    if django.VERSION < (1, 9):
-        # Unicode slugs are unsupported on Django 1.8
-        return False
-    else:
-        return getattr(settings, 'WAGTAIL_ALLOW_UNICODE_SLUGS', True)
+    return getattr(settings, 'WAGTAIL_ALLOW_UNICODE_SLUGS', True)
 
 
-@assignment_tag
+@register.simple_tag
 def auto_update_preview():
     return getattr(settings, 'WAGTAIL_AUTO_UPDATE_PREVIEW', False)
 
@@ -218,7 +204,7 @@ class EscapeScriptNode(template.Node):
     TAG_NAME = 'escapescript'
 
     def __init__(self, nodelist):
-        super(EscapeScriptNode, self).__init__()
+        super().__init__()
         self.nodelist = nodelist
 
     def render(self, context):
@@ -380,3 +366,8 @@ def replace_page_param(query, page_number, page_key='p'):
 @register.filter('abs')
 def _abs(val):
     return abs(val)
+
+
+@register.filter
+def admin_urlquote(value):
+    return quote(value)

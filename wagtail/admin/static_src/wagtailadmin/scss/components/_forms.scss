@@ -53,7 +53,7 @@ label,
 input,
 textarea,
 select,
-.richtext,
+.halloeditor,
 .tagit {
     box-sizing: border-box;
     border-radius: 6px;
@@ -74,9 +74,9 @@ select,
     }
 
     &:focus {
-        border-color: darken($color-input-focus, 40%);
-        outline: none;
         background-color: $color-input-focus;
+        border-color: $color-input-focus-border;
+        outline: none;
     }
 
     &:disabled,
@@ -117,7 +117,6 @@ select,
         font-size: 3em;
         pointer-events: none;
         color: $color-grey-3;
-        background-color: $color-fieldset-hover;
         margin: 0 1px 1px 0;
 
         .ie & {
@@ -901,7 +900,7 @@ li.focused > .help {
     input,
     textarea,
     select,
-    .richtext,
+    .halloeditor,
     .tagit {
         border-radius: 3px;
         padding: 0.4em 1em;

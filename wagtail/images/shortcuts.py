@@ -1,7 +1,4 @@
-# coding=utf-8
-from __future__ import absolute_import, unicode_literals
-
-from wagtail.wagtailimages.models import SourceImageIOError
+from wagtail.images.models import SourceImageIOError
 
 
 def get_rendition_or_not_found(image, specs):

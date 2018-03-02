@@ -1,9 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import url
 
 from wagtail.api.v2.router import WagtailAPIRouter
-from wagtail.wagtailcore import hooks
+from wagtail.core import hooks
 
 from .endpoints import PagesAdminAPIEndpoint
 

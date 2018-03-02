@@ -1,24 +1,22 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import include, url
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.templatetags.staticfiles import static
-from django.core import urlresolvers
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 
-from wagtail.wagtailadmin.menu import MenuItem
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailsnippets import urls
-from wagtail.wagtailsnippets.models import get_snippet_models
-from wagtail.wagtailsnippets.permissions import user_can_edit_snippets
+from wagtail.admin.menu import MenuItem
+from wagtail.core import hooks
+from wagtail.snippets import urls
+from wagtail.snippets.models import get_snippet_models
+from wagtail.snippets.permissions import user_can_edit_snippets
 
 
 @hooks.register('register_admin_urls')
 def register_admin_urls():
     return [
-        url(r'^snippets/', include(urls, app_name='wagtailsnippets', namespace='wagtailsnippets')),
+        url(r'^snippets/', include(urls, namespace='wagtailsnippets')),
     ]
 
 
@@ -31,7 +29,7 @@ class SnippetsMenuItem(MenuItem):
 def register_snippets_menu_item():
     return SnippetsMenuItem(
         _('Snippets'),
-        urlresolvers.reverse('wagtailsnippets:index'),
+        reverse('wagtailsnippets:index'),
         classnames='icon icon-snippet',
         order=500
     )
@@ -45,7 +43,7 @@ def editor_js():
             <script>window.chooserUrls.snippetChooser = '{1}';</script>
         """,
         static('wagtailsnippets/js/snippet-chooser.js'),
-        urlresolvers.reverse('wagtailsnippets:choose_generic')
+        reverse('wagtailsnippets:choose_generic')
     )
 
 

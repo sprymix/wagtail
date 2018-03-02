@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 from django.conf import settings
 from django.test import TestCase
 
-from wagtail.wagtailcore.models import Page
-from wagtail.wagtailsearch.backends import get_search_backend
+from wagtail.core.models import Page
+from wagtail.search.backends import get_search_backend
 
 
 class PageSearchTests(object):
@@ -33,6 +33,9 @@ class PageSearchTests(object):
         index = self.backend.get_index_for_model(Page)
         if index:
             index.refresh()
+
+    def test_order_by_title(self):
+        list(Page.objects.order_by('title').search('blah', order_by_relevance=False, backend=self.backend_name))
 
     def test_search_specific_queryset(self):
         list(Page.objects.specific().search('bread', backend=self.backend_name))

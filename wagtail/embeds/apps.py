@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.apps import AppConfig
 
 from .finders import get_finders
 
 
 class WagtailEmbedsAppConfig(AppConfig):
-    name = 'wagtail.wagtailembeds'
+    name = 'wagtail.embeds'
     label = 'wagtailembeds'
     verbose_name = "Wagtail embeds"
 

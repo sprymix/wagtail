@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf.urls import url
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.models import modelform_factory
 
-from wagtail.wagtailadmin.views import generic
-from wagtail.wagtailcore.permissions import ModelPermissionPolicy
+from wagtail.admin.views import generic
+from wagtail.core.permissions import ModelPermissionPolicy
 
 from .base import ViewSet
 
@@ -88,7 +86,7 @@ class ModelViewSet(ViewSet):
         )
 
     def get_urlpatterns(self):
-        return super(ModelViewSet, self).get_urlpatterns() + [
+        return super().get_urlpatterns() + [
             url(r'^$', self.index_view, name='index'),
             url(r'^new/$', self.add_view, name='add'),
             url(r'^(\d+)/$', self.edit_view, name='edit'),

@@ -1,6 +1,4 @@
-from __future__ import absolute_import, unicode_literals
-
-from wagtail.wagtailcore.permission_policies import ModelPermissionPolicy
-from wagtail.wagtailredirects.models import Redirect
+from wagtail.contrib.redirects.models import Redirect
+from wagtail.core.permission_policies import ModelPermissionPolicy
 
 permission_policy = ModelPermissionPolicy(Redirect)

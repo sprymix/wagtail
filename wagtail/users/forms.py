@@ -1,35 +1,27 @@
-from __future__ import absolute_import, unicode_literals
-
 from itertools import groupby
 
-import django
+import pytz
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.password_validation import (
+    password_validators_help_text_html, validate_password)
 from django.db import transaction
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.template.loader import render_to_string
 from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
-from wagtail.wagtailadmin.utils import get_available_admin_languages
-from wagtail.wagtailadmin.widgets import AdminPageChooser
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import (
+from wagtail.admin.utils import get_available_admin_languages
+from wagtail.admin.widgets import AdminPageChooser
+from wagtail.core import hooks
+from wagtail.core.models import (
     PAGE_PERMISSION_TYPE_CHOICES, PAGE_PERMISSION_TYPES, GroupPagePermission, Page,
-    UserPagePermissionsProxy
-)
+    UserPagePermissionsProxy)
+from wagtail.users.models import UserProfile
 
-import pytz
-
-from wagtail.wagtailusers.models import UserProfile
-
-
-if django.VERSION >= (1, 9):
-    from django.contrib.auth.password_validation import (
-        password_validators_help_text_html, validate_password
-    )
 
 User = get_user_model()
 
@@ -50,7 +42,7 @@ class UsernameForm(forms.ModelForm):
     something else, don't touch it.
     """
     def __init__(self, *args, **kwargs):
-        super(UsernameForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if User.USERNAME_FIELD == 'username':
             field = self.fields['username']
             field.regex = r"^[\w.@+-]+$"
@@ -121,13 +113,11 @@ class UserForm(UsernameForm):
             initial['timezone'] = UserProfile.get_for_user(instance).timezone
             kwargs['initial'] = initial
 
-        super(UserForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self.password_enabled:
             if self.password_required:
-                self.fields['password1'].help_text = (
-                    mark_safe(password_validators_help_text_html())
-                    if django.VERSION >= (1, 9) else '')
+                self.fields['password1'].help_text = mark_safe(password_validators_help_text_html())
                 self.fields['password1'].required = True
                 self.fields['password2'].required = True
         else:
@@ -164,17 +154,17 @@ class UserForm(UsernameForm):
                 code='password_mismatch',
             ))
 
-        if django.VERSION >= (1, 9) and password1:
+        if password1:
             validate_password(password1, user=self.instance)
 
         return password2
 
     def _clean_fields(self):
-        super(UserForm, self)._clean_fields()
+        super()._clean_fields()
         self._clean_username()
 
     def save(self, commit=True):
-        user = super(UserForm, self).save(commit=False)
+        user = super().save(commit=False)
 
         if self.password_enabled:
             password = self.cleaned_data['password1']
@@ -215,7 +205,7 @@ class UserEditForm(UserForm):
 
     def __init__(self, *args, **kwargs):
         editing_self = kwargs.pop('editing_self', False)
-        super(UserEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if editing_self:
             del self.fields["is_active"]
@@ -231,7 +221,7 @@ class UserEditForm(UserForm):
 
 class GroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        super(GroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.registered_permissions = Permission.objects.none()
         for fn in hooks.get_hooks('register_permissions'):
             self.registered_permissions = self.registered_permissions | fn()
@@ -277,7 +267,7 @@ class GroupForm(forms.ModelForm):
         except ValueError:
             # this form is not bound; we're probably creating a new group
             untouchable_permissions = []
-        group = super(GroupForm, self).save()
+        group = super().save()
         group.permissions.add(*untouchable_permissions)
         return group
 
@@ -317,7 +307,7 @@ class BaseGroupPagePermissionFormSet(forms.BaseFormSet):
                 'permission_types': [pp.permission_type for pp in page_permissions]
             })
 
-        super(BaseGroupPagePermissionFormSet, self).__init__(
+        super().__init__(
             data, files, initial=initial_data, prefix=prefix
         )
         for form in self.forms:
@@ -325,7 +315,7 @@ class BaseGroupPagePermissionFormSet(forms.BaseFormSet):
 
     @property
     def empty_form(self):
-        empty_form = super(BaseGroupPagePermissionFormSet, self).empty_form
+        empty_form = super().empty_form
         empty_form.fields['DELETE'].widget = forms.HiddenInput()
         return empty_form
 
@@ -398,7 +388,7 @@ GroupPagePermissionFormSet = forms.formset_factory(
 
 class NotificationPreferencesForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        super(NotificationPreferencesForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         user_perms = UserPagePermissionsProxy(self.instance.user)
         if not user_perms.can_publish_pages():
             del self.fields['submitted_notifications']
@@ -416,9 +406,6 @@ class PreferredLanguageForm(forms.ModelForm):
         required=False,
         choices=lambda: sorted(BLANK_CHOICE_DASH + get_available_admin_languages(), key=lambda l: l[1])
     )
-
-    def __init__(self, *args, **kwargs):
-        super(PreferredLanguageForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = UserProfile

@@ -1,16 +1,14 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 
+from wagtail.admin.forms import EmailLinkChooserForm, ExternalLinkChooserForm, SearchForm
+from wagtail.admin.modal_workflow import render_modal_workflow
+from wagtail.core import hooks
+from wagtail.core.models import Page, UserPagePermissionsProxy
+from wagtail.core.utils import resolve_model_string
 from wagtail.utils.pagination import paginate
-from wagtail.wagtailadmin.forms import EmailLinkChooserForm, ExternalLinkChooserForm, SearchForm
-from wagtail.wagtailadmin.modal_workflow import render_modal_workflow
-from wagtail.wagtailcore import hooks
-from wagtail.wagtailcore.models import Page, UserPagePermissionsProxy
-from wagtail.wagtailcore.utils import resolve_model_string
 
 
 def shared_context(request, extra_context=None):
@@ -162,7 +160,7 @@ def search(request, parent_page_id=None):
         )
         pages = filter_page_type(pages, desired_classes)
         pages = pages.specific()
-        pages = pages.search(search_form.cleaned_data['q'], fields=['title'])
+        pages = pages.search(search_form.cleaned_data['q'])
     else:
         pages = pages.none()
 
