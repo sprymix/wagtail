@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from django.db import migrations
 
 
@@ -21,7 +19,8 @@ def create_homepage(apps, schema_editor):
 
     # Create a new homepage
     homepage = HomePage.objects.create(
-        title="Homepage",
+        title="Home",
+        draft_title="Home",
         slug='home',
         content_type=homepage_content_type,
         path='00010001',

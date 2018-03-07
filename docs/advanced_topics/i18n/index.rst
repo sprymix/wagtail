@@ -17,6 +17,17 @@ The Wagtail admin backend has been translated into many different languages. You
 
 If your language isn't listed on that page, you can easily contribute new languages or correct mistakes. Sign up and submit changes to `Transifex <https://www.transifex.com/torchbox/wagtail/>`_. Translation updates are typically merged into an official release within one month of being submitted.
 
+Change Wagtail admin language on a per user basis
+=================================================
+
+Logged-in users can set their preferred language from ``/admin/account/``.
+By default, Wagtail provides a list of languages that have a >= 90% translation coverage.
+It is possible to override this list via the :ref:`WAGTAILADMIN_PERMITTED_LANGUAGES <WAGTAILADMIN_PERMITTED_LANGUAGES>` setting.
+
+In case there is zero or one language permitted, the form will be hidden.
+
+If there is no language selected by the user, the ``LANGUAGE_CODE`` wil be used.
+
 
 Changing the primary language of your Wagtail installation
 ==========================================================
@@ -42,11 +53,11 @@ Enabling multiple language support
 
 Firstly, make sure the `USE_I18N <https://docs.djangoproject.com/en/1.8/ref/settings/#use-i18n>`_ Django setting is set to ``True``.
 
-To enable multi-language support, add ``django.middleware.locale.LocaleMiddleware`` to your ``MIDDLEWARE_CLASSES``:
+To enable multi-language support, add ``django.middleware.locale.LocaleMiddleware`` to your ``MIDDLEWARE``:
 
 .. code-block:: python
 
-    MIDDLEWARE_CLASSES = (
+    MIDDLEWARE = (
         ...
 
         'django.middleware.locale.LocaleMiddleware',
@@ -76,10 +87,10 @@ This feature is enabled through the project's root URL configuration. Just put t
     from django.conf import settings
     from django.contrib import admin
 
-    from wagtail.wagtailadmin import urls as wagtailadmin_urls
-    from wagtail.wagtaildocs import urls as wagtaildocs_urls
-    from wagtail.wagtailcore import urls as wagtail_urls
-
+    from wagtail.admin import urls as wagtailadmin_urls
+    from wagtail.documents import urls as wagtaildocs_urls
+    from wagtail.core import urls as wagtail_urls
+    from search import views as search_views
 
     urlpatterns = [
         url(r'^django-admin/', include(admin.site.urls)),
@@ -89,10 +100,10 @@ This feature is enabled through the project's root URL configuration. Just put t
     ]
 
 
-    urlpatterns += i18n_patterns('',
+    urlpatterns += i18n_patterns(
         # These URLs will have /<language_code>/ appended to the beginning
 
-        url(r'^search/$', 'search.views.search', name='search'),
+        url(r'^search/$', search_views.search, name='search'),
 
         url(r'', include(wagtail_urls)),
     )
@@ -132,7 +143,7 @@ For each field you would like to be translatable, duplicate it for every languag
         body_fr = StreamField(...)
 
         # Language-independent fields don't need to be duplicated
-        thumbnail_image = models.ForeignKey('wagtailimages.image', ...)
+        thumbnail_image = models.ForeignKey('wagtailimages.image', on_delete=models.CASCADE, ...)
 
 .. note::
 
@@ -160,20 +171,16 @@ Copy this into your project and make sure it's imported in any ``models.py`` fil
 
     from django.utils import translation
 
-    class TranslatedField(object):
+    class TranslatedField:
         def __init__(self, en_field, fr_field):
             self.en_field = en_field
             self.fr_field = fr_field
 
         def __get__(self, instance, owner):
-            en = getattr(instance, self.en_field)
-            fr = getattr(instance, self.fr_field)
-
             if translation.get_language() == 'fr':
-                return fr
+                return getattr(instance, self.fr_field)
             else:
-                return en
-
+                return getattr(instance, self.en_field)
 
 Then, for each translated field, create an instance of ``TranslatedField`` with a nice name (as this is the name your templates will reference).
 

@@ -1,19 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 from collections import OrderedDict
 
-from django.apps import apps
 from django.conf.urls import url
 from django.core.exceptions import FieldDoesNotExist
-from django.core.urlresolvers import reverse
 from django.http import Http404
+from django.urls import reverse
 from modelcluster.fields import ParentalKey
 from rest_framework import status
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from wagtail.wagtailcore.models import Page
+from wagtail.api import APIField
+from wagtail.core.models import Page
 
 from .filters import (
     FieldsFilter, OrderingFilter, RestrictedChildOfFilter, RestrictedDescendantOfFilter,
@@ -25,13 +23,7 @@ from .utils import (
 
 
 class BaseAPIEndpoint(GenericViewSet):
-    renderer_classes = [JSONRenderer]
-
-    # The BrowsableAPIRenderer requires rest_framework to be installed
-    # Remove this check in Wagtail 1.4 as rest_framework will be required
-    # RemovedInWagtail14Warning
-    if apps.is_installed('rest_framework'):
-        renderer_classes.append(BrowsableAPIRenderer)
+    renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
 
     pagination_class = WagtailPagination
     base_serializer_class = BaseSerializer
@@ -60,7 +52,7 @@ class BaseAPIEndpoint(GenericViewSet):
     name = None  # Set on subclass.
 
     def __init__(self, *args, **kwargs):
-        super(BaseAPIEndpoint, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # seen_types is a mapping of type name strings (format: "app_label.ModelName")
         # to model classes. When an object is serialised in the API, its model
@@ -91,33 +83,34 @@ class BaseAPIEndpoint(GenericViewSet):
         elif isinstance(exc, BadRequestError):
             data = {'message': str(exc)}
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
-        return super(BaseAPIEndpoint, self).handle_exception(exc)
+        return super().handle_exception(exc)
+
+    @classmethod
+    def _convert_api_fields(cls, fields):
+        return [field if isinstance(field, APIField) else APIField(field)
+                for field in fields]
 
     @classmethod
     def get_body_fields(cls, model):
-        """
-        This returns a list of field names that are allowed to
-        be used in the API (excluding the id field)
-        """
-        fields = cls.body_fields[:]
+        return cls._convert_api_fields(cls.body_fields + list(getattr(model, 'api_fields', ())))
 
-        if hasattr(model, 'api_fields'):
-            fields.extend(model.api_fields)
-
-        return fields
+    @classmethod
+    def get_body_fields_names(cls, model):
+        return [field.name for field in cls.get_body_fields(model)]
 
     @classmethod
     def get_meta_fields(cls, model):
-        """
-        This returns a list of field names that are allowed to
-        be used in the meta section in the API (excluding type and detail_url).
-        """
-        meta_fields = cls.meta_fields[:]
+        return cls._convert_api_fields(cls.meta_fields + list(getattr(model, 'api_meta_fields', ())))
 
-        if hasattr(model, 'api_meta_fields'):
-            meta_fields.extend(model.api_meta_fields)
+    @classmethod
+    def get_meta_fields_names(cls, model):
+        return [field.name for field in cls.get_meta_fields(model)]
 
-        return meta_fields
+    @classmethod
+    def get_field_serializer_overrides(cls, model):
+        return {field.name: field.serializer
+                for field in cls.get_body_fields(model) + cls.get_meta_fields(model)
+                if field.serializer is not None}
 
     @classmethod
     def get_available_fields(cls, model, db_fields_only=False):
@@ -129,7 +122,7 @@ class BaseAPIEndpoint(GenericViewSet):
         an underlying column in the database (eg, type/detail_url and any custom
         fields that are callables)
         """
-        fields = cls.get_body_fields(model) + cls.get_meta_fields(model)
+        fields = cls.get_body_fields_names(model) + cls.get_meta_fields_names(model)
 
         if db_fields_only:
             # Get list of available database fields then remove any fields in our
@@ -172,8 +165,8 @@ class BaseAPIEndpoint(GenericViewSet):
     @classmethod
     def _get_serializer_class(cls, router, model, fields_config, show_details=False, nested=False):
         # Get all available fields
-        body_fields = cls.get_body_fields(model)
-        meta_fields = cls.get_meta_fields(model)
+        body_fields = cls.get_body_fields_names(model)
+        meta_fields = cls.get_meta_fields_names(model)
         all_fields = body_fields + meta_fields
 
         # Remove any duplicates
@@ -257,7 +250,15 @@ class BaseAPIEndpoint(GenericViewSet):
         # Reorder fields so it matches the order of all_fields
         fields = [field for field in all_fields if field in fields]
 
-        return get_serializer_class(model, fields, meta_fields=meta_fields, child_serializer_classes=child_serializer_classes, base=cls.base_serializer_class)
+        field_serializer_overrides = {field[0]: field[1] for field in cls.get_field_serializer_overrides(model).items() if field[0] in fields}
+        return get_serializer_class(
+            model,
+            fields,
+            meta_fields=meta_fields,
+            field_serializer_overrides=field_serializer_overrides,
+            child_serializer_classes=child_serializer_classes,
+            base=cls.base_serializer_class
+        )
 
     def get_serializer_class(self):
         request = self.request
@@ -297,7 +298,7 @@ class BaseAPIEndpoint(GenericViewSet):
         }
 
     def get_renderer_context(self):
-        context = super(BaseAPIEndpoint, self).get_renderer_context()
+        context = super().get_renderer_context()
         context['indent'] = 4
         return context
 
@@ -393,10 +394,14 @@ class PagesAPIEndpoint(BaseAPIEndpoint):
         queryset = queryset.public().live()
 
         # Filter by site
-        queryset = queryset.descendant_of(request.site.root_page, inclusive=True)
+        if request.site:
+            queryset = queryset.descendant_of(request.site.root_page, inclusive=True)
+        else:
+            # No sites configured
+            queryset = queryset.none()
 
         return queryset
 
     def get_object(self):
-        base = super(PagesAPIEndpoint, self).get_object()
+        base = super().get_object()
         return base.specific

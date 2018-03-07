@@ -1,0 +1,66 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load staticfiles %}
+{% block titletag %}{% trans "Add multiple documents" %}{% endblock %}
+{% block extra_css %}
+    {{ block.super }}
+
+    <link rel="stylesheet" href="{% static 'wagtaildocs/css/add-multiple.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+    {% trans "Add documents" as add_str %}
+    {% include "wagtailadmin/shared/header.html" with title=add_str icon="doc" %}
+    <div class="nice-padding" id="doc-multi-upload">
+        <div class="drop-zone">
+            <p>{% trans "Drag and drop documents into this area to upload immediately." %}</p>
+            <p>{{ help_text }}
+
+            <form action="{% url 'wagtaildocs:add_multiple' %}" method="POST" enctype="multipart/form-data" novalidate>
+                <div class="replace-file-input">
+                    <button class="button bicolor icon icon-plus">{% trans "Or choose from your computer" %}</button>
+                    <input class="fileupload" type="file" name="files[]" data-url="{% url 'wagtaildocs:add_multiple' %}" multiple />
+                </div>
+                {% csrf_token %}
+                {% if collections %}
+                    <div class="field">
+                        <label for="id_adddocument_collection">{% trans "Add to collection:" %}</label>
+                        <div class="field-content">
+                            <select id="id_adddocument_collection" name="collection">
+                                {% for collection in collections %}
+                                    <option value="{{ collection.id|unlocalize }}">{{ collection.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+            </form>
+        </div>
+
+        <div id="overall-progress" class="progress progress-secondary">
+            <div class="bar" style="width: 0%;">0%</div>
+        </div>
+
+        <ul class="upload-list multiple"></ul>
+        {% include "wagtaildocs/multiple/list_item.html" %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    {% include "wagtailadmin/pages/_editor_js.html" %}
+    {% url 'wagtailadmin_tag_autocomplete' as autocomplete_url %}
+    <script>
+        window.docupload_opts = {
+            simple_upload_url: "{% url 'wagtaildocs:add' %}"
+        }
+        $(function() {
+            add_doc_upload_widget($('#doc-multi-upload'),
+                                   window.docupload_opts);
+        });
+        window.tagit_opts = {
+            autocomplete: {source: "{{ autocomplete_url|addslashes }}"}
+        };
+    </script>
+{% endblock %}

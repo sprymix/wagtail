@@ -23,7 +23,7 @@ Wagtail provides a shortcut for searching pages: the ``.search()`` ``QuerySet`` 
 .. code-block:: python
 
     # Search future EventPages
-    >>> from wagtail.wagtailcore.models import EventPage
+    >>> from wagtail.core.models import EventPage
     >>> EventPage.objects.filter(date__gt=timezone.now()).search("Hello world!")
 
 
@@ -50,7 +50,7 @@ Wagtail's document and image models provide a ``search`` method on their QuerySe
 
 .. code-block:: python
 
-    >>> from wagtail.wagtailimages.models import Image
+    >>> from wagtail.images.models import Image
 
     >>> Image.objects.filter(uploaded_by_user=user).search("Hello")
     [<Image: Hello>, <Image: Hello world!>]
@@ -61,7 +61,7 @@ Wagtail's document and image models provide a ``search`` method on their QuerySe
 .. code-block:: python
 
     >>> from myapp.models import Book
-    >>> from wagtail.wagtailsearch.backends import get_search_backend
+    >>> from wagtail.search.backends import get_search_backend
 
     # Search books
     >>> s = get_search_backend()
@@ -74,13 +74,15 @@ You can also pass a QuerySet into the ``search`` method which allows you to add 
 .. code-block:: python
 
     >>> from myapp.models import Book
-    >>> from wagtail.wagtailsearch.backends import get_search_backend
+    >>> from wagtail.search.backends import get_search_backend
 
     # Search books
     >>> s = get_search_backend()
     >>> s.search("Great", Book.objects.filter(published_date__year__lt=1900))
     [<Book: Great Expectations>]
 
+
+.. _wagtailsearch_specifying_fields:
 
 Specifying the fields to search
 -------------------------------
@@ -101,8 +103,6 @@ Changing search behaviour
 
 Search operator
 ^^^^^^^^^^^^^^^
-
-.. versionadded:: 1.2
 
 The search operator specifies how search should behave when the user has typed in multiple search terms. There are two possible values:
 
@@ -151,8 +151,6 @@ For page, image and document models, the ``operator`` keyword argument is also s
 Custom ordering
 ^^^^^^^^^^^^^^^
 
-.. versionadded:: 1.2
-
 By default, search results are ordered by relevance, if the backend supports it. To preserve the QuerySet's existing ordering, the ``order_by_relevance`` keyword argument needs to be set to ``False`` on the ``search()`` method.
 
 For example:
@@ -170,8 +168,6 @@ For example:
 
 Annotating results with score
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 1.7
 
 For each matched result, Elasticsearch calculates a "score", which is a number
 that represents how relevant the result is based on the user's query. The
@@ -210,8 +206,8 @@ Here's an example Django view that could be used to add a "search" page to your 
 
     from django.shortcuts import render
 
-    from wagtail.wagtailcore.models import Page
-    from wagtail.wagtailsearch.models import Query
+    from wagtail.core.models import Page
+    from wagtail.search.models import Query
 
 
     def search(request):
@@ -271,4 +267,4 @@ Promoted search results
 
 "Promoted search results" allow editors to explicitly link relevant content to search terms, so results pages can contain curated content in addition to results from the search engine.
 
-This functionality is provided by the :mod:`~wagtail.contrib.wagtailsearchpromotions` contrib module.
+This functionality is provided by the :mod:`~wagtail.contrib.search_promotions` contrib module.

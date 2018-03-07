@@ -21,16 +21,18 @@ except ImportError:
 
 
 install_requires = [
-    "Django>=1.8.1,<1.11",
-    "django-modelcluster>=2.0,<3.0",
-    "django-taggit>=0.18,<0.19",
-    "django-treebeard>=3.0,<5.0",
-    "djangorestframework>=3.1.3",
-    "Pillow>=2.6.1",
-    "beautifulsoup4>=4.5.1",
+    "Django>=1.11,<2.1",
+    "django-modelcluster>=4.0,<5.0",
+    "django-taggit>=0.22.2,<1.0",
+    "django-treebeard>=4.2.0,<5.0",
+    "djangorestframework>=3.1.3,<4.0",
+    "draftjs_exporter>=2.0,<2.1",
+    "Pillow>=2.6.1,<5.0",
+    "beautifulsoup4>=4.5.1,<5.0",
     "html5lib>=0.999,<1",
-    "Unidecode>=0.04.14",
-    "Willow>=0.4,<0.5",
+    "Unidecode>=0.04.14,<1.0",
+    "Willow>=1.1,<1.2",
+    "requests>=2.11.1,<3.0",
 ]
 
 # Testing dependencies
@@ -42,21 +44,24 @@ testing_extras = [
     'Pillow>=2.7.0',
     'elasticsearch>=1.0.0,<3.0',
     'Jinja2>=2.8,<3.0',
-    'boto3>=1.1,<1.2',
+    'boto3>=1.4,<1.5',
+    'freezegun>=0.3.8',
 
     # For coverage and PEP8 linting
     'coverage>=3.7.0',
     'flake8>=2.2.0',
-    'isort>=4.2.0',
+    'isort==4.2.5',
+    'flake8-blind-except==0.1.1',
+    'flake8-print==2.0.2',
 ]
 
 # Documentation dependencies
 documentation_extras = [
-    'Sphinx>=1.3.1',
-    'sphinx-autobuild>=0.5.2',
-    'sphinx_rtd_theme>=0.1.8',
-    'sphinxcontrib-spelling==2.1.1',
-    'pyenchant==1.6.6',
+    'pyenchant==1.6.8',
+    'sphinxcontrib-spelling>=2.3.0',
+    'Sphinx>=1.5.2',
+    'sphinx-autobuild>=0.6.0',
+    'sphinx_rtd_theme>=0.1.9',
 ]
 
 setup(
@@ -77,15 +82,13 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Framework :: Django',
-        'Framework :: Django :: 1.8',
-        'Framework :: Django :: 1.9',
+        'Framework :: Django :: 1.11',
+        'Framework :: Django :: 2.0',
         'Topic :: Internet :: WWW/HTTP :: Site Management',
     ],
     install_requires=install_requires,

@@ -8,18 +8,18 @@ Compiling
 
 The SCSS source files are compiled to CSS using the
 `gulp <http://gulpjs.com/>`_ build system.
-This requires `node.js <http://nodejs.org>`_ to run.
+This requires `Node.js <http://nodejs.org>`_ to run.
 To install the libraries required for compiling the SCSS,
 run the following from the Wagtail repository root:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ npm install
 
 
 To compile the assets, run:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ npm run build
 
@@ -27,7 +27,7 @@ To compile the assets, run:
 Alternatively, the SCSS files can be monitored,
 automatically recompiling when any changes are observed, by running:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ npm start
 
@@ -35,22 +35,25 @@ automatically recompiling when any changes are observed, by running:
 Linting SCSS
 ~~~~~~~~~~~~
 
-Wagtail uses the "scss-lint" Ruby Gem for linting.
+Wagtail uses the `stylelint <https://stylelint.io/>`_ linter.
+You'll need Node.js and npm on your development machine.
+Ensure project dependencies are installed by running ``npm install``
 
-Install it thus:
+Run the linter from the wagtail project root:
 
-.. code-block:: bash
+.. code-block:: console
 
-    $ gem install scss-lint
+    $ npm run lint:css
 
 
-Then run the linter from the wagtail project root:
+The linter is configured to check your code for adherance to the guidelines
+below, plus a little more.
 
-.. code-block:: bash
+If you want to autofix errors, you can run that command directly with:
 
-    $ scss-lint
+.. code-block:: console
 
-The linter is configured to check your code for adherance to the guidelines below, plus a little more.
+    $ npm run lint:css -- --fix
 
 
 Spacing

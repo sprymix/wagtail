@@ -2,11 +2,6 @@
 Wagtail API v2 Usage Guide
 ==========================
 
-.. note::
-
-   This is the usage guide for version 2 of the API. For version 1, see
-   :doc:`/reference/contrib/api/usage`
-
 The Wagtail API module exposes a public, read only, JSON-formatted API which
 can be used by external clients (such as a mobile app) or the site's frontend.
 
@@ -424,7 +419,7 @@ the URL. For example:
 All exported fields will be returned in the response by default. You can use the
 ``?fields`` parameter to customise which fields are shown.
 
-For example: ``/api/v2/pages/1/?fields_,title,body`` will return just the
+For example: ``/api/v2/pages/1/?fields=_,title,body`` will return just the
 ``title`` and ``body`` of the page with the id of 1.
 
 Default endpoint fields

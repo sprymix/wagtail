@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
-import sys
-
 from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, Group, Permission, PermissionsMixin)
 from django.db import models
+
+from .fields import ConvertedValueField
 
 
 class CustomUserManager(BaseUserManager):
@@ -33,7 +31,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    identifier = models.AutoField(primary_key=True)
+    identifier = ConvertedValueField(primary_key=True)
     username = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=255, blank=True)
     is_staff = models.BooleanField(default=True)
@@ -101,13 +99,8 @@ class EmailUser(AbstractBaseUser):
         return self.first_name
 
 
-def steal_method(name):
-    func = getattr(PermissionsMixin, name)
-    if sys.version_info < (3,):
-        func = func.__func__
-    setattr(EmailUser, name, func)
-
 methods = ['get_group_permissions', 'get_all_permissions', 'has_perm',
            'has_perms', 'has_module_perms']
 for method in methods:
-    steal_method(method)
+    func = getattr(PermissionsMixin, method)
+    setattr(EmailUser, method, func)

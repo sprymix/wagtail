@@ -4,9 +4,11 @@
 Dynamic image serve view
 ========================
 
-Wagtail provides a view for dynamically generating renditions of images. It can
-be called by an external system (eg a blog or mobile app) or used internally as
-an alternative to Wagtail's ``{% image %}`` tag.
+In most cases, developers wanting to generate image renditions in Python should use the ``get_rendition()``
+method. See :ref:`image_renditions`.
+
+If you need to be able to generate image versions for an *external* system such as a blog or mobile app,
+Wagtail provides a view for dynamically generating renditions of images by calling a unique URL.
 
 The view takes an image id, filter spec and security signature in the URL. If
 these parameters are valid, it serves an image file matching that criteria.
@@ -21,12 +23,17 @@ Add an entry for the view into your URLs configuration:
 
  .. code-block:: python
 
-    from wagtail.wagtailimages.views.serve import ServeView
+    from wagtail.images.views.serve import ServeView
 
     urlpatterns = [
         ...
 
         url(r'^images/([^/]*)/(\d*)/([^/]*)/[^/]*$', ServeView.as_view(), name='wagtailimages_serve'),
+
+        ...
+
+        # Ensure that the wagtailimages_serve line appears above the default Wagtail page serving route
+        url(r'', include(wagtail_urls)),
     ]
 
 Usage
@@ -52,8 +59,8 @@ block the initial response while rendering like the ``{% image %}`` tag does.
 
 .. code-block:: python
 
-    from django.core.urlresolvers import reverse
-    from wagtail.wagtailimages.views.serve import generate_signature
+    from django.urls import reverse
+    from wagtail.images.views.serve import generate_signature
 
     def generate_image_url(image, filter_spec):
         signature = generate_signature(image.id, filter_spec)
@@ -102,7 +109,7 @@ method in your urls configuration:
 
 .. code-block:: python
 
-   from wagtail.wagtailimages.views.serve import ServeView
+   from wagtail.images.views.serve import ServeView
 
    urlpatterns = [
        ...
@@ -131,7 +138,7 @@ This view can be used out of the box:
 
 .. code-block:: python
 
-   from wagtail.wagtailimages.views.serve import SendFileView
+   from wagtail.images.views.serve import SendFileView
 
    urlpatterns = [
        ...
@@ -144,7 +151,7 @@ setting:
 
 .. code-block:: python
 
-    from wagtail.wagtailimages.views.serve import SendFileView
+    from wagtail.images.views.serve import SendFileView
     from project.sendfile_backends import MyCustomBackend
 
     class MySendFileView(SendFileView):
@@ -156,7 +163,7 @@ is to be authenticated (e.g. for Django >= 1.9):
 .. code-block:: python
 
     from django.contrib.auth.mixins import LoginRequiredMixin
-    from wagtail.wagtailimages.views.serve import SendFileView
+    from wagtail.images.views.serve import SendFileView
 
     class PrivateSendFileView(LoginRequiredMixin, SendFileView):
         raise_exception = True

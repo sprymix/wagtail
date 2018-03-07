@@ -3,15 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Nick Mavrakis <mavrakis.n@gmail.com>, 2017
+# serafeim <serafeim@torchbox.com>, 2016
 # serafeim <serafeim@torchbox.com>, 2016
 # Yiannis Inglessis <negletios@users.noreply.github.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-05 16:37+0100\n"
-"PO-Revision-Date: 2016-09-20 12:46+0000\n"
-"Last-Translator: Yiannis Inglessis <negletios@users.noreply.github.com>\n"
+"POT-Creation-Date: 2018-02-16 11:28+0000\n"
+"PO-Revision-Date: 2018-01-26 16:07+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Greek (http://www.transifex.com/torchbox/wagtail/language/"
 "el/)\n"
 "MIME-Version: 1.0\n"
@@ -22,13 +24,13 @@ msgstr ""
 
 #, python-format
 msgid "Editing %(setting_type_name)s - %(instance)s"
-msgstr "Διόρθωση %(setting_type_name)s - %(instance)s"
+msgstr "Επεξεργασία %(setting_type_name)s - %(instance)s"
 
 msgid "Editing"
 msgstr "Επεξεργασία"
 
-msgid "Saving..."
-msgstr "Αποθήκευση..."
+msgid "Saving…"
+msgstr "Αποθήκευση…"
 
 msgid "Save"
 msgstr "Αποθήκευση"
@@ -38,7 +40,7 @@ msgstr "Επιλογές"
 
 #, python-brace-format
 msgid "{setting_type} updated."
-msgstr "Η {setting_type} ανανεώθηκε."
+msgstr "Η επιλογή {setting_type} ανανεώθηκε."
 
 msgid "The setting could not be saved due to errors."
 msgstr "Δεν ήταν δυνατή η αποθήκευση της επιλογής λόγω σφάλματος."

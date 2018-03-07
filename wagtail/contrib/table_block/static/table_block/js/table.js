@@ -8,6 +8,7 @@ function initTable(id, tableOptions) {
     var tableHeaderCheckbox = $('#' + tableHeaderCheckboxId);
     var colHeaderCheckbox = $('#' + colHeaderCheckboxId);
     var hot;
+    var defaultOptions;
     var finalOptions = {};
     var persist;
     var cellEvent;
@@ -38,23 +39,12 @@ function initTable(id, tableOptions) {
     }
 
     try {
-        dataForForm = $.parseJSON(hiddenStreamInput.val());
+        dataForForm = JSON.parse(hiddenStreamInput.val());
     } catch (e) {
         // do nothing
     }
 
-    for (var key in tableOptions) {
-        if (tableOptions.hasOwnProperty(key)) {
-            finalOptions[key] = tableOptions[key];
-        }
-    }
-
     if (dataForForm !== null) {
-        if (dataForForm.hasOwnProperty('data')) {
-            // Overrides default value from tableOptions (if given) with value from database
-            finalOptions.data = dataForForm.data;
-        }
-
         if (dataForForm.hasOwnProperty('first_row_is_table_header')) {
             tableHeaderCheckbox.prop('checked', dataForForm.first_row_is_table_header);
         }
@@ -65,7 +55,7 @@ function initTable(id, tableOptions) {
 
     if (!tableOptions.hasOwnProperty('width') || !tableOptions.hasOwnProperty('height')) {
         // Size to parent .sequence-member-inner width if width is not given in tableOptions
-        $(window).resize(function() {
+        $(window).on('resize', function() {
             hot.updateSettings({
                 width: getWidth(),
                 height: getHeight()
@@ -95,40 +85,43 @@ function initTable(id, tableOptions) {
         persist();
     };
 
-    tableHeaderCheckbox.change(function() {
+    tableHeaderCheckbox.on('change', function() {
         persist();
     });
 
-    colHeaderCheckbox.change(function() {
+    colHeaderCheckbox.on('change', function() {
         persist();
     });
-    
-    finalOptions.afterChange = cellEvent;
-    finalOptions.afterCreateCol = structureEvent;
-    finalOptions.afterCreateRow = structureEvent;
-    finalOptions.afterRemoveCol = structureEvent;
-    finalOptions.afterRemoveRow = structureEvent;
-    finalOptions.contextMenu = [
-        'row_above',
-        'row_below',
-        '---------',
-        'col_left',
-        'col_right',
-        '---------',
-        'remove_row',
-        'remove_col',
-        '---------',
-        'undo',
-        'redo'
-    ];
+
+    defaultOptions = {
+        afterChange: cellEvent,
+        afterCreateCol: structureEvent,
+        afterCreateRow: structureEvent,
+        afterRemoveCol: structureEvent,
+        afterRemoveRow: structureEvent,
+        // contextMenu set via init, from server defaults
+    };
+
+    if (dataForForm !== null && dataForForm.hasOwnProperty('data')) {
+        // Overrides default value from tableOptions (if given) with value from database
+        defaultOptions.data = dataForForm.data;
+    }
+
+    Object.keys(defaultOptions).forEach(function (key) {
+        finalOptions[key] = defaultOptions[key];
+    });
+    Object.keys(tableOptions).forEach(function (key) {
+        finalOptions[key] = tableOptions[key];
+    });
+
     hot = new Handsontable(document.getElementById(containerId), finalOptions);
     hot.render(); // Call to render removes 'null' literals from empty cells
 
     // Apply resize after document is finished loading (parent .sequence-member-inner width is set)
     if ('resize' in $(window)) {
         resizeHeight(getHeight());
-        $(window).load(function() {
-            $(window).resize();
+        $(window).on('load', function() {
+            $(window).trigger('resize');
         });
     }
 }

@@ -27,17 +27,20 @@ class:
 ``ModelAdmin.inspect_view_fields``
 ------------------------------------------
 
-**Expected value:** A list or tuple, where each item is the name of a field 
-that you'd like ``InpectView`` to render.
+**Expected value:** A list or tuple, where each item is the name of a field
+or attribute on the instance that you'd like ``InpectView`` to render.
 
 A sensible value will be rendered for most field types.
 
-If a field happens to be a ``ForeignKey`` linking to the 
-``wagtailimages.Image`` model, a thumbnail of that image will be rendered. 
+If you have ``wagtail.images`` installed, and the value happens to be an
+instance of ``wagtailimages.models.Image`` (or a custom model that subclasses
+``wagtailimages.models.AbstractImage``), a thumbnail of that image will be
+rendered.
 
-If a field happens to be a ``ForeignKey`` linking to the 
-``wagtaildocs.Document`` model, a link to that document will be rendered.
-
+If you have `wagtail.documents` installed, and the value happens to be an
+instance of `wagtaildocs.models.Document` (or a custom model that subclasses
+``wagtaildocs.models.AbstractDocument``), a link to that document will be
+rendered, along with the document title, file extension and size.
 
 .. _modeladmin_inspect_view_fields_exclude:
 
@@ -45,7 +48,7 @@ If a field happens to be a ``ForeignKey`` linking to the
 ``ModelAdmin.inspect_view_fields_exclude``
 ------------------------------------------
 
-**Expected value:** A list or tuple, where each item is the name of a field 
+**Expected value:** A list or tuple, where each item is the name of a field
 that you'd like to exclude from ``InpectView``
 
 **Note:** If both ``inspect_view_fields`` and ``inspect_view_fields_exclude``
@@ -92,7 +95,7 @@ See the following part of the docs to find out more:
 ``ModelAdmin.inspect_view_class``
 ---------------------------------------
 
-**Expected value**: A custom ``view`` class to replace 
+**Expected value**: A custom ``view`` class to replace
 ``modeladmin.views.InspectView``
 
 See the following part of the docs to find out more:

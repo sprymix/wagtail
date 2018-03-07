@@ -1,28 +1,40 @@
+@import 'wagtailadmin/scss/variables';
+
 .content header {
     margin-bottom: 0;
 }
 
 
 .result-list {
-    padding: 0 15px;
+    margin-bottom: 0;
+}
 
-    table {
-        margin-bottom: 0;
-    }
-
-    body th {
-        background-color: transparent;
-        text-align: left;
-        padding: 1.2em 1em;
-    }
-
-    tbody tr:hover ul.actions {
-        visibility: visible;
-    }
-
-    tbody td,
-    tbody th {
+.listing {
+    td,
+    th {
         vertical-align: top;
+    }
+
+    thead th.sorted a {
+        color: $color-teal;
+    }
+
+    tbody {
+        overflow: auto;
+
+        tr:hover ul.actions {
+            visibility: visible;
+        }
+
+        tr > td {
+            background-color: inherit;
+
+            a.edit-obj {
+                color: inherit;
+                font-weight: 600;
+            }
+        }
+
     }
 }
 
@@ -75,8 +87,8 @@
         outline: none;
         box-sizing: border-box;
         -webkit-font-smoothing: auto;
+        // stylelint-disable-next-line property-no-vendor-prefix
         -moz-appearance: none;
-        -moz-box-sizing: border-box;
 
         &:hover {
             background-color: #358c8b;
@@ -86,7 +98,9 @@
     }
 
     li.selected a {
+        // stylelint-disable-next-line declaration-no-important
         color: #fff !important;
+        // stylelint-disable-next-line declaration-no-important
         border-color: #43b1b0 !important;
         background-color: #43b1b0;
     }
@@ -105,7 +119,7 @@
         float: left;
         margin: 0 15px 15px 0;
         width: 50px;
-   }
+    }
 }
 
 
@@ -125,7 +139,7 @@ p.no-results {
 }
 
 
-@media screen and (min-width: 50em) {
+@media screen and (min-width: $breakpoint-mobile) {
     .changelist-filter {
         float: right;
         padding: 0 1.5%;
@@ -133,14 +147,18 @@ p.no-results {
 
     .result-list {
         padding: 0 1.5% 0 0;
-    }
 
-    .result-list tbody th:first-child {
-        padding-left: 50px;
-    }
+        &.col12 {
+            padding-right: 0;
 
-    .result-list.col12 tbody td:last-child {
-        padding-right: 50px;
+            tbody td:last-child {
+                padding-right: 50px;
+            }
+        }
+
+        tbody th:first-child {
+            padding-left: 50px;
+        }
     }
 
     div.pagination {
@@ -158,7 +176,7 @@ p.no-results {
 }
 
 
-@media screen and (min-width: 1200px) {
+@media screen and (min-width: $breakpoint-desktop-large) {
     .result-list.col9 {
         width: 79%;
     }

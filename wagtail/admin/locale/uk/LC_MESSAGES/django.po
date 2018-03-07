@@ -1,0 +1,372 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Translators:
+# Mykola Zamkovoi <nickzam@gmail.com>, 2014
+# Viktor Shytiuk <VicHunting@yandex.ua>, 2018
+msgid ""
+msgstr ""
+"Project-Id-Version: Wagtail\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-02-16 11:28+0000\n"
+"PO-Revision-Date: 2018-02-16 11:33+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
+"Language-Team: Ukrainian (http://www.transifex.com/torchbox/wagtail/language/"
+"uk/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: uk\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "You do not have permission to access the admin"
+msgstr "У Вас не вистачає прав для доступу до адмінпанелі"
+
+msgid "Scheduled publishing"
+msgstr "Запланована публікація"
+
+msgid "Common page configuration"
+msgstr "Загальні налаштування сторінкі"
+
+msgid "Content"
+msgstr "Контент"
+
+msgid "Promote"
+msgstr "Просування"
+
+msgid "Settings"
+msgstr "Налаштування"
+
+msgid "Search"
+msgstr "Пошук"
+
+msgid "Search term"
+msgstr "Пошуковий термін"
+
+msgid "URL"
+msgstr "URL"
+
+msgid "Enter password"
+msgstr "Введіть пароль"
+
+#, python-format
+msgid "Enter your %s"
+msgstr "Введіть ваш %s"
+
+msgid "Enter your email address to reset your password"
+msgstr "Введіть вашу е-мейл адресу для скидання паролю"
+
+msgid "Please fill your email address."
+msgstr "Будь-ласка, введіть вашу е-мейл адресу."
+
+msgid ""
+"Sorry, you cannot reset your password here as your user account is managed "
+"by another server."
+msgstr ""
+"На жаль ви не можете скинути пароль тут, тому що, ваш обліковий запис є "
+"керованим іншим сервером."
+
+msgid "This email address is not recognised."
+msgstr "Ця адреса електронної пошти невідома системі."
+
+msgid "New title"
+msgstr "Новий заголовок"
+
+msgid "New slug"
+msgstr "Нова коротка назва для URL"
+
+msgid "New parent page"
+msgstr "Нова батьківська сторінка"
+
+msgid "This copy will be a child of this given parent page."
+msgstr "Ця копія буде спадковою для даної батьківської сторінки."
+
+msgid "Copy subpages"
+msgstr "Скопіюваті підсторінки"
+
+#, python-format
+msgid "This will copy %(count)s subpage."
+msgid_plural "This will copy %(count)s subpages."
+msgstr[0] "Ця дія скопіює %(count)s підсторінку."
+msgstr[1] "Ця дія скопіює %(count)s підсторінок."
+msgstr[2] "Ця дія скопіює %(count)s підсторінок."
+
+msgid "Publish copied page"
+msgstr "Опублікуваті скопійовані сторінки"
+
+msgid "This page is live. Would you like to publish its copy as well?"
+msgstr ""
+"Ця сторінка відображається на сайті, хочете також опублікувати її копію?"
+
+msgid "Publish copies"
+msgstr "Опублїкувати копії"
+
+#, python-format
+msgid ""
+"%(count)s of the pages being copied is live. Would you like to publish its "
+"copy?"
+msgid_plural ""
+"%(count)s of the pages being copied are live. Would you like to publish "
+"their copies?"
+msgstr[0] ""
+"%(count)s сторінку, що ви копіюєте, вже опубліковано. Хочете опублїкувати її "
+"копїю?"
+msgstr[1] ""
+"%(count)s сторінок, що ви копіюєте, вже опубліковано. Хочете опублїкувати їх "
+"копїю?"
+msgstr[2] ""
+"%(count)s сторінок, що ви копіюєте, вже опубліковано. Хочете опублїкувати їх "
+"копїю?"
+
+#, python-format
+msgid "You do not have permission to copy to page \"%(page_title)s\""
+msgstr "Ви не маєте прав на копіювання до сторінок \"%(page_title)s\""
+
+#, python-format
+msgid ""
+"This slug is already in use within the context of its parent page \"%s\""
+msgstr ""
+"Ця коротка назва вже використана в контексті батьківської сторінки \"%s\""
+
+msgid "You cannot copy a page into itself when copying subpages"
+msgstr "Не можливо скопіювати сторінку в саму себе, коли копіюєте підсторінки"
+
+msgid "Visibility"
+msgstr "Видимість"
+
+msgid "This field is required."
+msgstr "Це поле необхідно заповнити"
+
+msgid "Please select at least one group."
+msgstr "Будь ласка, виберіть як мінімум одну групу"
+
+msgid "This slug is already in use"
+msgstr "Ця коротка назва вже використовується"
+
+msgid "Error 404: Page not found"
+msgstr "Помилка 404: сторінку не знайдено"
+
+msgid "Error 404"
+msgstr "Помилка 404"
+
+msgid "The requested page could not be found."
+msgstr "Сторінку, яку ви просите, неможливо знайти"
+
+msgid "Go to Wagtail admin"
+msgstr "Перехід до адмінпанелі"
+
+msgid "Account"
+msgstr "Обліковий запис"
+
+msgid "Set gravatar"
+msgstr "Встановити gravatar"
+
+msgid "Change password"
+msgstr "Зміна паролю"
+
+msgid "Notification preferences"
+msgstr "Налаштування повідомлень"
+
+msgid "Choose which email notifications to receive."
+msgstr "Виберіть пошту, на яку надходитимуть повідомлення"
+
+msgid "Language preferences"
+msgstr "Налаштування мови"
+
+msgid "Choose the language you want to use here."
+msgstr "Виберіть мову, яку ви хочете тут використовувати"
+
+msgid ""
+"Your password can't be changed here. Please contact a site administrator."
+msgstr ""
+"Ваш пароль неможливо змінити. Будь-ласка, зверніться до адміністратора."
+
+msgid "Language Preferences"
+msgstr "Налаштування мови"
+
+msgid "Update"
+msgstr "Оновити"
+
+msgid "Reset password"
+msgstr "Скинути пароль"
+
+msgid "Password change successful"
+msgstr "Пароль вдало змінений"
+
+msgid "Login"
+msgstr "Вхід"
+
+msgid "Set your new password"
+msgstr "Встановіть новий пароль"
+
+msgid "The passwords do not match. Please try again."
+msgstr "Паролі не співпадають. Спробуйте знову."
+
+msgid "Check your email"
+msgstr "Перевірте Вашу пошту"
+
+msgid "A link to reset your password has been emailed to you."
+msgstr "Посилання для скидання паролю було надіслане"
+
+msgid "Please follow the link below to reset your password:"
+msgstr "Слідуйте за посиланням щоб скинути пароль"
+
+msgid "Your username (in case you've forgotten):"
+msgstr "Ваше ім'я користувача (якщо забули):"
+
+msgid "Password reset"
+msgstr "Скидання паролю"
+
+msgid "Reset your password"
+msgstr "Скинути Ваш пароль"
+
+msgid "Edit"
+msgstr "Редагування"
+
+msgid "Delete"
+msgstr "Видалити"
+
+msgid "Page"
+msgstr "Сторінка"
+
+msgid "Pages"
+msgstr "Сторінки"
+
+msgid "Loading…"
+msgstr "Завантаження..."
+
+msgid "No results"
+msgstr "Результати відсутні"
+
+msgid "Server Error"
+msgstr "Помилка Сервера"
+
+msgid "Alt text"
+msgstr "Змінити текст"
+
+msgid "Write here…"
+msgstr "Пишіть тут..."
+
+msgid "Horizontal line"
+msgstr "Горизонтальна лінія"
+
+msgid "Line break"
+msgstr "Рядковий розрив"
+
+msgid "Dashboard"
+msgstr "Панель"
+
+msgid "Menu"
+msgstr "Меню"
+
+msgid "Add another"
+msgstr "Додати іншого"
+
+msgid "Move up"
+msgstr "Пересунути вгору"
+
+msgid "Move down"
+msgstr "Пересунути вниз"
+
+msgid "Explorer"
+msgstr "Управління файлами"
+
+msgid "Internal link"
+msgstr "Внутрішнє посилання"
+
+msgid "External link"
+msgstr "Зовнішнє посилання"
+
+msgid "Choose"
+msgstr "Вибрати"
+
+msgid "Choose a page"
+msgstr "Оберіть сторінку"
+
+msgid "Insert link"
+msgstr "Вставити посилання"
+
+msgid "Save"
+msgstr "Зберегти"
+
+msgid "Privacy"
+msgstr "Приватність"
+
+msgid "Public"
+msgstr "Відкритий "
+
+msgid "Name"
+msgstr "Ім'я"
+
+msgid "Yes, delete"
+msgstr "Так, видалити"
+
+#, python-format
+msgid "Welcome to the %(site_name)s Wagtail CMS"
+msgstr "Ласкаво просимо до %(site_name)s Wagtail CMS"
+
+msgid "Pages awaiting moderation"
+msgstr "Сторінки очікують на модерацію"
+
+msgid "Title"
+msgstr "Заголовок"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "Edited"
+msgstr "Редаговано"
+
+msgid "Edit this page"
+msgstr "Редагувати цю сторінку"
+
+msgid "Approve"
+msgstr "Підтвердити"
+
+msgid "Reject"
+msgstr "Відхилити"
+
+msgid "Preview"
+msgstr "Попередній перегляд"
+
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "1%(time_period)s тому"
+
+msgid "Date"
+msgstr "Дата"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Draft"
+msgstr "Чернетка"
+
+msgid "Sign in"
+msgstr "Увійдіть"
+
+msgid "Sign in to Wagtail"
+msgstr "Увійдіть до Wagtail"
+
+msgid "Forgotten it?"
+msgstr "Забули це?"
+
+msgid "Page privacy"
+msgstr "Приватність сторінки"
+
+msgid "Locked"
+msgstr "Заблоковано"
+
+msgid "Unlocked"
+msgstr "Розблоковано"
+
+msgid "Publishing…"
+msgstr "Опубліковується..."
+
+msgid "Fields"
+msgstr "Поля"
+
+msgid "Choose another page"
+msgstr "Оберіть іншу сторінку"

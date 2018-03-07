@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 
-import django
 from django.contrib.admin.templatetags.admin_list import ResultList, result_headers
 from django.contrib.admin.utils import display_for_field, display_for_value, lookup_field
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.forms.utils import flatatt
 from django.template import Library
 from django.template.loader import get_template
 from django.utils.encoding import force_text
@@ -37,11 +35,8 @@ def items_for_result(view, result):
                 boolean = getattr(attr, 'boolean', False)
                 if boolean or not value:
                     allow_tags = True
-                if django.VERSION >= (1, 9):
-                    result_repr = display_for_value(
-                        value, empty_value_display, boolean)
-                else:
-                    result_repr = display_for_value(value, boolean)
+                result_repr = display_for_value(
+                    value, empty_value_display, boolean)
 
                 # Strip HTML tags in the resulting text, except if the
                 # function has an "allow_tags" attribute set to True.
@@ -57,11 +52,8 @@ def items_for_result(view, result):
                     else:
                         result_repr = field_val
                 else:
-                    if django.VERSION >= (1, 9):
-                        result_repr = display_for_field(
-                            value, f, empty_value_display)
-                    else:
-                        result_repr = display_for_field(value, f)
+                    result_repr = display_for_field(
+                        value, f, empty_value_display)
 
                 if isinstance(f, (
                     models.DateField, models.TimeField, models.ForeignKey)
@@ -70,14 +62,12 @@ def items_for_result(view, result):
         if force_text(result_repr) == '':
             result_repr = mark_safe('&nbsp;')
         row_classes.extend(
-            modeladmin.get_extra_class_names_for_field_col(field_name, result))
-        row_attrs_dict = modeladmin.get_extra_attrs_for_field_col(
-            field_name, result)
-        row_attrs_dict['class'] = ' ' . join(row_classes)
-        row_attrs = ''.join(
-            ' %s="%s"' % (key, val) for key, val in row_attrs_dict.items())
-        row_attrs_safe = mark_safe(row_attrs)
-        yield format_html('<td{}>{}</td>', row_attrs_safe, result_repr)
+            modeladmin.get_extra_class_names_for_field_col(result, field_name)
+        )
+        row_attrs = modeladmin.get_extra_attrs_for_field_col(result, field_name)
+        row_attrs['class'] = ' ' . join(row_classes)
+        row_attrs_flat = flatatt(row_attrs)
+        yield format_html('<td{}>{}</td>', row_attrs_flat, result_repr)
 
 
 def results(view, object_list):
@@ -156,8 +146,17 @@ def admin_list_filter(view, spec):
 def result_row_display(context, index):
     obj = context['object_list'][index]
     view = context['view']
+    row_attrs_dict = view.model_admin.get_extra_attrs_for_row(obj, context)
+    row_attrs_dict['data-object-pk'] = obj.pk
+    odd_or_even = 'odd' if (index % 2 == 0) else 'even'
+    if 'class' in row_attrs_dict:
+        row_attrs_dict['class'] += ' %s' % odd_or_even
+    else:
+        row_attrs_dict['class'] = odd_or_even
+
     context.update({
         'obj': obj,
+        'row_attrs': mark_safe(flatatt(row_attrs_dict)),
         'action_buttons': view.get_buttons_for_obj(obj),
     })
     return context

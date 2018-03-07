@@ -85,7 +85,9 @@ Images (tag)
 
 The ``image`` tag inserts an XHTML-compatible ``img`` element into the page, setting its ``src``, ``width``, ``height`` and ``alt``. See also :ref:`image_tag_alt`.
 
-The syntax for the ``image`` tag is thus::
+The syntax for the ``image`` tag is thus:
+
+.. code-block:: html+django
 
     {% image [image] [resize-rule] %}
 
@@ -168,13 +170,15 @@ Takes a Page object and returns a relative URL (``/foo/bar/``) if within the sam
 ``slugurl``
 ------------
 
-Takes any ``slug`` as defined in a page's "Promote" tab and returns the URL for the matching Page. Like ``pageurl``, this will try to provide a relative link if possible, but will default to an absolute link if the Page is on a different Site. This is most useful when creating shared page furniture, e.g. top level navigation or site-wide links.
+Takes any ``slug`` as defined in a page's "Promote" tab and returns the URL for the matching Page. If multiple pages exist with the same slug, the page chosen is undetermined.
+
+Like ``pageurl``, this will try to provide a relative link if possible, but will default to an absolute link if the Page is on a different Site. This is most useful when creating shared page furniture, e.g. top level navigation or site-wide links.
 
 .. code-block:: html+django
 
     {% load wagtailcore_tags %}
     ...
-    <a href="{% slugurl page.your_slug %}">
+    <a href="{% slugurl 'news' %}">News index</a>
 
 
 .. _static_tag:

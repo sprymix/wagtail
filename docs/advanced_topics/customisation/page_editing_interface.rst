@@ -6,13 +6,11 @@ Customising the editing interface
 Customising the tabbed interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 1.0
-
 As standard, Wagtail organises panels for pages into three tabs: 'Content', 'Promote' and 'Settings'. For snippets Wagtail puts all panels into one page. Depending on the requirements of your site, you may wish to customise this for specific page types or snippets - for example, adding an additional tab for sidebar content. This can be done by specifying an ``edit_handler`` attribute on the page or snippet model. For example:
 
 .. code-block:: python
 
-    from wagtail.wagtailadmin.edit_handlers import TabbedInterface, ObjectList
+    from wagtail.admin.edit_handlers import TabbedInterface, ObjectList
 
     class BlogPage(Page):
         # field definitions omitted
@@ -40,12 +38,12 @@ As standard, Wagtail organises panels for pages into three tabs: 'Content', 'Pro
 Rich Text (HTML)
 ~~~~~~~~~~~~~~~~
 
-Wagtail provides a general-purpose WYSIWYG editor for creating rich text content (HTML) and embedding media such as images, video, and documents. To include this in your models, use the :class:`~wagtail.wagtailcore.fields.RichTextField` function when defining a model field:
+Wagtail provides a general-purpose WYSIWYG editor for creating rich text content (HTML) and embedding media such as images, video, and documents. To include this in your models, use the :class:`~wagtail.core.fields.RichTextField` function when defining a model field:
 
 .. code-block:: python
 
-    from wagtail.wagtailcore.fields import RichTextField
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel
+    from wagtail.core.fields import RichTextField
+    from wagtail.admin.edit_handlers import FieldPanel
 
 
     class BookPage(Page):
@@ -55,40 +53,72 @@ Wagtail provides a general-purpose WYSIWYG editor for creating rich text content
             FieldPanel('body', classname="full"),
         ]
 
-:class:`~wagtail.wagtailcore.fields.RichTextField` inherits from Django's basic ``TextField`` field, so you can pass any field parameters into :class:`~wagtail.wagtailcore.fields.RichTextField` as if using a normal Django field. This field does not need a special panel and can be defined with ``FieldPanel``.
+:class:`~wagtail.core.fields.RichTextField` inherits from Django's basic ``TextField`` field, so you can pass any field parameters into :class:`~wagtail.core.fields.RichTextField` as if using a normal Django field. This field does not need a special panel and can be defined with ``FieldPanel``.
 
-However, template output from :class:`~wagtail.wagtailcore.fields.RichTextField` is special and need to be filtered to preserve embedded content. See :ref:`rich-text-filter`.
+However, template output from :class:`~wagtail.core.fields.RichTextField` is special and need to be filtered to preserve embedded content. See :ref:`rich-text-filter`.
 
-If you're interested in extending the capabilities of the Wagtail WYSIWYG editor (``hallo.js``), See :ref:`extending_wysiwyg`.
 
-.. _extending_wysiwyg:
+.. _rich_text_features:
 
-Extending the WYSIWYG Editor (``hallo.js``)
--------------------------------------------
+Limiting features in a rich text field
+--------------------------------------
 
-To inject JavaScript into the Wagtail page editor, see the :ref:`insert_editor_js <insert_editor_js>` hook. Once you have the hook in place and your ``hallo.js`` plugin loads into the Wagtail page editor, use the following JavaScript to register the plugin with ``hallo.js``.
+By default, the rich text editor provides users with a wide variety of options for text formatting and inserting embedded content such as images. However, we may wish to restrict a rich text field to a more limited set of features - for example:
 
-.. code-block:: javascript
+ * The field might be intended for a short text snippet, such as a summary to be pulled out on index pages, where embedded images or videos would be inappropriate;
+ * When page content is defined using :ref:`StreamField <streamfield>`, elements such as headings, images and videos are usually given their own block types, alongside a rich text block type used for ordinary paragraph text; in this case, allowing headings and images to also exist within the rich text content is redundant (and liable to result in inconsistent designs).
 
-    registerHalloPlugin(name, opts);
+This can be achieved by passing a ``features`` keyword argument to ``RichTextField``, with a list of identifiers for the features you wish to allow:
 
-``hallo.js`` plugin names are prefixed with the ``"IKS."`` namespace, but the ``name`` you pass into ``registerHalloPlugin()`` should be without the prefix. ``opts`` is an object passed into the plugin.
+.. code-block:: python
 
-For information on developing custom ``hallo.js`` plugins, see the project's page: https://github.com/bergie/hallo
+    body = RichTextField(features=['h2', 'h3', 'bold', 'italic', 'link'])
+
+The feature identifiers provided on a default Wagtail installation are as follows:
+
+ * ``h1``, ``h2``, ``h3``, ``h4``, ``h5``, ``h6`` - heading elements
+ * ``bold``, ``italic`` - bold / italic text
+ * ``ol``, ``ul`` - ordered / unordered lists
+ * ``hr`` - horizontal rules
+ * ``link`` - page, external and email links
+ * ``document-link`` - links to documents
+ * ``image`` - embedded images
+ * ``embed`` - embedded media (see :ref:`embedded_content`)
+
+
+Adding new features to this list is generally a two step process:
+
+ * Create a plugin that extends the editor with a new toolbar button or other control(s) to manage the rich text formatting of the feature.
+ * Create conversion or whitelist rules to define how content from the editor should be filtered or transformed before storage, and front-end HTML output.
+
+Both of these steps are performed through the ``register_rich_text_features`` hook (see :ref:`admin_hooks`). The hook function is triggered on startup, and receives a *feature registry* object as its argument; this object keeps track of the behaviours associated with each feature identifier.
+
+To have a feature active by default (i.e. on ``RichTextFields`` that do not define an explicit ``features`` list), add it to the ``default_features`` list on the ``features`` object:
+
+.. code-block:: python
+
+    @hooks.register('register_rich_text_features')
+    def register_blockquote_feature(features):
+        features.default_features.append('h6')
+
+The process for creating new features is described in the following pages:
+
+* :doc:`./extending_draftail`
+* :doc:`./extending_hallo`
 
 .. _rich_text_image_formats:
 
 Image Formats in the Rich Text Editor
 -------------------------------------
 
-On loading, Wagtail will search for any app with the file ``image_formats.py`` and execute the contents. This provides a way to customise the formatting options shown to the editor when inserting images in the :class:`~wagtail.wagtailcore.fields.RichTextField` editor.
+On loading, Wagtail will search for any app with the file ``image_formats.py`` and execute the contents. This provides a way to customise the formatting options shown to the editor when inserting images in the :class:`~wagtail.core.fields.RichTextField` editor.
 
 As an example, add a "thumbnail" format:
 
 .. code-block:: python
 
     # image_formats.py
-    from wagtail.wagtailimages.formats import Format, register_image_format
+    from wagtail.images.formats import Format, register_image_format
 
     register_image_format(Format('thumbnail', 'Thumbnail', 'richtext-image thumbnail', 'max-120x120'))
 
@@ -99,10 +129,10 @@ To begin, import the ``Format`` class, ``register_image_format`` function, and o
   The unique key used to identify the format. To unregister this format, call ``unregister_image_format`` with this string as the only argument.
 
 ``label``
-  The label used in the chooser form when inserting the image into the :class:`~wagtail.wagtailcore.fields.RichTextField`.
+  The label used in the chooser form when inserting the image into the :class:`~wagtail.core.fields.RichTextField`.
 
 ``classnames``
-  The string to assign to the ``class`` attribute of the generated ``<img>`` tag. 
+  The string to assign to the ``class`` attribute of the generated ``<img>`` tag.
 
   .. note::
     Any class names you provide must have CSS rules matching them written separately, as part of the front end CSS code. Specifying a ``classnames`` value of ``left`` will only ensure that class is output in the generated markup, it won't cause the image to align itself left.
@@ -118,15 +148,15 @@ To unregister, call ``unregister_image_format`` with the string of the ``name`` 
 Customising generated forms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. class:: wagtail.wagtailadmin.forms.WagtailAdminModelForm
-.. class:: wagtail.wagtailadmin.forms.WagtailAdminPageForm
+.. class:: wagtail.admin.forms.WagtailAdminModelForm
+.. class:: wagtail.admin.forms.WagtailAdminPageForm
 
 Wagtail automatically generates forms using the panels configured on the model.
-By default, this form subclasses :class:`~wagtail.wagtailadmin.forms.WagtailAdminModelForm`,
-or :class:`~wagtail.wagtailadmin.forms.WagtailAdminPageForm` for pages.
+By default, this form subclasses :class:`~wagtail.admin.forms.WagtailAdminModelForm`,
+or :class:`~wagtail.admin.forms.WagtailAdminPageForm` for pages.
 A custom base form class can be configured by setting the :attr:`base_form_class` attribute on any model.
-Custom forms for snippets must subclass :class:`~wagtail.wagtailadmin.forms.WagtailAdminModelForm`,
-and custom forms for pages must subclass :class:`~wagtail.wagtailadmin.forms.WagtailAdminPageForm`.
+Custom forms for snippets must subclass :class:`~wagtail.admin.forms.WagtailAdminModelForm`,
+and custom forms for pages must subclass :class:`~wagtail.admin.forms.WagtailAdminPageForm`.
 
 This can be used to add non-model fields to the form, to automatically generate field content,
 or to add custom validation logic for your models:
@@ -134,16 +164,17 @@ or to add custom validation logic for your models:
 .. code-block:: python
 
     from django import forms
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel
-    from wagtail.wagtailadmin.forms import WagtailAdminPageForm
-    from wagtail.wagtailcore.models import Page
+    import geocoder  # not in Wagtail, for example only - http://geocoder.readthedocs.io/
+    from wagtail.admin.edit_handlers import FieldPanel
+    from wagtail.admin.forms import WagtailAdminPageForm
+    from wagtail.core.models import Page
 
 
     class EventPageForm(WagtailAdminPageForm):
         address = forms.CharField()
 
         def clean(self):
-            cleaned_data = super(EventPageForm, self).clean()
+            cleaned_data = super().clean()
 
             # Make sure that the event starts before it ends
             start_date = cleaned_data['start_date']
@@ -154,13 +185,13 @@ or to add custom validation logic for your models:
             return cleaned_data
 
         def save(self, commit=True):
-            page = super(EventPageForm, self).save(commit=False)
+            page = super().save(commit=False)
 
             # Update the duration field from the submitted dates
             page.duration = (page.end_date - page.start_date).days
 
             # Fetch the location by geocoding the address
-            page.location = geocoder.get_coordinates(self.cleaned_data['address'])
+            page.location = geocoder.arcgis(self.cleaned_data['address'])
 
             if commit:
                 page.save()
@@ -171,12 +202,13 @@ or to add custom validation logic for your models:
         start_date = models.DateField()
         end_date = models.DateField()
         duration = models.IntegerField()
-        location = models.CharField()
+        location = models.CharField(max_length=255)
 
         content_panels = [
-            FieldPanel('given_name'),
-            FieldPanel('family_name'),
-            FieldPanel('bio'),
+            FieldPanel('title'),
+            FieldPanel('start_date'),
+            FieldPanel('end_date'),
+            FieldPanel('address'),
         ]
         base_form_class = EventPageForm
 

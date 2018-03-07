@@ -5,36 +5,42 @@ Integrating Wagtail into a Django project
 
 Wagtail provides the ``wagtail start`` command and project template to get you started with a new Wagtail project as quickly as possible, but it's easy to integrate Wagtail into an existing Django project too.
 
-Wagtail is currently compatible with Django 1.8, 1.9 and 1.10. First, install the ``wagtail`` package from PyPI::
+Wagtail is currently compatible with Django 1.11 and 2.0. First, install the ``wagtail`` package from PyPI:
 
-    pip install wagtail
+.. code-block:: console
+
+    $ pip install wagtail
 
 or add the package to your existing requirements file. This will also install the **Pillow** library as a dependency, which requires libjpeg and zlib - see Pillow's `platform-specific installation instructions <http://pillow.readthedocs.org/en/latest/installation.html#external-libraries>`_.
 
 Settings
 --------
 
-In your settings file, add the following apps to ``INSTALLED_APPS``::
+In your settings file, add the following apps to ``INSTALLED_APPS``:
 
-    'wagtail.wagtailforms',
-    'wagtail.wagtailredirects',
-    'wagtail.wagtailembeds',
-    'wagtail.wagtailsites',
-    'wagtail.wagtailusers',
-    'wagtail.wagtailsnippets',
-    'wagtail.wagtaildocs',
-    'wagtail.wagtailimages',
-    'wagtail.wagtailsearch',
-    'wagtail.wagtailadmin',
-    'wagtail.wagtailcore',
+.. code-block:: python
+
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail.core',
 
     'modelcluster',
     'taggit',
 
-Add the following entries to ``MIDDLEWARE_CLASSES``::
+Add the following entries to ``MIDDLEWARE``:
 
-    'wagtail.wagtailcore.middleware.SiteMiddleware',
-    'wagtail.wagtailredirects.middleware.RedirectMiddleware',
+.. code-block:: python
+
+    'wagtail.core.middleware.SiteMiddleware',
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 
 Add a ``STATIC_ROOT`` setting, if your project does not have one already:
 
@@ -57,15 +63,17 @@ Now make the following additions to your ``urls.py`` file:
 
 .. code-block:: python
 
-    from wagtail.wagtailadmin import urls as wagtailadmin_urls
-    from wagtail.wagtaildocs import urls as wagtaildocs_urls
-    from wagtail.wagtailcore import urls as wagtail_urls
+    from django.urls import path, re_path, include
+
+    from wagtail.admin import urls as wagtailadmin_urls
+    from wagtail.documents import urls as wagtaildocs_urls
+    from wagtail.core import urls as wagtail_urls
 
     urlpatterns = [
         ...
-        url(r'^cms/', include(wagtailadmin_urls)),
-        url(r'^documents/', include(wagtaildocs_urls)),
-        url(r'^pages/', include(wagtail_urls)),
+        re_path(r'^cms/', include(wagtailadmin_urls)),
+        re_path(r'^documents/', include(wagtaildocs_urls)),
+        re_path(r'^pages/', include(wagtail_urls)),
         ...
     ]
 
@@ -75,7 +83,9 @@ The URL paths here can be altered as necessary to fit your project's URL scheme.
 
 ``wagtaildocs_urls`` is the location from where document files will be served. This can be omitted if you do not intend to use Wagtail's document management features.
 
-``wagtail_urls`` is the base location from where the pages of your Wagtail site will be served. In the above example, Wagtail will handle URLs under ``/pages/``, leaving the root URL and other paths to be handled as normal by your Django project. If you want Wagtail to handle the entire URL space including the root URL, this can be replaced with::
+``wagtail_urls`` is the base location from where the pages of your Wagtail site will be served. In the above example, Wagtail will handle URLs under ``/pages/``, leaving the root URL and other paths to be handled as normal by your Django project. If you want Wagtail to handle the entire URL space including the root URL, this can be replaced with:
+
+.. code-block:: python
 
     url(r'', include(wagtail_urls)),
 

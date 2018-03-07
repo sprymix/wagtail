@@ -1,7 +1,4 @@
-from __future__ import absolute_import, unicode_literals
-
 import operator
-import sys
 from collections import OrderedDict
 from functools import reduce
 
@@ -19,9 +16,8 @@ from django.db.models.constants import LOOKUP_SEP
 from django.db.models.fields import FieldDoesNotExist
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
 from django.db.models.sql.constants import QUERY_TERMS
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.template.defaultfilters import filesizeformat
-from django.utils import six
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_text
 from django.utils.functional import cached_property
@@ -32,11 +28,8 @@ from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 
-from wagtail.wagtailadmin import messages
-from wagtail.wagtailadmin.edit_handlers import (
-    ObjectList, extract_panel_definitions_from_model_class)
-from wagtail.wagtaildocs.models import get_document_model
-from wagtail.wagtailimages.models import Filter, get_image_model
+from wagtail.admin import messages
+from wagtail.admin.edit_handlers import ObjectList, extract_panel_definitions_from_model_class
 
 from .forms import ParentChooserForm
 
@@ -72,7 +65,7 @@ class WMABaseView(TemplateView):
             raise PermissionDenied
         button_helper_class = self.model_admin.get_button_helper_class()
         self.button_helper = button_helper_class(self, request)
-        return super(WMABaseView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     @cached_property
     def menu_icon(self):
@@ -99,19 +92,28 @@ class WMABaseView(TemplateView):
     def get_base_queryset(self, request=None):
         return self.model_admin.get_queryset(request or self.request)
 
+    def get_context_data(self, **kwargs):
+        context = {
+            'view': self,
+            'model_admin': self.model_admin,
+        }
+        context.update(kwargs)
+        return super().get_context_data(**context)
+
 
 class ModelFormView(WMABaseView, FormView):
 
-    def get_edit_handler_class(self):
+    def get_edit_handler(self):
         if hasattr(self.model, 'edit_handler'):
             edit_handler = self.model.edit_handler
         else:
-            panels = extract_panel_definitions_from_model_class(self.model)
+            fields_to_exclude = self.model_admin.get_form_fields_exclude(request=self.request)
+            panels = extract_panel_definitions_from_model_class(self.model, exclude=fields_to_exclude)
             edit_handler = ObjectList(panels)
         return edit_handler.bind_to_model(self.model)
 
     def get_form_class(self):
-        return self.get_edit_handler_class().get_form_class(self.model)
+        return self.get_edit_handler().get_form_class()
 
     def get_success_url(self):
         return self.index_url
@@ -120,7 +122,7 @@ class ModelFormView(WMABaseView, FormView):
         return getattr(self, 'instance', None) or self.model()
 
     def get_form_kwargs(self):
-        kwargs = FormView.get_form_kwargs(self)
+        kwargs = super().get_form_kwargs()
         kwargs.update({'instance': self.get_instance()})
         return kwargs
 
@@ -132,18 +134,18 @@ class ModelFormView(WMABaseView, FormView):
         )
 
     def get_context_data(self, **kwargs):
-        context = super(ModelFormView, self).get_context_data(**kwargs)
         instance = self.get_instance()
-        edit_handler_class = self.get_edit_handler_class()
+        edit_handler = self.get_edit_handler()
         form = self.get_form()
-        context.update({
-            'view': self,
-            'model_admin': self.model_admin,
+        edit_handler = edit_handler.bind_to_instance(
+            instance=instance, form=form)
+        context = {
             'is_multipart': form.is_multipart(),
-            'edit_handler': edit_handler_class(instance=instance, form=form),
+            'edit_handler': edit_handler,
             'form': form,
-        })
-        return context
+        }
+        context.update(kwargs)
+        return super().get_context_data(**context)
 
     def get_success_message(self, instance):
         return _("{model_name} '{instance}' created.").format(
@@ -179,7 +181,7 @@ class InstanceSpecificView(WMABaseView):
     instance = None
 
     def __init__(self, model_admin, instance_pk):
-        super(InstanceSpecificView, self).__init__(model_admin)
+        super().__init__(model_admin)
         self.instance_pk = unquote(instance_pk)
         self.pk_quoted = quote(self.instance_pk)
         filter_kwargs = {}
@@ -199,10 +201,14 @@ class InstanceSpecificView(WMABaseView):
     def delete_url(self):
         return self.url_helper.get_action_url('delete', self.pk_quoted)
 
+    def get_context_data(self, **kwargs):
+        context = {'instance': self.instance}
+        context.update(kwargs)
+        return super().get_context_data(**context)
+
 
 class IndexView(WMABaseView):
 
-    # IndexView settings
     ORDER_VAR = 'o'
     ORDER_TYPE_VAR = 'ot'
     PAGE_VAR = 'p'
@@ -237,7 +243,7 @@ class IndexView(WMABaseView):
         self.query = request.GET.get(self.SEARCH_VAR, '')
         self.queryset = self.get_queryset(request)
 
-        return super(IndexView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     @property
     def media(self):
@@ -299,13 +305,13 @@ class IndexView(WMABaseView):
                 # Lookups on non-existent fields are ok, since they're ignored
                 # later.
                 return True
-            if hasattr(field, 'rel'):
-                if field.rel is None:
+            if hasattr(field, 'remote_field'):
+                if field.remote_field is None:
                     # This property or relation doesn't exist, but it's allowed
                     # since it's ignored in ChangeList.get_filters().
                     return True
-                model = field.rel.to
-                rel_name = field.rel.get_related_field().name
+                model = field.remote_field.model
+                rel_name = field.remote_field.get_related_field().name
             elif isinstance(field, ForeignObjectRel):
                 model = field.model
                 rel_name = model._meta.pk.name
@@ -398,10 +404,7 @@ class IndexView(WMABaseView):
                 filter_specs, bool(filter_specs), lookup_params, use_distinct
             )
         except FieldDoesNotExist as e:
-            six.reraise(
-                IncorrectLookupParameters,
-                IncorrectLookupParameters(e),
-                sys.exc_info()[2])
+            raise IncorrectLookupParameters from e
 
     def get_query_string(self, new_params=None, remove=None):
         if new_params is None:
@@ -606,7 +609,7 @@ class IndexView(WMABaseView):
                     return True
         return False
 
-    def get_context_data(self, *args, **kwargs):
+    def get_context_data(self, **kwargs):
         user = self.request.user
         all_count = self.get_base_queryset().count()
         queryset = self.get_queryset()
@@ -637,7 +640,9 @@ class IndexView(WMABaseView):
                 'no_valid_parents': not valid_parent_count,
                 'required_parent_types': allowed_parent_types,
             })
-        return context
+
+        context.update(kwargs)
+        return super().get_context_data(**context)
 
     def get_template_names(self):
         return self.model_admin.get_index_template()
@@ -666,7 +671,7 @@ class CreateView(ModelFormView):
             # The page can be added in multiple places, so redirect to the
             # choose_parent view so that the parent can be specified
             return redirect(self.url_helper.get_action_url('choose_parent'))
-        return super(CreateView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_meta_title(self):
         return _('Create new %s') % self.verbose_name
@@ -690,7 +695,7 @@ class EditView(ModelFormView, InstanceSpecificView):
             return redirect(
                 self.url_helper.get_action_url('edit', self.pk_quoted)
             )
-        return super(EditView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_meta_title(self):
         return _('Editing %s') % self.verbose_name
@@ -700,9 +705,12 @@ class EditView(ModelFormView, InstanceSpecificView):
             model_name=capfirst(self.verbose_name), instance=instance)
 
     def get_context_data(self, **kwargs):
-        kwargs['user_can_delete'] = self.permission_helper.user_can_delete_obj(
-            self.request.user, self.instance)
-        return super(EditView, self).get_context_data(**kwargs)
+        context = {
+            'user_can_delete': self.permission_helper.user_can_delete_obj(
+                self.request.user, self.instance)
+        }
+        context.update(kwargs)
+        return super().get_context_data(**context)
 
     def get_error_message(self):
         name = self.verbose_name
@@ -716,7 +724,7 @@ class ChooseParentView(WMABaseView):
     def dispatch(self, request, *args, **kwargs):
         if not self.permission_helper.user_can_create(request.user):
             raise PermissionDenied
-        return super(ChooseParentView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_page_title(self):
         return _('Add %s') % self.verbose_name
@@ -727,20 +735,25 @@ class ChooseParentView(WMABaseView):
 
     def get(self, request, *args, **kwargs):
         form = self.get_form(request)
-        context = {'view': self, 'form': form}
-        return render(request, self.get_template(), context)
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
 
     def post(self, request, *args, **kargs):
         form = self.get_form(request)
         if form.is_valid():
-            parent_pk = quote(form.cleaned_data['parent_page'].pk)
-            return redirect(self.url_helper.get_action_url(
-                'add', self.app_label, self.model_name, parent_pk))
+            return self.form_valid(form)
+        return self.form_invalid(form)
 
-        context = {'view': self, 'form': form}
-        return render(request, self.get_template(), context)
+    def form_valid(self, form):
+        parent_pk = quote(form.cleaned_data['parent_page'].pk)
+        return redirect(self.url_helper.get_action_url(
+            'add', self.app_label, self.model_name, parent_pk))
 
-    def get_template(self):
+    def form_invalid(self, form):
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+    def get_template_names(self):
         return self.model_admin.get_choose_parent_template()
 
 
@@ -758,7 +771,7 @@ class DeleteView(InstanceSpecificView):
             return redirect(
                 self.url_helper.get_action_url('delete', self.pk_quoted)
             )
-        return super(DeleteView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_meta_title(self):
         return _('Confirm deletion of %s') % self.verbose_name
@@ -768,10 +781,6 @@ class DeleteView(InstanceSpecificView):
             "Are you sure you want to delete this %s? If other things in your "
             "site are related to it, they may also be affected."
         ) % self.verbose_name
-
-    def get(self, request, *args, **kwargs):
-        context = {'view': self, 'instance': self.instance}
-        return self.render_to_response(context)
 
     def delete_instance(self):
         self.instance.delete()
@@ -793,13 +802,10 @@ class DeleteView(InstanceSpecificView):
                     qs = getattr(self.instance, rel.get_accessor_name())
                     for obj in qs.all():
                         linked_objects.append(obj)
-
-            context = {
-                'view': self,
-                'instance': self.instance,
-                'protected_error': True,
-                'linked_objects': linked_objects,
-            }
+            context = self.get_context_data(
+                protected_error=True,
+                linked_objects=linked_objects
+            )
             return self.render_to_response(context)
 
     def get_template_names(self):
@@ -835,7 +841,7 @@ class InspectView(InstanceSpecificView):
         return label
 
     def get_field_display_value(self, field_name, field=None):
-        """ Return a display value for a field """
+        """ Return a display value for a field/attribute """
 
         # First we check for a 'get_fieldname_display' property/method on
         # the model, and return the value of that, if present.
@@ -845,39 +851,47 @@ class InspectView(InstanceSpecificView):
                 return val_funct()
             return val_funct
 
-        # If we have a real field, we can utilise that to try to display
-        # something more useful
-        if field is not None:
-            try:
-                field_type = field.get_internal_type()
-                if (
-                    field_type == 'ForeignKey' and
-                    field.related_model == get_image_model()
-                ):
-                    # The field is an image
-                    return self.get_image_field_display(field_name, field)
+        # Now let's get the attribute value from the instance itself and see if
+        # we can render something useful. raises AttributeError appropriately.
+        val = getattr(self.instance, field_name)
 
-                if (
-                    field_type == 'ForeignKey' and
-                    field.related_model == get_document_model()
-                ):
-                    # The field is a document
-                    return self.get_document_field_display(field_name, field)
+        if isinstance(val, models.Manager):
+            val = val.all()
 
-            except AttributeError:
-                pass
+        if isinstance(val, models.QuerySet):
+            if val.exists():
+                return ', '.join(['%s' % obj for obj in val])
+            return self.model_admin.get_empty_value_display(field_name)
 
-        # Resort to getting the value of 'field_name' from the instance
-        return getattr(self.instance, field_name,
-                       self.model_admin.get_empty_value_display(field_name))
+        # wagtail.images might not be installed
+        try:
+            from wagtail.images.models import AbstractImage
+            if isinstance(val, AbstractImage):
+                # Render a rendition of the image
+                return self.get_image_field_display(field_name, field)
+        except RuntimeError:
+            pass
+
+        # wagtail.wagtaildocuments might not be installed
+        try:
+            from wagtail.documents.models import AbstractDocument
+            if isinstance(val, AbstractDocument):
+                # Render a link to the document
+                return self.get_document_field_display(field_name, field)
+        except RuntimeError:
+            pass
+
+        # Resort to returning the real value or 'empty value'
+        if val or val is False:
+            return val
+        return self.model_admin.get_empty_value_display(field_name)
 
     def get_image_field_display(self, field_name, field):
         """ Render an image """
+        from wagtail.images.shortcuts import get_rendition_or_not_found
         image = getattr(self.instance, field_name)
         if image:
-            fltr, _ = Filter.objects.get_or_create(spec='max-400x400')
-            rendition = image.get_rendition(fltr)
-            return rendition.img_tag
+            return get_rendition_or_not_found(image, 'max-400x400').img_tag
         return self.model_admin.get_empty_value_display(field_name)
 
     def get_document_field_display(self, field_name, field):
@@ -919,16 +933,13 @@ class InspectView(InstanceSpecificView):
         return fields
 
     def get_context_data(self, **kwargs):
-        context = super(InspectView, self).get_context_data(**kwargs)
-        buttons = self.button_helper.get_buttons_for_obj(
-            self.instance, exclude=['inspect'])
-        context.update({
-            'view': self,
+        context = {
             'fields': self.get_fields_dict(),
-            'buttons': buttons,
-            'instance': self.instance,
-        })
-        return context
+            'buttons': self.button_helper.get_buttons_for_obj(
+                self.instance, exclude=['inspect']),
+        }
+        context.update(kwargs)
+        return super().get_context_data(**context)
 
     def get_template_names(self):
         return self.model_admin.get_inspect_template()
