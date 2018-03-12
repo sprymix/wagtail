@@ -16,7 +16,7 @@ from wagtail.core.models import Collection, Site
 from wagtail.images import get_image_model
 from wagtail.images.exceptions import InvalidFilterSpecError
 from wagtail.images.forms import URLGeneratorForm, get_image_form
-from wagtail.images.models import Filter
+from wagtail.images.models import AbstractRendition, Filter
 from wagtail.images.permissions import permission_policy
 from wagtail.images.views.serve import generate_signature
 from wagtail.search import index as search_index
@@ -237,8 +237,8 @@ def delete(request, image_id):
 
         dependants = {
             m._meta: ii for m, ii in collector.data.items()
-            if not issubclass(m, (AbstractRendition, image.__class__))
-            and not getattr(m, 'exclude_from_search_index', False)
+            if not issubclass(m, (AbstractRendition, image.__class__)) and
+            not getattr(m, 'exclude_from_search_index', False)
         }
 
         if dependants:
