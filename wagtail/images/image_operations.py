@@ -283,7 +283,7 @@ class QuantizeOperation(Operation):
     def construct(self, *args):
         pass
 
-    def run(self, willow, image):
+    def run(self, willow, image, env):
         return willow.quantize()
 
 
