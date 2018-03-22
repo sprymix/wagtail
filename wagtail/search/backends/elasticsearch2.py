@@ -706,6 +706,13 @@ class Elasticsearch2SearchResults(BaseSearchResults):
             # Send to Elasticsearch
             hits = self.backend.es.search(**params)['hits']['hits']
 
+            if self.return_pks:
+                pks = [hit['fields']['pk'][0] for hit in hits]
+                for pk in pks:
+                    yield pk
+
+                return
+
             # Get results
             for result in self._get_results_from_hits(hits):
                 yield result

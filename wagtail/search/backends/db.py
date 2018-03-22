@@ -90,6 +90,9 @@ class DatabaseSearchResults(BaseSearchResults):
         return queryset.filter(q).distinct()[self.start:self.stop]
 
     def _do_search(self):
+        if self.return_pks:
+            return self.get_queryset().values_list('pk', flat=True)
+
         queryset = self.get_queryset()
 
         if self._score_field:

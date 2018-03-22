@@ -194,7 +194,7 @@ class BaseSearchResults:
     def _clone(self):
         klass = self.__class__
         new = klass(self.backend, self.query_compiler,
-                    prefetch_related=self.prefetch_related, 
+                    prefetch_related=self.prefetch_related,
                     return_pks=self.return_pks)
         new.start = self.start
         new.stop = self.stop
