@@ -91,16 +91,18 @@ class EditHandler:
     the EditHandler API
     """
 
-    def __init__(self, heading='', classname='', help_text=''):
+    def __init__(self, heading='', classname='', help_text='', extra_js=''):
         self.heading = heading
         self.classname = classname
         self.help_text = help_text
+        self.extra_js = extra_js
 
     def clone(self):
         return self.__class__(
             heading=self.heading,
             classname=self.classname,
             help_text=self.help_text,
+            extra_js=self.extra_js,
         )
 
     # return list of widget overrides that this EditHandler wants to be in place
@@ -199,13 +201,6 @@ class EditHandler:
         """
         # by default, assume that the subclass provides a catch-all render() method
         return self.render()
-
-    def render_js(self):
-        """
-        Render a snippet of Javascript code to be executed when this object's rendered
-        HTML is inserted into the DOM. (This won't necessarily happen on page load...)
-        """
-        return ""
 
     def render_missing_fields(self):
         """
@@ -403,7 +398,8 @@ class FieldPanel(EditHandler):
             widget=self.widget if hasattr(self, 'widget') else None,
             heading=self.heading,
             classname=self.classname,
-            help_text=self.help_text
+            help_text=self.help_text,
+            extra_js=self.extra_js,
         )
 
     def widget_overrides(self):
@@ -442,10 +438,15 @@ class FieldPanel(EditHandler):
     field_template = "wagtailadmin/edit_handlers/field_panel_field.html"
 
     def render_as_field(self):
-        return mark_safe(render_to_string(self.field_template, {
+        field = render_to_string(self.field_template, {
             'field': self.bound_field,
             'field_type': self.field_type(),
-        }))
+        })
+
+        if self.extra_js:
+            return widget_with_script(field, self.extra_js)
+        else:
+            return mark_safe(field)
 
     def required_fields(self):
         return [self.field_name]
@@ -537,7 +538,11 @@ class BaseChooserPanel(FieldPanel):
             self.object_type_name: instance_obj,
             'is_chosen': bool(instance_obj),  # DEPRECATED - passed to templates for backwards compatibility only
         }
-        return mark_safe(render_to_string(self.field_template, context))
+        field = render_to_string(self.field_template, context)
+        if self.extra_js:
+            return widget_with_script(field, self.extra_js)
+        else:
+            return mark_safe(field)
 
 
 class PageChooserPanel(BaseChooserPanel):

@@ -68,6 +68,7 @@ class RenditionChooserPanel(ImageChooserPanel):
             heading=self.heading,
             classname=self.classname,
             help_text=self.help_text,
+            extra_js=self.extra_js,
             crop=self.crop,
             ratios=self.ratios,
             default_ratio=self.default_ratio,
