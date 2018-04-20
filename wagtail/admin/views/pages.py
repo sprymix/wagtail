@@ -612,7 +612,7 @@ def archive(request, page_id):
 def view_draft(request, page_id):
     page = get_object_or_404(Page, id=page_id).get_latest_revision_as_page()
     perms = page.permissions_for_user(request.user)
-    if not (perms.can_publish() or perms.can_edit()):
+    if not (perms.can_publish() or perms.can_edit() or perms.can_preview()):
         raise PermissionDenied
     return page.serve_preview(page.dummy_request(request), page.default_preview_mode)
 

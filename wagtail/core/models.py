@@ -1587,6 +1587,7 @@ PAGE_PERMISSION_TYPES = [
     ('add', _("Add"), _("Add/edit pages you own")),
     ('edit', _("Edit"), _("Edit any page")),
     ('publish', _("Publish"), _("Publish any page")),
+    ('preview', _("Preview"), _("Preview any page")),
     ('bulk_delete', _("Bulk delete"), _("Delete pages with children")),
     ('lock', _("Lock"), _("Lock/unlock any page")),
 ]
@@ -1796,6 +1797,11 @@ class PagePermissionTester:
         if not self.user.is_active:
             return False
         return self.user.is_superuser or ('publish' in self.permissions)
+
+    def can_preview(self):
+        if not self.user.is_active:
+            return False
+        return self.user.is_superuser or ('preview' in self.permissions)
 
     def can_set_view_restrictions(self):
         return self.can_publish()
