@@ -192,6 +192,7 @@ def external_link(request):
             result = {
                 'url': form.cleaned_data['url'],
                 'title': form.cleaned_data['link_text'].strip() or form.cleaned_data['url'],
+                'alt_title': form.cleaned_data['link_title'].strip(),
                 # If the user has explicitly entered / edited something in the link_text field,
                 # always use that text. If not, we should favour keeping the existing link/selection
                 # text, where applicable.

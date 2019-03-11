@@ -55,6 +55,7 @@ class SearchForm(forms.Form):
 class ExternalLinkChooserForm(forms.Form):
     url = URLOrAbsolutePathField(required=True, label=ugettext_lazy("URL"))
     link_text = forms.CharField(required=False)
+    link_title = forms.CharField(required=False)
     new_window = forms.BooleanField(required=False, initial=False,
         help_text=_('Whether this link should be openend in a new window'))
     omniture_data = forms.CharField(required=False,
