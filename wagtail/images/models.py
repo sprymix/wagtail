@@ -597,6 +597,10 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
             ('image', 'filter_spec', 'focal_point_key'),
         )
 
+    @property
+    def alt(self):
+        return self.alt_text or self.image.title
+
     def get_rendition(self, filter_spec):
         # we need to construct a new filter combining what we've been passed
         # and the filter used to get THIS rendition
