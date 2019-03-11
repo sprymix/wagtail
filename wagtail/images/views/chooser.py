@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import hashlib
 import json
 import uuid
 import urllib
@@ -56,13 +57,14 @@ def get_image_json(image):
     })
 
 
-def get_cropper_settings(request):
+def get_cropper_settings(request, image):
     '''Helper that extracts the settings for the ImageCropperForm from request
     data.'''
 
     # get filter spec if it was passed
     #
     initial = {}
+    alt = request.GET.get('alt')
     crop = request.GET.get('crop')
     fit = request.GET.get('fit')
     ratios = request.GET.get('ratios')
@@ -91,6 +93,11 @@ def get_cropper_settings(request):
 
     if ratios is not None:
         ratios = tuple(ratios.split(','))
+
+    if not alt:
+        alt = image.default_alt_text
+
+    initial.update({'alt_text': alt})
 
     return dict(initial=initial,
                 ratios=ratios,
@@ -341,14 +348,14 @@ def chooser_select(request, image_id):
 
         if will_select_format:
             form = ImageInsertionForm(
-                            initial={'alt_text': image.default_alt_text})
+                initial={'alt_text': image.default_alt_text})
             return render_modal_workflow(
                 request, 'wagtailimages/chooser/select_format.html',
                 'wagtailimages/chooser/select_format.js',
                 {'image': image, 'form': form}
             )
         elif will_select_rendition:
-            form = ImageCropperForm(**get_cropper_settings(request))
+            form = ImageCropperForm(**get_cropper_settings(request, image))
             return render_modal_workflow(
                 request, 'wagtailimages/chooser/select_rendition.html',
                 'wagtailimages/chooser/select_rendition.js',
@@ -437,7 +444,18 @@ def chooser_select_rendition(request, image_id):
             post_processing_spec = request.GET.get('pps')
             if post_processing_spec:
                 filter_spec = '{}|{}'.format(filter_spec, post_processing_spec)
+
+            alt_text = form.cleaned_data['alt_text'].strip()
+            if alt_text:
+                alt_spec = 'alttext-{}'.format(
+                    hashlib.md5(alt_text.encode()).hexdigest())
+                filter_spec = '{}|{}'.format(filter_spec, alt_spec)
+
             rendition = image.get_user_rendition(filter_spec)
+
+            if rendition.alt_text != alt_text:
+                rendition.alt_text = alt_text
+                rendition.save()
 
         else:
             # something went wrong
@@ -445,12 +463,12 @@ def chooser_select_rendition(request, image_id):
             raise ValidationError(_("Errors encountered while cropping."),
                                   code='invalid')
 
-        rendition = image.get_user_rendition(filter_spec)
         preview_image = image.get_rendition(filter_spec + '|max-130x100')
 
         rendition_json = json.dumps({
             'id': rendition.id,
             'title': image.title,
+            'alt': rendition.alt_text,
             'original_id': image.id,
             'spec': rendition.filter_spec,
             'html': rendition.img_tag(),
@@ -468,7 +486,7 @@ def chooser_select_rendition(request, image_id):
     else:
         # get filter spec if it was passed
         #
-        form = ImageCropperForm(**get_cropper_settings(request))
+        form = ImageCropperForm(**get_cropper_settings(request, image))
 
         return render_modal_workflow(
             request, 'wagtailimages/chooser/select_rendition.html',

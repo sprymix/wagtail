@@ -133,6 +133,7 @@ def register_image_operations():
         ('format', image_operations.FormatOperation),
         ('bgcolor', image_operations.BackgroundColorOperation),
         ('quantize', image_operations.QuantizeOperation),
+        ('alttext', image_operations.AltTextOperation),
     ]
 
 

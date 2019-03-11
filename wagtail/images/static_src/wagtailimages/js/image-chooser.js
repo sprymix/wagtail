@@ -40,11 +40,12 @@ function createRenditionChooser(id) {
             'src': imageData.preview.url,
             'width': imageData.preview.width,
             'height': imageData.preview.height,
-            'alt': imageData.title
+            'alt': imageData.alt || imageData.title
           });
           chooserElement.removeClass('blank');
           chooserElement.attr({'data-original-image-id': imageData.original_id});
           chooserElement.attr({'data-spec': imageData.spec});
+          chooserElement.attr({'data-alt': imageData.alt});
         } else {
           chooserElement.addClass('blank');
         }
@@ -59,7 +60,8 @@ function createRenditionChooser(id) {
             default_ratio = chooserElement.attr('data-default_ratio'),
             disable_selection = chooserElement.attr('data-disable_selection'),
             force_selection = chooserElement.attr('data-force_selection'),
-            pps = chooserElement.attr('data-pps');
+            pps = chooserElement.attr('data-pps'),
+            alt = chooserElement.attr('data-alt');
 
         // convert disable and force selection setitngs to a single char
         disable_selection = disable_selection ? disable_selection[0] : null;
@@ -81,7 +83,8 @@ function createRenditionChooser(id) {
             ar: default_ratio,
             fsel: force_selection,
             dsel: disable_selection,
-            pps: pps
+            pps: pps,
+            alt: alt
         };
 
         // build URL with the params_dict

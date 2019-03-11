@@ -590,6 +590,8 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
     image = models.ForeignKey('Image', related_name='user_renditions',
                               on_delete=models.CASCADE)
 
+    alt_text = models.CharField(max_length=255, null=True)
+
     class Meta:
         unique_together = (
             ('image', 'filter_spec', 'focal_point_key'),

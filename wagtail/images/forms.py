@@ -106,6 +106,7 @@ class ImageCropperForm(forms.Form):
                                          widget=forms.HiddenInput())
     width = forms.IntegerField(required=False, label=_('Fit width'))
     height = forms.IntegerField(required=False, label=_('height'))
+    alt_text = forms.CharField()
 
     ratios = ('1:1', '4:3', '16:9', '2:1', 'free')
     default_ratio = 'free'

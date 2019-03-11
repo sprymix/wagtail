@@ -315,3 +315,11 @@ class BackgroundColorOperation(Operation):
 
     def run(self, willow, image, env):
         return willow.set_background_color_rgb(self.color)
+
+
+class AltTextOperation(Operation):
+    def construct(self, *args):
+        pass
+
+    def run(self, willow, image, env):
+        pass
