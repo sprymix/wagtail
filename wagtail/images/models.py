@@ -511,6 +511,7 @@ class AbstractRendition(models.Model):
     width = models.IntegerField(editable=False)
     height = models.IntegerField(editable=False)
     focal_point_key = models.CharField(max_length=16, blank=True, default='', editable=False)
+    alt_text = models.CharField(max_length=255, null=True)
 
     @property
     def url(self):
@@ -518,7 +519,7 @@ class AbstractRendition(models.Model):
 
     @property
     def alt(self):
-        return self.image.title
+        return self.alt_text or self.image.title
 
     @property
     def attrs(self):
@@ -590,16 +591,10 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
     image = models.ForeignKey('Image', related_name='user_renditions',
                               on_delete=models.CASCADE)
 
-    alt_text = models.CharField(max_length=255, null=True)
-
     class Meta:
         unique_together = (
             ('image', 'filter_spec', 'focal_point_key'),
         )
-
-    @property
-    def alt(self):
-        return self.alt_text or self.image.title
 
     def get_rendition(self, filter_spec):
         # we need to construct a new filter combining what we've been passed
@@ -635,6 +630,7 @@ class UserRendition(AbstractRendition, WillowImageWrapper):
 
             rendition, created = self.image.renditions.get_or_create(
                 filter_spec=filter_spec,
+                alt_text=self.alt_text,
                 defaults={'file': File(generated_image.f,
                                        name=output_filename)}
             )
