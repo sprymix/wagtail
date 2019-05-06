@@ -71,7 +71,7 @@ class ImageInsertionForm(forms.Form):
         choices=[(format.name, format.label) for format in get_image_formats()],
         widget=forms.RadioSelect
     )
-    alt_text = forms.CharField()
+    alt_text = forms.CharField(required=False)
 
 
 class URLGeneratorForm(forms.Form):
@@ -106,7 +106,7 @@ class ImageCropperForm(forms.Form):
                                          widget=forms.HiddenInput())
     width = forms.IntegerField(required=False, label=_('Fit width'))
     height = forms.IntegerField(required=False, label=_('height'))
-    alt_text = forms.CharField()
+    alt_text = forms.CharField(required=False)
 
     ratios = ('1:1', '4:3', '16:9', '2:1', 'free')
     default_ratio = 'free'
