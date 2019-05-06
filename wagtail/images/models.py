@@ -160,6 +160,7 @@ class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWr
     file = models.ImageField(
         verbose_name=_('file'), upload_to=get_upload_to, width_field='width', height_field='height'
     )
+    alt_text = models.CharField(max_length=255, null=True, blank=True)
     width = models.IntegerField(verbose_name=_('width'), editable=False)
     height = models.IntegerField(verbose_name=_('height'), editable=False)
     created_at = models.DateTimeField(verbose_name=_('created at'), auto_now_add=True, db_index=True)
@@ -360,10 +361,7 @@ class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWr
 
     @property
     def default_alt_text(self):
-        # by default the alt text field (used in rich text insertion) is populated
-        # from the title. Subclasses might provide a separate alt field, and
-        # override this
-        return self.title
+        return self.alt_text
 
     def is_editable_by_user(self, user):
         from wagtail.images.permissions import permission_policy
@@ -383,6 +381,7 @@ class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWr
 class Image(AbstractImage):
     admin_form_fields = (
         'title',
+        'alt_text',
         'file',
         'collection',
         'tags',
@@ -511,7 +510,7 @@ class AbstractRendition(models.Model):
     width = models.IntegerField(editable=False)
     height = models.IntegerField(editable=False)
     focal_point_key = models.CharField(max_length=16, blank=True, default='', editable=False)
-    alt_text = models.CharField(max_length=255, null=True)
+    alt_text = models.CharField(max_length=255, null=True, blank=True)
 
     @property
     def url(self):
@@ -519,7 +518,7 @@ class AbstractRendition(models.Model):
 
     @property
     def alt(self):
-        return self.alt_text or self.image.title
+        return self.alt_text or self.image.alt_text
 
     @property
     def attrs(self):
