@@ -3,15 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Istvan Farkas <istvan.farkas@gmail.com>, 2019
 # Kornel Novak Mergulhão <nkornel@gmail.com>, 2016
 # Kornel Novak Mergulhão <nkornel@gmail.com>, 2016
+# B N <biczoxd@gmail.com>, 2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2017-09-22 19:04+0000\n"
-"Last-Translator: Kornel Novak Mergulhão <nkornel@gmail.com>\n"
+"POT-Creation-Date: 2019-10-16 18:00+0100\n"
+"PO-Revision-Date: 2019-08-01 11:55+0000\n"
+"Last-Translator: Istvan Farkas <istvan.farkas@gmail.com>\n"
 "Language-Team: Hungarian (http://www.transifex.com/torchbox/wagtail/language/"
 "hu/)\n"
 "MIME-Version: 1.0\n"
@@ -20,16 +22,54 @@ msgstr ""
 "Language: hu\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "Wagtail sites"
+msgstr "Wagtail webhelyek"
+
+msgid "Choose a root page"
+msgstr "Válassza ki a főoldalt"
+
+msgid "Choose a different root page"
+msgstr "Válasszon ki egy másik főoldalt"
+
 msgid "Site"
-msgstr "Oldal"
+msgstr "Webhely"
+
+msgid "Port"
+msgstr "Port"
+
+msgid "Site name"
+msgstr "Webhely neve"
+
+msgid "Root page"
+msgstr "Főoldal"
+
+msgid "Default?"
+msgstr "Alapméretezett?"
 
 msgid "Default"
 msgstr "Alapértelmezett"
 
+msgid "Sites"
+msgstr "Webhelyek"
+
+msgid "Add a site"
+msgstr "Webhely hozzáadása"
+
+msgid "Add site"
+msgstr "Webhely hozzáadása"
+
+msgid "Site '{0}' created."
+msgstr "'{0}' webhely létrehozva."
+
+msgid "Site '{0}' updated."
+msgstr "'{0}' oldal frissítve."
+
+msgid "The site could not be saved due to errors."
+msgstr "Az oldalt hibák miatt nem lehetett elmenteni."
+
 msgid "Delete site"
 msgstr "Oldal törlése"
 
-#, python-brace-format
 msgid "Site '{0}' deleted."
 msgstr "A(z) '{0}' oldal törölve lett."
 

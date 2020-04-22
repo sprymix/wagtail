@@ -4,6 +4,7 @@ import { AtomicBlockUtils, Modifier, RichUtils, EditorState } from 'draft-js';
 import { ENTITY_TYPE } from 'draftail';
 
 import { STRINGS } from '../../../config/wagtailConfig';
+import { getSelectionText } from '../DraftUtils';
 
 const $ = global.jQuery;
 
@@ -16,47 +17,80 @@ MUTABILITY[DOCUMENT] = 'MUTABLE';
 MUTABILITY[ENTITY_TYPE.IMAGE] = 'IMMUTABLE';
 MUTABILITY[EMBED] = 'IMMUTABLE';
 
-export const getChooserConfig = (entityType, entity) => {
-  const chooserURL = {};
-  chooserURL[ENTITY_TYPE.IMAGE] = `${global.chooserUrls.imageChooser}?select_format=true`;
-  chooserURL[EMBED] = global.chooserUrls.embedsChooser;
-  chooserURL[ENTITY_TYPE.LINK] = global.chooserUrls.pageChooser;
-  chooserURL[DOCUMENT] = global.chooserUrls.documentChooser;
+export const getChooserConfig = (entityType, entity, selectedText) => {
+  let url;
+  let urlParams;
 
-  let url = chooserURL[entityType.type];
-  let urlParams = {};
+  switch (entityType.type) {
+  case ENTITY_TYPE.IMAGE:
+    return {
+      url: `${global.chooserUrls.imageChooser}?select_format=true`,
+      urlParams: {},
+      onload: global.IMAGE_CHOOSER_MODAL_ONLOAD_HANDLERS,
+    };
 
-  if (entityType.type === ENTITY_TYPE.LINK) {
+  case EMBED:
+    return {
+      url: global.chooserUrls.embedsChooser,
+      urlParams: {},
+      onload: global.EMBED_CHOOSER_MODAL_ONLOAD_HANDLERS,
+    };
+
+  case ENTITY_TYPE.LINK:
+    url = global.chooserUrls.pageChooser;
     urlParams = {
       page_type: 'wagtailcore.page',
       allow_external_link: true,
       allow_email_link: true,
-      can_choose_root: 'false',
-      // This does not initialise the modal with the currently selected text.
-      // This will need to be implemented in the future.
-      // See https://github.com/jpuri/draftjs-utils/blob/e81c0ae19c3b0fdef7e0c1b70d924398956be126/js/block.js#L106.
-      link_text: '',
+      allow_phone_link: true,
+      allow_anchor_link: true,
+      link_text: selectedText,
     };
 
     if (entity) {
       const data = entity.getData();
 
       if (data.id) {
-        url = `${global.chooserUrls.pageChooser}${data.parentId}/`;
+        if (data.parentId !== null) {
+          url = `${global.chooserUrls.pageChooser}${data.parentId}/`;
+        } else {
+          url = global.chooserUrls.pageChooser;
+        }
       } else if (data.url.startsWith('mailto:')) {
         url = global.chooserUrls.emailLinkChooser;
         urlParams.link_url = data.url.replace('mailto:', '');
+      } else if (data.url.startsWith('tel:')) {
+        url = global.chooserUrls.phoneLinkChooser;
+        urlParams.link_url = data.url.replace('tel:', '');
+      } else if (data.url.startsWith('#')) {
+        url = global.chooserUrls.anchorLinkChooser;
+        urlParams.link_url = data.url.replace('#', '');
       } else {
         url = global.chooserUrls.externalLinkChooser;
         urlParams.link_url = data.url;
       }
     }
-  }
 
-  return {
-    url,
-    urlParams,
-  };
+    return {
+      url,
+      urlParams,
+      onload: global.PAGE_CHOOSER_MODAL_ONLOAD_HANDLERS,
+    };
+
+  case DOCUMENT:
+    return {
+      url: global.chooserUrls.documentChooser,
+      urlParams: {},
+      onload: global.DOCUMENT_CHOOSER_MODAL_ONLOAD_HANDLERS,
+    };
+
+  default:
+    return {
+      url: null,
+      urlParams: {},
+      onload: {},
+    };
+  }
 };
 
 export const filterEntityData = (entityType, data) => {
@@ -113,8 +147,9 @@ class ModalWorkflowSource extends Component {
   }
 
   componentDidMount() {
-    const { onClose, entityType, entity } = this.props;
-    const { url, urlParams } = getChooserConfig(entityType, entity);
+    const { onClose, entityType, entity, editorState } = this.props;
+    const selectedText = getSelectionText(editorState);
+    const { url, urlParams, onload } = getChooserConfig(entityType, entity, selectedText);
 
     $(document.body).on('hidden.bs.modal', this.onClose);
 
@@ -122,6 +157,7 @@ class ModalWorkflowSource extends Component {
     this.workflow = global.ModalWorkflow({
       url,
       urlParams,
+      onload,
       responses: {
         imageChosen: this.onChosen,
         // Discard the first parameter (HTML) to only transmit the data.

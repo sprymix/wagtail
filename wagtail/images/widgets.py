@@ -1,8 +1,10 @@
 import json
 
+from django import forms
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 
+from wagtail.admin.staticfiles import versioned_static
 from wagtail.admin.widgets import AdminChooser
 from wagtail.images import get_image_model
 from wagtail.images.models import UserRendition
@@ -31,6 +33,22 @@ class AdminImageChooser(AdminChooser):
 
     def render_js_init(self, id_, name, value):
         return "createImageChooser({0});".format(json.dumps(id_))
+
+    @property
+    def media(self):
+        return forms.Media(js=[
+            versioned_static('wagtailimages/js/image-chooser-modal.js'),
+            versioned_static('wagtailimages/js/image-chooser.js'),
+            versioned_static('wagtailimages/js/add-multiple.js'),
+            versioned_static('wagtailimages/js/vendor/jquery.Jcrop.min.js'),
+            versioned_static('wagtailimages/js/vendor/load-image.min.js'),
+            versioned_static('wagtailimages/js/vendor/canvas-to-blob.min.js'),
+            versioned_static('wagtailadmin/js/vendor/jquery.iframe-transport.js'),
+            versioned_static('wagtailadmin/js/vendor/jquery.fileupload.js'),
+            versioned_static('wagtailadmin/js/vendor/jquery.fileupload-process.js'),
+            versioned_static('wagtailimages/js/vendor/jquery.fileupload-image.js'),
+            versioned_static('wagtailimages/js/vendor/jquery.fileupload-validate.js'),
+        ])
 
 
 class AdminImageRenditionChooser(AdminChooser):
@@ -63,3 +81,19 @@ class AdminImageRenditionChooser(AdminChooser):
 
     def render_js_init(self, id_, name, value):
         return "createRenditionChooser({0});".format(json.dumps(id_))
+
+    @property
+    def media(self):
+        return forms.Media(js=[
+            versioned_static('wagtailimages/js/image-chooser-modal.js'),
+            versioned_static('wagtailimages/js/image-chooser.js'),
+            versioned_static('wagtailimages/js/add-multiple.js'),
+            versioned_static('wagtailimages/js/vendor/jquery.Jcrop.min.js'),
+            versioned_static('wagtailimages/js/vendor/load-image.min.js'),
+            versioned_static('wagtailimages/js/vendor/canvas-to-blob.min.js'),
+            versioned_static('wagtailadmin/js/vendor/jquery.iframe-transport.js'),
+            versioned_static('wagtailadmin/js/vendor/jquery.fileupload.js'),
+            versioned_static('wagtailadmin/js/vendor/jquery.fileupload-process.js'),
+            versioned_static('wagtailimages/js/vendor/jquery.fileupload-image.js'),
+            versioned_static('wagtailimages/js/vendor/jquery.fileupload-validate.js'),
+        ])

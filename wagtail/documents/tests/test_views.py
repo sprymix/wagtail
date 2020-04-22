@@ -1,72 +1,17 @@
 import os.path
 import unittest
+from unittest import mock
 
-import mock
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 
 from wagtail.documents import models
-from wagtail.tests.utils import WagtailTestUtils
 
 
-class TestEditView(TestCase, WagtailTestUtils):
-    def setUp(self):
-        self.login()
-
-        self.document = models.Document(title='Test')
-        self.document.file.save('test_edit_view.txt',
-                                ContentFile('A test content.'))
-        self.edit_url = reverse('wagtaildocs:edit', args=(self.document.pk,))
-        self.storage = self.document.file.storage
-
-    def update_from_db(self):
-        self.document = models.Document.objects.get(pk=self.document.pk)
-
-    def test_reupload_same_name(self):
-        """
-        Checks that reuploading the document file with the same file name
-        changes the file name, to avoid browser cache issues (see #3816).
-        """
-        old_file = self.document.file
-        new_name = self.document.filename
-        new_file = SimpleUploadedFile(new_name, b'An updated test content.')
-
-        response = self.client.post(self.edit_url, {
-            'title': self.document.title, 'file': new_file,
-        })
-        self.assertRedirects(response, reverse('wagtaildocs:index'))
-        self.update_from_db()
-        self.assertFalse(self.storage.exists(old_file.name))
-        self.assertTrue(self.storage.exists(self.document.file.name))
-        self.assertNotEqual(self.document.file.name, 'documents/' + new_name)
-        self.assertEqual(self.document.file.read(),
-                         b'An updated test content.')
-
-    def test_reupload_different_name(self):
-        """
-        Checks that reuploading the document file with a different file name
-        correctly uses the new file name.
-        """
-        old_file = self.document.file
-        new_name = 'test_reupload_different_name.txt'
-        new_file = SimpleUploadedFile(new_name, b'An updated test content.')
-
-        response = self.client.post(self.edit_url, {
-            'title': self.document.title, 'file': new_file,
-        })
-        self.assertRedirects(response, reverse('wagtaildocs:index'))
-        self.update_from_db()
-        self.assertFalse(self.storage.exists(old_file.name))
-        self.assertTrue(self.storage.exists(self.document.file.name))
-        self.assertEqual(self.document.file.name, 'documents/' + new_name)
-        self.assertEqual(self.document.file.read(),
-                         b'An updated test content.')
-
-
+@override_settings(WAGTAILDOCS_SERVE_METHOD=None)
 class TestServeView(TestCase):
     def setUp(self):
         self.document = models.Document(title="Test document")
@@ -123,6 +68,76 @@ class TestServeView(TestCase):
         _get_sendfile.clear()
 
 
+@override_settings(WAGTAILDOCS_SERVE_METHOD='redirect')
+class TestServeViewWithRedirect(TestCase):
+    def setUp(self):
+        self.document = models.Document(title="Test document")
+        self.document.file.save('example.doc', ContentFile("A boring example document"))
+        self.serve_view_url = reverse('wagtaildocs_serve', args=(self.document.id, self.document.filename))
+
+    def tearDown(self):
+        self.document.delete()
+
+    def get(self):
+        return self.client.get(reverse('wagtaildocs_serve', args=(self.document.id, self.document.filename)))
+
+    def test_document_url_should_point_to_serve_view(self):
+        self.assertEqual(self.document.url, self.serve_view_url)
+
+    def test_redirect(self):
+        response = self.get()
+        self.assertRedirects(response, self.document.file.url, fetch_redirect_response=False)
+
+
+@override_settings(WAGTAILDOCS_SERVE_METHOD='direct')
+class TestDirectDocumentUrls(TestCase):
+    def setUp(self):
+        self.document = models.Document(title="Test document")
+        self.document.file.save('example.doc', ContentFile("A boring example document"))
+
+    def tearDown(self):
+        self.document.delete()
+
+    def get(self):
+        return self.client.get(reverse('wagtaildocs_serve', args=(self.document.id, self.document.filename)))
+
+    def test_url_should_point_directly_to_file_storage_url(self):
+        self.assertEqual(self.document.url, self.document.file.url)
+
+    def test_redirect(self):
+        # The serve view will not normally be linked to in 'direct' mode, but we should ensure it
+        # still works by redirecting
+        response = self.get()
+        self.assertRedirects(response, self.document.file.url, fetch_redirect_response=False)
+
+
+@override_settings(
+    WAGTAILDOCS_SERVE_METHOD=None,
+    DEFAULT_FILE_STORAGE='wagtail.tests.dummy_external_storage.DummyExternalStorage'
+)
+class TestServeWithExternalStorage(TestCase):
+    """
+    Test the behaviour of the default serve method when used with a remote storage backend
+    (i.e. one that throws NotImplementedError for the path() method).
+    """
+    def setUp(self):
+        self.document = models.Document(title="Test document")
+        self.document.file.save('example.doc', ContentFile("A boring example document"))
+        self.serve_view_url = reverse('wagtaildocs_serve', args=(self.document.id, self.document.filename))
+
+    def tearDown(self):
+        self.document.delete()
+
+    def test_document_url_should_point_to_serve_view(self):
+        self.assertEqual(self.document.url, self.serve_view_url)
+
+    def test_redirect(self):
+        # serve view should redirect to the remote URL
+        response = self.client.get(self.serve_view_url)
+        self.assertRedirects(response, self.document.file.url, fetch_redirect_response=False)
+
+
+@override_settings(WAGTAILDOCS_SERVE_METHOD=None)
 class TestServeViewWithSendfile(TestCase):
     def setUp(self):
         # Import using a try-catch block to prevent crashes if the
@@ -180,6 +195,7 @@ class TestServeViewWithSendfile(TestCase):
         self.assertEqual(response['X-Accel-Redirect'], os.path.join(settings.MEDIA_URL, self.document.file.name))
 
 
+@override_settings(WAGTAILDOCS_SERVE_METHOD=None)
 class TestServeWithUnicodeFilename(TestCase):
     def setUp(self):
         self.document = models.Document(title="Test document")

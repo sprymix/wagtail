@@ -5,13 +5,14 @@
 # Translators:
 # Ettore Atalan <atalanttore@googlemail.com>, 2016
 # Vorlif <flori@vorlif.org>, 2015
-# Henrik Kröger <hedwig@riseup.net>, 2016
+# Henrik Kröger <hedwig@riseup.net>, 2016,2018
 # Johannes Spielmann <j@spielmannsolutions.com>, 2014
 # Johannes Spielmann <j@spielmannsolutions.com>, 2014
 # karlsander <karlsander@gmail.com>, 2014
 # karlsander <karlsander@gmail.com>, 2014
 # pcraston <patrick@craston.com>, 2014
 # pcraston <patrick@craston.com>, 2014
+# Peter Dreuw <archandha@gmx.net>, 2019
 # Vorlif <flori@vorlif.org>, 2015
 # Wasilis Mandratzis-Walz, 2015
 # Wasilis Mandratzis-Walz, 2015
@@ -19,9 +20,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 16:02+0000\n"
-"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
+"POT-Creation-Date: 2019-10-16 18:00+0100\n"
+"PO-Revision-Date: 2019-05-19 11:16+0000\n"
+"Last-Translator: Peter Dreuw <archandha@gmx.net>\n"
 "Language-Team: German (http://www.transifex.com/torchbox/wagtail/language/"
 "de/)\n"
 "MIME-Version: 1.0\n"
@@ -29,6 +30,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Wagtail redirects"
+msgstr "Wagtail Umleitungen"
 
 msgid "From site"
 msgstr "Von Website"
@@ -118,7 +122,7 @@ msgstr "Diese Weiterleitung bearbeiten"
 #, python-format
 msgid ""
 "\n"
-"            There is one match\n"
+"            There is %(counter)s match\n"
 "        "
 msgid_plural ""
 "\n"
@@ -126,12 +130,10 @@ msgid_plural ""
 "        "
 msgstr[0] ""
 "\n"
-"            Es gibt ein Ergebnis\n"
-"        "
+"Es gibt %(counter)s Ergebnis."
 msgstr[1] ""
 "\n"
-"            Es gibt %(counter)s Ergebnisse\n"
-"        "
+"Es gibt %(counter)s Ergebnisse."
 
 #, python-format
 msgid "Sorry, no redirects match \"<em>%(query_string)s</em>\""
@@ -150,7 +152,6 @@ msgstr ""
 msgid "Search redirects"
 msgstr "Such-Umleitungen"
 
-#, python-brace-format
 msgid "Redirect '{0}' updated."
 msgstr "Weiterleitung ‚{0}‘ geändert."
 
@@ -161,11 +162,9 @@ msgid "The redirect could not be saved due to errors."
 msgstr ""
 "Aufgrund von Fehlern konnte die Weiterleitung nicht gespeichert werden."
 
-#, python-brace-format
 msgid "Redirect '{0}' deleted."
 msgstr "Weiterleitung ‚{0}‘ gelöscht."
 
-#, python-brace-format
 msgid "Redirect '{0}' added."
 msgstr "Weiterleitung ‚{0}‘ hinzugefügt"
 

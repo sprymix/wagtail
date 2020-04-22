@@ -1,11 +1,12 @@
 import functools
 
 from django.conf.urls import url, include
-from django.views.decorators.cache import cache_control
+from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
 from django.http import Http404
 from django.views.defaults import page_not_found
 
+from wagtail.admin.auth import require_admin_access
 from wagtail.admin.urls import pages as wagtailadmin_pages_urls
 from wagtail.admin.urls import collections as wagtailadmin_collections_urls
 from wagtail.admin.urls import password_reset as wagtailadmin_password_reset_urls
@@ -13,7 +14,6 @@ from wagtail.admin.views import account, chooser, home, pages, tags, userbar
 from wagtail.admin.api import urls as api_urls
 from wagtail.core import hooks
 from wagtail.utils.urlpatterns import decorate_urlpatterns
-from wagtail.admin.decorators import require_admin_access
 
 
 urlpatterns = [
@@ -37,6 +37,8 @@ urlpatterns = [
     url(r'^choose-page/search/$', chooser.search, name='wagtailadmin_choose_page_search'),
     url(r'^choose-external-link/$', chooser.external_link, name='wagtailadmin_choose_page_external_link'),
     url(r'^choose-email-link/$', chooser.email_link, name='wagtailadmin_choose_page_email_link'),
+    url(r'^choose-phone-link/$', chooser.phone_link, name='wagtailadmin_choose_page_phone_link'),
+    url(r'^choose-anchor-link/$', chooser.anchor_link, name='wagtailadmin_choose_page_anchor_link'),
 
     url(r'^tag-autocomplete/$', tags.autocomplete, name='wagtailadmin_tag_autocomplete'),
 
@@ -44,17 +46,25 @@ urlpatterns = [
 
     url(r'^account/$', account.account, name='wagtailadmin_account'),
     url(r'^account/change_password/$', account.change_password, name='wagtailadmin_account_change_password'),
+    url(r'^account/change_email/$', account.change_email, name='wagtailadmin_account_change_email'),
+    url(r'^account/change_name/$', account.change_name, name='wagtailadmin_account_change_name'),
     url(
         r'^account/notification_preferences/$',
         account.notification_preferences,
         name='wagtailadmin_account_notification_preferences'
     ),
+    url(r'account/change_avatar/$', account.change_avatar, name='wagtailadmin_account_change_avatar'),
     url(
         r'^account/language_preferences/$',
         account.language_preferences,
         name='wagtailadmin_account_language_preferences'
     ),
-    url(r'^logout/$', account.logout, name='wagtailadmin_logout'),
+    url(
+        r'^account/current_time_zone/$',
+        account.current_time_zone,
+        name='wagtailadmin_account_current_time_zone'
+    ),
+    url(r'^logout/$', account.LogoutView.as_view(), name='wagtailadmin_logout'),
 ]
 
 
@@ -71,7 +81,7 @@ urlpatterns = decorate_urlpatterns(urlpatterns, require_admin_access)
 
 # These url patterns do not require an authenticated admin user
 urlpatterns += [
-    url(r'^login/$', account.login, name='wagtailadmin_login'),
+    url(r'^login/$', account.LoginView.as_view(), name='wagtailadmin_login'),
 
     # These two URLs have the "permission_required" decorator applied directly
     # as they need to fail with a 403 error rather than redirect to the login page
@@ -105,5 +115,5 @@ urlpatterns = decorate_urlpatterns(urlpatterns, display_custom_404)
 # Decorate all views with cache settings to prevent caching
 urlpatterns = decorate_urlpatterns(
     urlpatterns,
-    cache_control(private=True, no_cache=True, no_store=True, max_age=0)
+    never_cache
 )

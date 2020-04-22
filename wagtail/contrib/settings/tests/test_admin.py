@@ -72,7 +72,9 @@ class TestSettingCreateView(BaseTestSettingView):
     def test_edit_invalid(self):
         response = self.post(post_data={'foo': 'bar'})
         self.assertContains(response, "The setting could not be saved due to errors.")
-        self.assertContains(response, "This field is required.")
+        self.assertContains(response, """<p class="error-message"><span>This field is required.</span></p>""",
+                            count=2, html=True)
+        self.assertContains(response, "This field is required", count=2)
 
     def test_edit(self):
         response = self.post(post_data={'title': 'Edited site title',
@@ -115,7 +117,9 @@ class TestSettingEditView(BaseTestSettingView):
     def test_edit_invalid(self):
         response = self.post(post_data={'foo': 'bar'})
         self.assertContains(response, "The setting could not be saved due to errors.")
-        self.assertContains(response, "This field is required.")
+        self.assertContains(response, """<p class="error-message"><span>This field is required.</span></p>""",
+                            count=2, html=True)
+        self.assertContains(response, "This field is required", count=2)
 
     def test_edit(self):
         response = self.post(post_data={'title': 'Edited site title',
@@ -126,6 +130,19 @@ class TestSettingEditView(BaseTestSettingView):
         setting = TestSetting.objects.get(site=default_site)
         self.assertEqual(setting.title, 'Edited site title')
         self.assertEqual(setting.email, 'test@example.com')
+
+    def test_get_edit_current_site(self):
+        url = reverse('wagtailsettings:edit', args=('tests', 'testsetting'))
+        default_site = Site.objects.get(is_default_site=True)
+
+        response = self.client.get(url)
+        self.assertRedirects(response, status_code=302, expected_url='%s%s/' % (url, default_site.pk))
+
+    def test_get_edit_current_site_invalid(self):
+        Site.objects.all().delete()
+        url = reverse('wagtailsettings:edit', args=('tests', 'testsetting'))
+        response = self.client.get(url)
+        self.assertRedirects(response, status_code=302, expected_url='/admin/')
 
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'example.com', 'noneoftheabove.example.com'])

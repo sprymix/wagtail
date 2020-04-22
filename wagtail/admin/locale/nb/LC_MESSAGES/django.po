@@ -10,9 +10,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-02-16 13:12+0000\n"
-"Last-Translator: Stein Strindhaug <stein.strindhaug@gmail.com>\n"
+"POT-Creation-Date: 2019-10-16 18:00+0100\n"
+"PO-Revision-Date: 2019-10-16 17:04+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Norwegian Bokmål (http://www.transifex.com/torchbox/wagtail/"
 "language/nb/)\n"
 "MIME-Version: 1.0\n"
@@ -21,11 +21,32 @@ msgstr ""
 "Language: nb\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "None"
-msgstr "Ingen"
+msgid "Publish"
+msgstr "Publiser"
+
+msgid "Submit for moderation"
+msgstr "Send til godkjenning"
+
+msgid "Unpublish"
+msgstr "Avpublisér"
+
+msgid "Delete"
+msgstr "Slett"
+
+msgid "Page locked"
+msgstr "Siden er låst"
+
+msgid "Wagtail admin"
+msgstr "Wagtail admin"
+
+msgid "Sorry, you do not have permission to access this area."
+msgstr "Beklager, du har ikke tilgang på dette området."
 
 msgid "You do not have permission to access the admin"
 msgstr "Du har ikke tilgang på admin sidene"
+
+msgid "None"
+msgstr "Ingen"
 
 msgid "Scheduled publishing"
 msgstr "Planlagt publisering"
@@ -42,15 +63,6 @@ msgstr "Fremming"
 msgid "Settings"
 msgstr "Innstillinger"
 
-msgid "Search"
-msgstr "Søk"
-
-msgid "Search term"
-msgstr "Søkeord"
-
-msgid "URL"
-msgstr "URL"
-
 msgid "Enter password"
 msgstr "Skriv inn passord"
 
@@ -61,18 +73,8 @@ msgstr "Skriv inn %s"
 msgid "Enter your email address to reset your password"
 msgstr "Skriv inn din e-postadresse for å nullstille passord"
 
-msgid "Please fill your email address."
-msgstr "Vennligst fyll inn din e-postadresse."
-
-msgid ""
-"Sorry, you cannot reset your password here as your user account is managed "
-"by another server."
-msgstr ""
-"Beklager, du kan ikke nullstille passord her, din brukerkonto håndteres av "
-"en annen server."
-
-msgid "This email address is not recognised."
-msgstr "E-postadressen er ukjent."
+msgid "You cannot have multiple permission records for the same collection."
+msgstr "Du kan ikke ha flere tillatelsesoppføringer for samme samling."
 
 msgid "New title"
 msgstr "Ny tittel"
@@ -131,15 +133,6 @@ msgstr ""
 msgid "You cannot copy a page into itself when copying subpages"
 msgstr "Du kan ikke kopiere en side inn i seg selv når du kopierer undersider"
 
-msgid "Visibility"
-msgstr "Synlighet"
-
-msgid "This field is required."
-msgstr "Dette feltet er påkrevet."
-
-msgid "Please select at least one group."
-msgstr "Velg minst en gruppe."
-
 msgid "This slug is already in use"
 msgstr "Denne permalenken er allerede i bruk"
 
@@ -149,105 +142,89 @@ msgstr "Tidspunkt for publisering må være før tidspunkt for avpublisering"
 msgid "Expiry date/time must be in the future"
 msgstr "Tidspunkt for avpublisering må være en gang i fremtiden"
 
-msgid "You cannot have multiple permission records for the same collection."
-msgstr "Du kan ikke ha flere tillatelsesoppføringer for samme samling."
+msgid "Search"
+msgstr "Søk"
 
-msgid "Error 404: Page not found"
-msgstr "404 Feil: Fant ikke siden"
+msgid "Search term"
+msgstr "Søkeord"
 
-msgid "Error 404"
-msgstr "404 Feil"
+msgid "Visibility"
+msgstr "Synlighet"
 
-msgid "The requested page could not be found."
-msgstr "Den forespurte siden ble ikke funnet."
+msgid "This field is required."
+msgstr "Dette feltet er påkrevet."
 
-msgid "Go to Wagtail admin"
-msgstr "Gå til Wagtail admin"
+msgid "Please select at least one group."
+msgstr "Velg minst en gruppe."
 
-msgid "Account"
-msgstr "Konto"
+msgid "Catalan"
+msgstr "katalansk"
 
-msgid "Set gravatar"
-msgstr "Sett gravatar"
+msgid "German"
+msgstr "tysk"
 
-msgid ""
-"Your avatar image is provided by Gravatar and is connected to your email "
-"address. With a Gravatar account you can set an avatar for any number of "
-"other email addresses you use."
-msgstr ""
-"Ditt avatar-bilde blir levert av Gravatar og er knyttet til din e-"
-"postadresse. Med en Gravatar-konto kan du sette en avatar for alle dine e-"
-"postadresser."
+msgid "Greek"
+msgstr "gresk"
 
-msgid "Change password"
-msgstr "Endre passord"
+msgid "English"
+msgstr "engelsk"
 
-msgid "Change the password you use to log in."
-msgstr "Endre passordet du bruker for å logge inn."
+msgid "Spanish"
+msgstr "spansk"
 
-msgid "Notification preferences"
-msgstr "Varslingsinnstillinger"
+msgid "Finnish"
+msgstr "finsk"
 
-msgid "Choose which email notifications to receive."
-msgstr "Velg hvilke e-postvarsler du vil motta."
+msgid "French"
+msgstr "fransk"
 
-msgid "Language preferences"
-msgstr "Språkinnstillinger"
+msgid "Galician"
+msgstr "galisisk"
 
-msgid "Choose the language you want to use here."
-msgstr "Velg språket du vil bruke her."
+msgid "Icelandic"
+msgstr "islandsk"
 
-msgid ""
-"Your password can't be changed here. Please contact a site administrator."
-msgstr ""
-"Passordet ditt kan ikke endres her. Kontakt en administrator for nettstedet."
+msgid "Italian"
+msgstr "italiensk"
 
-msgid "Language Preferences"
-msgstr "Språkinnstillinger"
+msgid "Korean"
+msgstr "Koreansk"
 
-msgid "Update"
-msgstr "Oppdatér"
+msgid "Lithuanian"
+msgstr "litauisk"
 
-msgid "Reset password"
-msgstr "Nullstill passord"
+msgid "Norwegian Bokmål"
+msgstr "norsk bokmål"
 
-msgid "Password change successful"
-msgstr "Passordendring utført"
+msgid "Netherlands Dutch"
+msgstr "nederlandsk"
 
-msgid "Login"
-msgstr "Logg inn"
+msgid "Persian"
+msgstr "Persisk"
 
-msgid "Set your new password"
-msgstr "Sett ditt nye passord"
+msgid "Polish"
+msgstr "polsk"
 
-msgid "The passwords do not match. Please try again."
-msgstr "Passordene stemmer ikke overens. Prøv igjen."
+msgid "Brazilian Portuguese"
+msgstr "brasiliansk portugisisk"
 
-msgid "Check your email"
-msgstr "Sjekk e-posten din"
+msgid "Portuguese"
+msgstr "portugisisk"
 
-msgid "A link to reset your password has been emailed to you."
-msgstr ""
-"En lenke for å nullstille passordet ditt har blitt sendt til din e-"
-"postadresse."
+msgid "Romanian"
+msgstr "rumensk"
 
-msgid "Please follow the link below to reset your password:"
-msgstr "Vennligst følg lenken under for å nullstille ditt passord:"
+msgid "Russian"
+msgstr "russisk"
 
-msgid "Your username (in case you've forgotten):"
-msgstr "Brukernavnet ditt (i tilfelle du hadde glemt det):"
+msgid "Swedish"
+msgstr "Svensk"
 
-msgid "Password reset"
-msgstr "Passordnullstilling"
+msgid "Slovak"
+msgstr "Slovakisk"
 
-msgid "Reset your password"
-msgstr "Nullstill ditt passord"
-
-msgid "Edit"
-msgstr "Redigér"
-
-msgid "Delete"
-msgstr "Slett"
+msgid "Ukrainian"
+msgstr "Ukrainsk"
 
 msgid "Page"
 msgstr "Side"
@@ -263,9 +240,6 @@ msgstr "Ingen resultater"
 
 msgid "Server Error"
 msgstr "Serverfeil"
-
-msgid "See children"
-msgstr "Se undersider"
 
 msgid "See all"
 msgstr "Se alle"
@@ -291,14 +265,181 @@ msgstr "Angre"
 msgid "Redo"
 msgstr "Gjør om"
 
+msgid "Reload the page"
+msgstr "Oppdater siden"
+
+msgid "Reload saved content"
+msgstr "Oppdater lagret innhold"
+
+msgid "Show latest content"
+msgstr "Vis siste innhold"
+
+msgid "Show error"
+msgstr "Vis feil"
+
+msgid ""
+"The editor just crashed. Content has been reset to the last saved version."
+msgstr "Editoren krasjet. Innholdet er tilbakestilt til sist lagrede versjon."
+
+msgid "Close"
+msgstr "Lukk"
+
+msgid "Edit '{title}'"
+msgstr "Endre '{title}'"
+
+msgid "January"
+msgstr "januar"
+
+msgid "February"
+msgstr "februar"
+
+msgid "March"
+msgstr "mars"
+
+msgid "April"
+msgstr "april"
+
+msgid "May"
+msgstr "mai"
+
+msgid "June"
+msgstr "juni"
+
+msgid "July"
+msgstr "juli"
+
+msgid "August"
+msgstr "august"
+
+msgid "September"
+msgstr "september"
+
+msgid "October"
+msgstr "oktober"
+
+msgid "November"
+msgstr "november"
+
+msgid "December"
+msgstr "desember"
+
+msgid "Sun"
+msgstr "Søn"
+
+msgid "Mon"
+msgstr "Man"
+
+msgid "Tue"
+msgstr "Tir"
+
+msgid "Wed"
+msgstr "Ons"
+
+msgid "Thu"
+msgstr "Tor"
+
+msgid "Fri"
+msgstr "Fre"
+
+msgid "Sat"
+msgstr "Lør"
+
+msgid "Error 404: Page not found"
+msgstr "404 Feil: Fant ikke siden"
+
+msgid "Error 404"
+msgstr "404 Feil"
+
+msgid "The requested page could not be found."
+msgstr "Den forespurte siden ble ikke funnet."
+
+msgid "Go to Wagtail admin"
+msgstr "Gå til Wagtail admin"
+
+msgid "Account"
+msgstr "Konto"
+
+msgid "Change profile picture"
+msgstr "Bytt profilbilde"
+
+msgid "Your current profile picture:"
+msgstr "Nåværende profilbilde"
+
+msgid "Update"
+msgstr "Oppdatér"
+
+msgid "Change email"
+msgstr "Endre e-post"
+
+msgid "Change password"
+msgstr "Endre passord"
+
+msgid ""
+"Your password can't be changed here. Please contact a site administrator."
+msgstr ""
+"Passordet ditt kan ikke endres her. Kontakt en administrator for nettstedet."
+
+msgid "Set Time Zone"
+msgstr "Velg tidssone"
+
+msgid "Language Preferences"
+msgstr "Språkinnstillinger"
+
+msgid "Notification preferences"
+msgstr "Varslingsinnstillinger"
+
+msgid "Reset password"
+msgstr "Nullstill passord"
+
+msgid "Password change successful"
+msgstr "Passordendring utført"
+
+msgid "Login"
+msgstr "Logg inn"
+
+msgid "Set your new password"
+msgstr "Sett ditt nye passord"
+
+msgid "Invalid password reset link"
+msgstr "Ugyldig passordnullstillings-lenke"
+
+msgid ""
+"The password reset link was invalid, possibly because it has already been "
+"used."
+msgstr ""
+"Passordnullstillings-lenken var ugyldig, muligens fordi den allerede har "
+"blitt brukt."
+
+msgid "Request a new password reset"
+msgstr "Gjør en ny passordnullstilling"
+
+msgid "Check your email"
+msgstr "Sjekk e-posten din"
+
+msgid ""
+"A link to reset your password has been emailed to you if an account exists "
+"for this address."
+msgstr ""
+"En lenke for å nullstille passordet ditt har blitt sendt til din e-"
+"postadresse dersom det finnes en konto for denne adressen."
+
+msgid "Please follow the link below to reset your password:"
+msgstr "Vennligst følg lenken under for å nullstille ditt passord:"
+
+msgid "Your username (in case you've forgotten):"
+msgstr "Brukernavnet ditt (i tilfelle du hadde glemt det):"
+
+msgid "Password reset"
+msgstr "Passordnullstilling"
+
+msgid "Reset your password"
+msgstr "Nullstill ditt passord"
+
 msgid "Dashboard"
 msgstr "Kontrollpanel"
 
 msgid "Menu"
 msgstr "Meny"
-
-msgid "Add another"
-msgstr "Legg til en ny"
 
 msgid "Move up"
 msgstr "Flytt opp"
@@ -317,22 +458,6 @@ msgstr "Ekstern lenke"
 
 msgid "Email link"
 msgstr "E-postlenke"
-
-#, python-format
-msgid ""
-"\n"
-"        There is one match\n"
-"    "
-msgid_plural ""
-"\n"
-"        There are %(counter)s matches\n"
-"    "
-msgstr[0] ""
-"\n"
-"Det er ett treff"
-msgstr[1] ""
-"\n"
-"Det er %(counter)s treff"
 
 msgid "Choose"
 msgstr "Velg"
@@ -455,6 +580,9 @@ msgstr "Godkjenn"
 msgid "Reject"
 msgstr "Avslå"
 
+msgid "Edit"
+msgstr "Redigér"
+
 msgid "Preview"
 msgstr "Forhåndsvis"
 
@@ -479,24 +607,6 @@ msgstr "Publisert"
 
 msgid "Site summary"
 msgstr "Oppsummering for nettstedet"
-
-#, python-format
-msgid ""
-"\n"
-"        <span>%(total)s</span> Page\n"
-"    "
-msgid_plural ""
-"\n"
-"        <span>%(total)s</span> Pages\n"
-"    "
-msgstr[0] ""
-"\n"
-"<span>%(total)s</span> side\n"
-" "
-msgstr[1] ""
-"\n"
-"<span>%(total)s</span> sider\n"
-" "
 
 msgid "Sign in"
 msgstr "Logg inn"
@@ -572,6 +682,21 @@ msgstr "Låst"
 
 msgid "Unlocked"
 msgstr "Ulåst"
+
+msgid "Publishing…"
+msgstr "Publiserer..."
+
+msgid "Publish this revision"
+msgstr "Publiser denne revisjonen"
+
+msgid "Saving…"
+msgstr "Lagrer..."
+
+msgid "Replace current draft"
+msgstr "Erstatt nåværende kladd"
+
+msgid "Save draft"
+msgstr "Lagre kladd"
 
 #, python-format
 msgid "Create a page in %(title)s"
@@ -655,9 +780,6 @@ msgstr "Ja, flytt denne siden"
 msgid "Unpublish %(title)s"
 msgstr "Avpublisér %(title)s"
 
-msgid "Unpublish"
-msgstr "Avpublisér"
-
 msgid "Are you sure you want to unpublish this page?"
 msgstr "Er du sikker på at du vil avpublisere denne siden?"
 
@@ -710,21 +832,6 @@ msgstr "Ny %(page_type)s"
 msgid "New"
 msgstr "Ny"
 
-msgid "Saving…"
-msgstr "Lagrer..."
-
-msgid "Save draft"
-msgstr "Lagre kladd"
-
-msgid "Publishing…"
-msgstr "Publiserer..."
-
-msgid "Publish"
-msgstr "Publiser"
-
-msgid "Submit for moderation"
-msgstr "Send til godkjenning"
-
 msgid "This page has unsaved changes."
 msgstr "Denne siden har endringer som ikke er lagret."
 
@@ -735,15 +842,6 @@ msgstr "Redigerer %(page_type)s: %(title)s"
 #, python-format
 msgid "Editing %(page_type)s <span>%(title)s</span>"
 msgstr "Redigerer %(page_type)s: <span>%(title)s</span>"
-
-msgid "Page locked"
-msgstr "Siden er låst"
-
-msgid "Replace current draft"
-msgstr "Erstatt nåværende kladd"
-
-msgid "Publish this revision"
-msgstr "Publiser denne revisjonen"
 
 #, python-format
 msgid "Last modified: %(last_mod)s"
@@ -877,9 +975,6 @@ msgstr "Denne siden er unntatt offentlig visning"
 msgid "Disable ordering of child pages"
 msgstr "Skru av rekkefølge på undersider"
 
-msgid "Order"
-msgstr "Rekkefølge"
-
 msgid "Enable ordering of child pages"
 msgstr "Skru på rekkefølge på undersider"
 
@@ -905,9 +1000,6 @@ msgstr ""
 "Kan ikke forhåndsvise siden fordi det er feil som må fikses. \n"
 "Lukk denne fanen, rediger siden for å korrigere feilene og bruk "
 "forhåndsvisning på nytt."
-
-msgid "Close"
-msgstr "Lukk"
 
 #, python-format
 msgid "Comparing %(title)s"
@@ -1059,6 +1151,10 @@ msgstr "Ingen sider bruker"
 msgid "Collection"
 msgstr "Samling"
 
+#, python-format
+msgid "Page %(page_num)s of %(total_pages)s."
+msgstr "Side %(page_num)s av %(total_pages)s."
+
 msgid "Root"
 msgstr "Rot"
 
@@ -1068,63 +1164,6 @@ msgstr "Hjem"
 msgid "All collections"
 msgstr "Alle samlinger"
 
-msgid "January"
-msgstr "januar"
-
-msgid "February"
-msgstr "februar"
-
-msgid "March"
-msgstr "mars"
-
-msgid "April"
-msgstr "april"
-
-msgid "May"
-msgstr "mai"
-
-msgid "June"
-msgstr "juni"
-
-msgid "July"
-msgstr "juli"
-
-msgid "August"
-msgstr "august"
-
-msgid "September"
-msgstr "september"
-
-msgid "October"
-msgstr "oktober"
-
-msgid "November"
-msgstr "november"
-
-msgid "December"
-msgstr "desember"
-
-msgid "Sun"
-msgstr "Søn"
-
-msgid "Mon"
-msgstr "Man"
-
-msgid "Tue"
-msgstr "Tir"
-
-msgid "Wed"
-msgstr "Ons"
-
-msgid "Thu"
-msgstr "Tor"
-
-msgid "Fri"
-msgstr "Fre"
-
-msgid "Sat"
-msgstr "Lør"
-
 msgid "Edit your account"
 msgstr "Endre din konto"
 
@@ -1133,10 +1172,6 @@ msgstr "Kontoinnstillinger"
 
 msgid "Log out"
 msgstr "Logg ut"
-
-#, python-format
-msgid "Page %(page_num)s of %(total_pages)s."
-msgstr "Side %(page_num)s av %(total_pages)s."
 
 msgid "Other searches"
 msgstr "Andre søk"
@@ -1150,23 +1185,6 @@ msgstr ""
 "programvaren. Vær vennlig å <a href=\"http://browsehappy.com/\">oppgradere "
 "nettleseren din</a>."
 
-msgid ""
-"\n"
-"            Javascript is required to use Wagtail, but it is currently "
-"disabled.<br />\n"
-"            Here are the <a href=\"http://www.enable-javascript.com/\" "
-"target=\"_blank\" rel=\"noopener\">instructions how to enable JavaScript in "
-"your web browser</a>.\n"
-"        "
-msgstr ""
-"\n"
-"            Javascript er påkrevd for å bruke Wagtail, men det er for "
-"øyeblikket deaktivert.<br />\n"
-"            Her finner du <a href=\"http://www.enable-javascript.com/no/\" "
-"target=\"_blank\" rel=\"noopener\">instruksjoner for hvordan man aktiverer "
-"JavaScript i nettleseren</a>.\n"
-"        "
-
 msgid "Go to Wagtail admin interface"
 msgstr "Gå til Wagtail administrasjonsgrensesnitt"
 
@@ -1179,82 +1197,16 @@ msgstr "Vis i Utforsker"
 msgid "Test"
 msgstr "Test"
 
-msgid "Catalan"
-msgstr "katalansk"
-
-msgid "German"
-msgstr "tysk"
-
-msgid "Greek"
-msgstr "gresk"
-
-msgid "English"
-msgstr "engelsk"
-
-msgid "Spanish"
-msgstr "spansk"
-
-msgid "Finnish"
-msgstr "finsk"
-
-msgid "French"
-msgstr "fransk"
-
-msgid "Galician"
-msgstr "galisisk"
-
-msgid "Icelandic"
-msgstr "islandsk"
-
-msgid "Italian"
-msgstr "italiensk"
-
-msgid "Korean"
-msgstr "Koreansk"
-
-msgid "Lithuanian"
-msgstr "litauisk"
-
-msgid "Norwegian Bokmål"
-msgstr "norsk bokmål"
-
-msgid "Netherlands Dutch"
-msgstr "nederlandsk"
-
-msgid "Persian"
-msgstr "Persisk"
-
-msgid "Polish"
-msgstr "polsk"
-
-msgid "Brazilian Portuguese"
-msgstr "brasiliansk portugisisk"
-
-msgid "Portuguese"
-msgstr "portugisisk"
-
-msgid "Romanian"
-msgstr "rumensk"
-
-msgid "Russian"
-msgstr "russisk"
-
-msgid "Swedish"
-msgstr "Svensk"
-
-msgid "Slovak"
-msgstr "Slovakisk"
-
-msgid "Chinese (China)"
-msgstr "kinesisk (Kina)"
-
-msgid "Sorry, you do not have permission to access this area."
-msgstr "Beklager, du har ikke tilgang på dette området."
-
 msgid "Your password has been changed successfully!"
 msgstr "Passordet ditt er endret."
 
+msgid "Your email has been changed successfully!"
+msgstr "E-posten din er endret."
+
 msgid "Your preferences have been updated."
+msgstr "Dine innstillinger har blitt oppdatert."
+
+msgid "Your preferences have been updated successfully!"
 msgstr "Dine innstillinger har blitt oppdatert."
 
 msgid "You have been successfully logged out."
@@ -1269,11 +1221,9 @@ msgstr "Legg til en samling"
 msgid "Add collection"
 msgstr "Legg til samling"
 
-#, python-brace-format
 msgid "Collection '{0}' created."
 msgstr "Samlingen \"{0}\" er opprettet."
 
-#, python-brace-format
 msgid "Collection '{0}' updated."
 msgstr "Samlingen \"{0}\" er oppdatert."
 
@@ -1283,7 +1233,6 @@ msgstr "Samlingen kunne ikke lagres grunnet feil."
 msgid "Delete collection"
 msgstr "Slett samlingen"
 
-#, python-brace-format
 msgid "Collection '{0}' deleted."
 msgstr "Samlingen \"{0}\" er slettet."
 
@@ -1293,18 +1242,15 @@ msgstr "Er du sikker på at du vil slette denne samlingen?"
 msgid "Editing"
 msgstr "Redigerer"
 
-#, python-brace-format
 msgid "Page '{0}' created and scheduled for publishing."
 msgstr "Siden \"{0}\" er opprettet og planlagt for publisering."
 
 msgid "View live"
 msgstr "Vis publisert"
 
-#, python-brace-format
 msgid "Page '{0}' created and published."
 msgstr "Siden \"{0}\" er opprettet og publisert."
 
-#, python-brace-format
 msgid "Page '{0}' created and submitted for moderation."
 msgstr "Siden \"{0}\" er opprettet og sendt til godkjenning."
 
@@ -1314,43 +1260,34 @@ msgstr "Vis kladd"
 msgid "Failed to send notifications to moderators"
 msgstr "Klarte ikke å sende varsler til moderatorene"
 
-#, python-brace-format
 msgid "Page '{0}' created."
 msgstr "Siden \"{0}\" er opprettet."
 
 msgid "The page could not be created due to validation errors"
 msgstr "Siden kunne ikke opprettes grunnet valideringsfeil."
 
-#, python-brace-format
 msgid "Revision from {0} of page '{1}' has been scheduled for publishing."
 msgstr "Revisjonen fra {0} av siden «{1}» har blitt planlagt for publisering."
 
-#, python-brace-format
 msgid "Page '{0}' is live and this revision has been scheduled for publishing."
 msgstr ""
 "Siden \"{0}\" er publisert og denne revisjonen er planlagt for publisering."
 
-#, python-brace-format
 msgid "Page '{0}' has been scheduled for publishing."
 msgstr "Siden \"{0}\" er planlagt for publisering."
 
-#, python-brace-format
 msgid "Revision from {0} of page '{1}' has been published."
 msgstr "Revisjonen fra {0} av siden «{1}» har blitt publisert."
 
-#, python-brace-format
 msgid "Page '{0}' has been published."
 msgstr "Siden \"{0}\" er publisert."
 
-#, python-brace-format
 msgid "Page '{0}' has been submitted for moderation."
 msgstr "Siden \"{0}\" er sendt til godkjenning."
 
-#, python-brace-format
 msgid "Page '{0}' has been replaced with revision from {1}."
 msgstr "Siden «{0}» har blitt erstattet av revisjonen fra {1}."
 
-#, python-brace-format
 msgid "Page '{0}' has been updated."
 msgstr "Siden \"{0}\" er oppdatert."
 
@@ -1366,49 +1303,39 @@ msgstr "Sammenlign med publisert versjon"
 msgid "This page is currently awaiting moderation"
 msgstr "Denne siden påventer godkjenning"
 
-#, python-brace-format
 msgid "Page '{0}' deleted."
 msgstr "Siden \"{0}\" er slettet."
 
-#, python-brace-format
 msgid "Page '{0}' unpublished."
 msgstr "Siden \"{0}\" er avpublisert."
 
-#, python-brace-format
 msgid "Page '{0}' moved."
 msgstr "Siden \"{0}\" er flyttet."
 
-#, python-brace-format
 msgid "Page '{0}' and {1} subpages copied."
 msgstr "Siden \"{0}\" og {1} undersider kopiert."
 
-#, python-brace-format
 msgid "Page '{0}' copied."
 msgstr "Siden \"{0}\" kopiert."
 
-#, python-brace-format
 msgid "The page '{0}' is not currently awaiting moderation."
 msgstr "Siden \"{0}\" påventer ikke godkjenning."
 
-#, python-brace-format
 msgid "Page '{0}' published."
 msgstr "Siden \"{0}\" er publisert."
 
 msgid "Failed to send approval notifications"
 msgstr "Klarte ikke å sende varsel om godkjenninger"
 
-#, python-brace-format
 msgid "Page '{0}' rejected for publication."
 msgstr "Siden \"{0}\" ble avvist for publikasjon."
 
 msgid "Failed to send rejection notifications"
 msgstr "Klarte ikke å sende varsel om avvisninger"
 
-#, python-brace-format
 msgid "Page '{0}' is now locked."
 msgstr "Siden \"{0}\" er nå låst."
 
-#, python-brace-format
 msgid "Page '{0}' is now unlocked."
 msgstr "Siden \"{0}\" er nå ulåst."
 
@@ -1426,60 +1353,38 @@ msgstr "Tidligste"
 msgid "Latest"
 msgstr "Siste"
 
-#, python-brace-format
 msgid "revision {0} of \"{1}\""
 msgstr "revisjon {0} av \"{1}\""
 
-#, python-brace-format
 msgid "Revision {0} of \"{1}\" unscheduled."
 msgstr "Revisjon {0} av \"{1}\" avbrutt."
-
-#, python-brace-format
-msgid "Edit '{title}'"
-msgstr "Endre '{title}'"
-
-#, python-brace-format
-msgid "Preview draft version of '{title}'"
-msgstr "Forhåndsvis kladd av «{title}»"
-
-#, python-brace-format
-msgid "View live version of '{title}'"
-msgstr "Vis publisert versjon av  «{title}»"
-
-#, python-brace-format
-msgid "Add a child page to '{title}' "
-msgstr "Legg til underside til «{title}»"
 
 msgid "More"
 msgstr "Mer"
 
-#, python-brace-format
-msgid "View more options for '{title}'"
-msgstr "Vis flere valgmuligheter for «{title}»"
+msgid "Set profile picture"
+msgstr "Velg profilbilde"
 
-#, python-brace-format
-msgid "Move page '{title}'"
-msgstr "Flytt siden «{title}»"
+msgid "Change the email address linked to your account."
+msgstr "Endre e-postadressen knyttet til kontoen din."
 
-#, python-brace-format
-msgid "Copy page '{title}'"
-msgstr "Kopier siden «{title}»"
+msgid "Change the password you use to log in."
+msgstr "Endre passordet du bruker for å logge inn."
 
-#, python-brace-format
-msgid "Delete page '{title}'"
-msgstr "Slett siden «{title}»"
+msgid "Choose which email notifications to receive."
+msgstr "Velg hvilke e-postvarsler du vil motta."
 
-#, python-brace-format
-msgid "Unpublish page '{title}'"
-msgstr "Avpublisér siden «{title}»"
+msgid "Language preferences"
+msgstr "Språkinnstillinger"
 
-#, python-brace-format
-msgid "View revision history for '{title}'"
-msgstr "Vis revisjonshistorikken til siden «{title}»"
+msgid "Choose the language you want to use here."
+msgstr "Velg språket du vil bruke her."
 
-#, python-brace-format
-msgid "Heading {level}"
-msgstr "Overskrift {level}"
+msgid "Current Time Zone"
+msgstr "Nåværende tidssone"
+
+msgid "Choose your current time zone."
+msgstr "Velg din nåværende tidssone."
 
 msgid "Bulleted list"
 msgstr "Punktliste"

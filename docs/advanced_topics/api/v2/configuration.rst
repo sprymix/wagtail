@@ -1,3 +1,5 @@
+.. _api_v2_configuration:
+
 ==================================
 Wagtail API v2 Configuration Guide
 ==================================
@@ -125,7 +127,7 @@ For example:
     class BlogPage(Page):
         published_date = models.DateTimeField()
         body = RichTextField()
-        feed_image = models.ForeignKey('wagtailimages.Image', on_delete=models.CASCADE, ...)
+        feed_image = models.ForeignKey('wagtailimages.Image', on_delete=models.SET_NULL, null=True, ...)
         private_field = models.CharField(max_length=255)
 
         # Export fields over the API
@@ -157,7 +159,7 @@ JSON format. You can override the serialiser for any field using the
 
         api_fields = [
             # Change the format of the published_date field to "Thursday 06 April 2017"
-            APIField('published_date', serializer=DateField(format='%A $d %B %Y')),
+            APIField('published_date', serializer=DateField(format='%A %d %B %Y')),
             ...
         ]
 
@@ -228,6 +230,7 @@ This would add the following to the JSON:
             "meta": {
                 "type": "wagtailimages.Image",
                 "detail_url": "http://www.example.com/api/v2/images/12/",
+                "download_url": "/media/images/a_test_image.jpg",
                 "tags": []
             },
             "title": "A test image",
@@ -235,11 +238,17 @@ This would add the following to the JSON:
             "height": 1125
         },
         "feed_image_thumbnail": {
-            "url": "http://www.example.com/media/images/a_test_image.fill-100x100.jpg",
+            "url": "/media/images/a_test_image.fill-100x100.jpg",
             "width": 100,
             "height": 100
         }
     }
+
+
+Note: ``download_url`` is the original uploaded file path, whereas
+``feed_image_thumbnail['url']`` is the url of the rendered image.
+When you are using another storage backend, such as S3, ``download_url`` will return
+a URL to the image if your media files are properly configured.
 
 Additional settings
 ===================

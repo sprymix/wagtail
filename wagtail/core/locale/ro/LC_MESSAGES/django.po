@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Dan Braghis, 2014-2018
+# Dan Braghis, 2014-2019
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 23:38+0000\n"
-"Last-Translator: Dan Braghis\n"
+"POT-Creation-Date: 2019-10-16 17:59+0100\n"
+"PO-Revision-Date: 2019-10-16 17:05+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/torchbox/wagtail/language/"
 "ro/)\n"
 "MIME-Version: 1.0\n"
@@ -20,9 +20,8 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?"
 "2:1));\n"
 
-#, python-brace-format
-msgid "{label}: this block has no options."
-msgstr "{label}: acest block nu are nici o opțiune."
+msgid "Wagtail core"
+msgstr "Nucleu Wagtail"
 
 msgid "This block has no options."
 msgstr "Acest bloc nu are nici o opțiune."
@@ -304,6 +303,9 @@ msgstr "permisiune"
 
 msgid "group collection permission"
 msgstr "permisiune grup colecție"
+
+msgid "group collection permissions"
+msgstr "permisiuni grup colecție"
 
 msgid "Log in"
 msgstr "Logare"

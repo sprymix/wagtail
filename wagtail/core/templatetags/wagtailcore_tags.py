@@ -1,25 +1,38 @@
 from django import template
+from django.shortcuts import reverse
 from django.template.defaulttags import token_kwargs
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 
-from wagtail import __version__
+from wagtail import VERSION, __version__
 from wagtail.core.models import Page
 from wagtail.core.rich_text import RichText, expand_db_html
+from wagtail.utils.version import get_main_version
 
 register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def pageurl(context, page):
+def pageurl(context, page, fallback=None):
     """
     Outputs a page's URL as relative (/foo/bar/) if it's within the same site as the
     current page, or absolute (http://example.com/foo/bar/) if not.
+    If kwargs contains a fallback view name and page is None, the fallback view url will be returned.
     """
+    if page is None and fallback:
+        return reverse(fallback)
+
+    if not hasattr(page, 'relative_url'):
+        raise ValueError("pageurl tag expected a Page object, got %r" % page)
+
     try:
         current_site = context['request'].site
     except (KeyError, AttributeError):
         # request.site not available in the current context; fall back on page.url
+        return page.url
+
+    if current_site is None:
+        # request.site is set to None; fall back on page.url
         return page.url
 
     # Pass page.relative_url the request object, which may contain a cached copy of
@@ -31,27 +44,50 @@ def pageurl(context, page):
 
 @register.simple_tag(takes_context=True)
 def slugurl(context, slug):
-    """Returns the URL for the page that has the given slug."""
-    page = Page.objects.filter(slug=slug).first()
+    """
+    Returns the URL for the page that has the given slug.
+
+    First tries to find a page on the current site. If that fails or a request
+    is not available in the context, then returns the URL for the first page
+    that matches the slug on any site.
+    """
+
+    page = None
+    try:
+        current_site = context['request'].site
+    except (KeyError, AttributeError):
+        # No site object found - allow the fallback below to take place.
+        pass
+    else:
+        if current_site is not None:
+            page = Page.objects.in_site(current_site).filter(slug=slug).first()
+
+    # If no page is found, fall back to searching the whole tree.
+    if page is None:
+        page = Page.objects.filter(slug=slug).first()
 
     if page:
         # call pageurl() instead of page.relative_url() here so we get the ``accepts_kwarg`` logic
         return pageurl(context, page)
-    else:
-        return None
-
-    try:
-        current_site = context['request'].site
-    except (KeyError, AttributeError):
-        # request.site not available in the current context; fall back on page.url
-        return page.url
-
-    return page.relative_url(current_site)
 
 
 @register.simple_tag
 def wagtail_version():
     return __version__
+
+
+@register.simple_tag
+def wagtail_documentation_path():
+    major, minor, patch, release, num = VERSION
+    if release == 'final':
+        return 'https://docs.wagtail.io/en/v%s' % __version__
+    else:
+        return 'https://docs.wagtail.io/en/latest'
+
+
+@register.simple_tag
+def wagtail_release_notes_path():
+    return "%s.html" % get_main_version(VERSION)
 
 
 @register.filter
@@ -62,7 +98,10 @@ def richtext(value):
     elif value is None:
         html = ''
     else:
-        html = expand_db_html(value)
+        if isinstance(value, str):
+            html = expand_db_html(value)
+        else:
+            raise TypeError("'richtext' template filter received an invalid value; expected string, got {}.".format(type(value)))
 
     return mark_safe('<div class="rich-text">' + html + '</div>')
 
@@ -91,7 +130,7 @@ class IncludeBlockNode(template.Node):
 
             return value.render_as_block(context=new_context)
         else:
-            return force_text(value)
+            return force_str(value)
 
 
 @register.tag

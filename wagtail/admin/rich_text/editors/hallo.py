@@ -2,19 +2,20 @@ import json
 from collections import OrderedDict
 
 from django.forms import Media, widgets
+from django.utils.functional import cached_property
 
 from wagtail.admin.edit_handlers import RichTextFieldPanel
 from wagtail.admin.rich_text.converters.editor_html import EditorHTMLConverter
+from wagtail.admin.staticfiles import versioned_static
 from wagtail.core.rich_text import features
-from wagtail.utils.widgets import WidgetWithScript
 
 
 class HalloPlugin:
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
         self.options = kwargs.get('options', {})
-        self.js = kwargs.get('js', None)
-        self.css = kwargs.get('css', None)
+        self.js = kwargs.get('js', [])
+        self.css = kwargs.get('css', {})
         self.order = kwargs.get('order', 100)
 
     def construct_plugins_list(self, plugins):
@@ -23,7 +24,12 @@ class HalloPlugin:
 
     @property
     def media(self):
-        return Media(js=self.js, css=self.css)
+        js = [versioned_static(js_file) for js_file in self.js]
+        css = {}
+        for media_type, css_files in self.css.items():
+            css[media_type] = [versioned_static(css_file) for css_file in css_files]
+
+        return Media(js=js, css=css)
 
 
 class HalloFormatPlugin(HalloPlugin):
@@ -41,9 +47,11 @@ class HalloFormatPlugin(HalloPlugin):
 
 
 class HalloHeadingPlugin(HalloPlugin):
+    default_order = 20
+
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'halloheadings')
-        kwargs.setdefault('order', 20)
+        kwargs.setdefault('order', self.default_order)
         self.element = kwargs.pop('element')
         super().__init__(**kwargs)
 
@@ -66,17 +74,25 @@ class HalloListPlugin(HalloPlugin):
         plugins[self.name]['lists'][self.list_type] = True
 
 
+class HalloRequireParagraphsPlugin(HalloPlugin):
+    @property
+    def media(self):
+        return Media(js=[
+            versioned_static('wagtailadmin/js/hallo-plugins/hallo-requireparagraphs.js'),
+        ]) + super().media
+
+
 # Plugins which are always imported, and cannot be enabled/disabled via 'features'
 CORE_HALLO_PLUGINS = [
     HalloPlugin(name='halloreundo', order=50),
-    HalloPlugin(name='hallorequireparagraphs', js=[
-        'wagtailadmin/js/hallo-plugins/hallo-requireparagraphs.js',
-    ]),
+    HalloRequireParagraphsPlugin(name='hallorequireparagraphs'),
     HalloHeadingPlugin(element='p')
 ]
 
 
-class HalloRichTextArea(WidgetWithScript, widgets.Textarea):
+class HalloRichTextArea(widgets.Textarea):
+    template_name = 'wagtailadmin/widgets/hallo_rich_text_area.html'
+
     # this class's constructor accepts a 'features' kwarg
     accepts_features = True
 
@@ -102,19 +118,19 @@ class HalloRichTextArea(WidgetWithScript, widgets.Textarea):
 
         super().__init__(*args, **kwargs)
 
-    def translate_value(self, value):
+    def format_value(self, value):
         # Convert database rich text representation to the format required by
         # the input field
+        value = super().format_value(value)
+
         if value is None:
             return None
 
         return self.converter.from_database_format(value)
 
-    def render(self, name, value, attrs=None):
-        translated_value = self.translate_value(value)
-        return super().render(name, translated_value, attrs)
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
 
-    def render_js_init(self, id_, name, value):
         if self.options is not None and 'plugins' in self.options:
             # explicit 'plugins' config passed in options, so use that
             plugin_data = self.options['plugins']
@@ -122,10 +138,9 @@ class HalloRichTextArea(WidgetWithScript, widgets.Textarea):
             plugin_data = OrderedDict()
             for plugin in self.plugins:
                 plugin.construct_plugins_list(plugin_data)
+        context['widget']['plugins_json'] = json.dumps(plugin_data)
 
-        return "makeHalloRichTextEditable({0}, {1});".format(
-            json.dumps(id_), json.dumps(plugin_data)
-        )
+        return context
 
     def value_from_datadict(self, data, files, name):
         original_value = super().value_from_datadict(data, files, name)
@@ -133,13 +148,13 @@ class HalloRichTextArea(WidgetWithScript, widgets.Textarea):
             return None
         return self.converter.to_database_format(original_value)
 
-    @property
+    @cached_property
     def media(self):
         media = Media(js=[
-            'wagtailadmin/js/vendor/hallo.js',
-            'wagtailadmin/js/hallo-bootstrap.js',
+            versioned_static('wagtailadmin/js/vendor/hallo.js'),
+            versioned_static('wagtailadmin/js/hallo-bootstrap.js'),
         ], css={
-            'all': ['wagtailadmin/css/panels/hallo.css']
+            'all': [versioned_static('wagtailadmin/css/panels/hallo.css')]
         })
 
         for plugin in self.plugins:

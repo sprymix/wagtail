@@ -15,8 +15,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 16:00+0000\n"
+"POT-Creation-Date: 2019-10-16 17:59+0100\n"
+"PO-Revision-Date: 2019-10-16 17:05+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Greek (http://www.transifex.com/torchbox/wagtail/language/"
 "el/)\n"
@@ -25,9 +25,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: el\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "GIF, JPEG, PNG"
-msgstr "GIF, JPEG, PNG"
 
 #, python-format
 msgid ""
@@ -145,29 +142,6 @@ msgstr "Δημοφιλείς ετικέτες"
 msgid "Uploading…"
 msgstr "Ανέβασμα εικόνας …"
 
-msgid "Server Error"
-msgstr "Σφάλμα"
-
-msgid "Report this error to your webmaster with the following information:"
-msgstr "Αναφέρατε το σφάλμα στο διαχειριστή με τις εξής πληροφορίες:"
-
-#, python-format
-msgid ""
-"\n"
-"            There is one match\n"
-"        "
-msgid_plural ""
-"\n"
-"            There are %(counter)s matches\n"
-"        "
-msgstr[0] ""
-"\n"
-"Βρέθηκε ένα αποτέλεσμα"
-msgstr[1] ""
-"\n"
-"            Βρέθηκαν %(counter)s αποτελέσματα\n"
-"        "
-
 msgid "Latest images"
 msgstr "Τελευταίες εικόνες"
 
@@ -176,24 +150,6 @@ msgstr "Επιλογή τύπου"
 
 msgid "Insert image"
 msgstr "Εισαγωγή εικόνας"
-
-#, python-format
-msgid ""
-"\n"
-"        <span>%(total)s</span> Image\n"
-"    "
-msgid_plural ""
-"\n"
-"        <span>%(total)s</span> Images\n"
-"    "
-msgstr[0] ""
-"\n"
-"                <span>%(total)s</span> Εικόνα\n"
-"            "
-msgstr[1] ""
-"\n"
-"                <span>%(total)s</span> Εικόνες\n"
-"            "
 
 msgid "Change image file:"
 msgstr "Αλλαγή αρχείου εικόνας:"
@@ -223,21 +179,11 @@ msgstr "Επεξεργασία εικόνας %(title)s"
 msgid "Editing"
 msgstr "Διόρθωση"
 
-msgid "Focal point (optional)"
-msgstr "Κομβικό σημείο (οπτική)"
-
-msgid ""
-"To define this image's most important region, drag a box over the image "
-"below."
-msgstr ""
-"Για να ορίσετε αυτή η εικόνα είναι πιο σημαντική περιοχή, σύρετε ένα πλαίσιο "
-"πάνω από την εικόνα πιο κάτω."
+msgid "URL Generator"
+msgstr "Παραγωγή URL"
 
 msgid "Current focal point shown"
 msgstr "Τρέχον εστιακό σημείο παρουσιάζεται"
-
-msgid "URL Generator"
-msgstr "Παραγωγή URL"
 
 msgid "Max dimensions"
 msgstr "Μέγιστες διαστάσεις"
@@ -340,6 +286,12 @@ msgstr ""
 msgid "Sorry, upload failed."
 msgstr "Συγγνώμη, η μεταφόρτωση απέτυχε."
 
+msgid "Server Error"
+msgstr "Σφάλμα"
+
+msgid "Report this error to your webmaster with the following information:"
+msgstr "Αναφέρατε το σφάλμα στο διαχειριστή με τις εξής πληροφορίες:"
+
 msgid "Image updated."
 msgstr "Ενημέρωση εικόνας"
 
@@ -358,7 +310,6 @@ msgstr "Προσθήκη αδειών εικόνων"
 msgid "Search images"
 msgstr "Αναζήτηση εικόνων"
 
-#, python-brace-format
 msgid "Image '{0}' updated."
 msgstr "Η εικόνα '{0}' ενημερώθηκε."
 
@@ -375,11 +326,9 @@ msgstr ""
 "Το αρχείο προέλευσης της εικόνας δεν θα μπορεσε να βρεθεί. Παρακαλούμε να "
 "αλλάξετε την πηγή ή να διαγράψετε την εικόνα."
 
-#, python-brace-format
 msgid "Image '{0}' deleted."
 msgstr "Η εικόνα '{0}' διαγράφηκε."
 
-#, python-brace-format
 msgid "Image '{0}' added."
 msgstr "Η εικόνα '{0}' δημιουργήθηκε."
 

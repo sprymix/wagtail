@@ -41,13 +41,14 @@ SECRET_KEY = 'not needed'
 ROOT_URLCONF = 'wagtail.tests.urls'
 
 STATIC_URL = '/static/'
-STATIC_ROOT = STATIC_ROOT
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 
 USE_TZ = True
+
+LANGUAGE_CODE = "en"
 
 TEMPLATES = [
     {
@@ -88,10 +89,12 @@ MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
+    'wagtail.tests.middleware.BlockDodgyUserAgentMiddleware',
     'wagtail.core.middleware.SiteMiddleware',
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 )
@@ -155,6 +158,7 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',  # don't use the intentionally slow default password hasher
 )
 
+ALLOWED_HOSTS = ['localhost', 'testserver']
 
 WAGTAILSEARCH_BACKENDS = {
     'default': {
@@ -172,7 +176,11 @@ if os.environ.get('DATABASE_ENGINE') == 'django.db.backends.postgresql':
     }
 
 if 'ELASTICSEARCH_URL' in os.environ:
-    if os.environ.get('ELASTICSEARCH_VERSION') == '5':
+    if os.environ.get('ELASTICSEARCH_VERSION') == '7':
+        backend = 'wagtail.search.backends.elasticsearch7'
+    elif os.environ.get('ELASTICSEARCH_VERSION') == '6':
+        backend = 'wagtail.search.backends.elasticsearch6'
+    elif os.environ.get('ELASTICSEARCH_VERSION') == '5':
         backend = 'wagtail.search.backends.elasticsearch5'
     elif os.environ.get('ELASTICSEARCH_VERSION') == '2':
         backend = 'wagtail.search.backends.elasticsearch2'
@@ -211,4 +219,14 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
     'custom': {
         'WIDGET': 'wagtail.tests.testapp.rich_text.CustomRichTextArea'
     },
+}
+
+
+# Set a non-standard DEFAULT_AUTHENTICATION_CLASSES value, to verify that the
+# admin API still works with session-based auth regardless of this setting
+# (see https://github.com/wagtail/wagtail/issues/5585)
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+    ]
 }

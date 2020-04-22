@@ -1,8 +1,10 @@
 import json
 
+from django import forms
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 
+from wagtail.admin.staticfiles import versioned_static
 from wagtail.admin.widgets import AdminChooser
 from wagtail.documents.models import get_document_model
 
@@ -30,3 +32,10 @@ class AdminDocumentChooser(AdminChooser):
 
     def render_js_init(self, id_, name, value):
         return "createDocumentChooser({0});".format(json.dumps(id_))
+
+    @property
+    def media(self):
+        return forms.Media(js=[
+            versioned_static('wagtaildocs/js/document-chooser-modal.js'),
+            versioned_static('wagtaildocs/js/document-chooser.js'),
+        ])

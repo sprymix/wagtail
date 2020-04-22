@@ -4,14 +4,14 @@
 #
 # Translators:
 # Miłosz Miśkiewicz, 2016-2017
-# Miłosz Miśkiewicz, 2017-2018
+# Miłosz Miśkiewicz, 2017-2019
 # Miłosz Miśkiewicz, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-02-08 21:16+0000\n"
+"POT-Creation-Date: 2019-10-16 18:00+0100\n"
+"PO-Revision-Date: 2019-10-25 10:04+0000\n"
 "Last-Translator: Miłosz Miśkiewicz\n"
 "Language-Team: Polish (http://www.transifex.com/torchbox/wagtail/language/"
 "pl/)\n"
@@ -22,6 +22,9 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n"
 "%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n"
 "%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+
+msgid "Wagtail forms"
+msgstr "Formularze Wagtail"
 
 #, python-format
 msgid "%s submissions"
@@ -115,6 +118,12 @@ msgstr "tekst pomocniczy"
 
 msgid "Submission date"
 msgstr "Data zgłoszenia"
+
+msgid "Form"
+msgstr "Formularz"
+
+msgid "Landing page"
+msgstr "Landing page"
 
 msgid "to address"
 msgstr "do adresu"

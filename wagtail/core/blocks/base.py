@@ -5,13 +5,9 @@ from django import forms
 from django.core import checks
 from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
-
-# unicode_literals ensures that any render / __str__ methods returning HTML via calls to mark_safe / format_html
-# return a SafeText, not SafeBytes; necessary so that it doesn't get re-encoded when the template engine
-# calls force_text, which would cause it to lose its 'safe' flag
 
 __all__ = ['BaseBlock', 'Block', 'BoundBlock', 'DeclarativeSubBlocksMetaclass', 'BlockWidget', 'BlockField']
 
@@ -101,7 +97,7 @@ class Block(metaclass=BaseBlock):
     def set_name(self, name):
         self.name = name
         if not self.meta.label:
-            self.label = capfirst(force_text(name).replace('_', ' '))
+            self.label = capfirst(force_str(name).replace('_', ' '))
 
     @property
     def media(self):
@@ -256,7 +252,7 @@ class Block(metaclass=BaseBlock):
         Return a text rendering of 'value', suitable for display on templates. render() will fall back on
         this if the block does not define a 'template' property.
         """
-        return force_text(value)
+        return force_str(value)
 
     def get_searchable_content(self, value):
         """
@@ -358,19 +354,19 @@ class Block(metaclass=BaseBlock):
 
     def __eq__(self, other):
         """
-        The deep_deconstruct method in django.db.migrations.autodetector.MigrationAutodetector does not
-        recurse into arbitrary lists and dicts. As a result, when it is passed a field such as:
-            StreamField([
-                ('heading', CharBlock()),
-            ])
-        the CharBlock object will be left in its constructed form. This causes problems when
-        MigrationAutodetector compares two separate instances of the StreamField from different project
-        states: since the CharBlocks are different objects, it will report a change where there isn't one.
+        Implement equality on block objects so that two blocks with matching definitions are considered
+        equal. (Block objects are intended to be immutable with the exception of set_name(), so here
+        'matching definitions' means that both the 'name' property and the constructor args/kwargs - as
+        captured in _constructor_args - are equal on both blocks.)
 
-        To prevent this, we implement the equality operator on Block instances such that the two CharBlocks
-        are reported as equal. Since block objects are intended to be immutable with the exception of
-        set_name(), it is sufficient to compare the 'name' property and the constructor args/kwargs of the
-        two block objects. The 'deconstruct' method provides a convenient way to access the latter.
+        This was originally necessary as a workaround for https://code.djangoproject.com/ticket/24340
+        in Django <1.9; the deep_deconstruct function used to detect changes for migrations did not
+        recurse into the block lists, and left them as Block instances. This __eq__ method therefore
+        came into play when identifying changes within migrations.
+
+        As of Django >=1.9, this *probably* isn't required any more. However, it may be useful in
+        future as a way of identifying blocks that can be re-used within StreamField definitions
+        (https://github.com/wagtail/wagtail/issues/4298#issuecomment-367656028).
         """
 
         if not isinstance(other, Block):
@@ -485,7 +481,7 @@ class BlockWidget(forms.Widget):
         super().__init__(attrs=attrs)
         self.block_def = block_def
 
-    def render_with_errors(self, name, value, attrs=None, errors=None):
+    def render_with_errors(self, name, value, attrs=None, errors=None, renderer=None):
         bound_block = self.block_def.bind(value, prefix=name, errors=errors)
         js_initializer = self.block_def.js_initializer()
         if js_initializer:
@@ -501,12 +497,16 @@ class BlockWidget(forms.Widget):
             js_snippet = ''
         return mark_safe(bound_block.render_form() + js_snippet)
 
-    def render(self, name, value, attrs=None):
-        return self.render_with_errors(name, value, attrs=attrs, errors=None)
+    def render(self, name, value, attrs=None, renderer=None):
+        return self.render_with_errors(name, value, attrs=attrs, errors=None, renderer=renderer)
 
     @property
     def media(self):
-        return self.block_def.all_media()
+        return self.block_def.all_media() + forms.Media(
+            css={'all': [
+                'wagtailadmin/css/panels/streamfield.css',
+            ]}
+        )
 
     def value_from_datadict(self, data, files, name):
         return self.block_def.value_from_datadict(data, files, name)

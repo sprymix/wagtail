@@ -1,46 +1,14 @@
 import os
 
+import willow
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.forms.fields import ImageField
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
 
-ALLOWED_EXTENSIONS = ['gif', 'jpg', 'jpeg', 'png']
-SUPPORTED_FORMATS_TEXT = _("GIF, JPEG, PNG")
-
-INVALID_IMAGE_ERROR = _(
-    "Not a supported image format. Supported formats: %s."
-) % SUPPORTED_FORMATS_TEXT
-
-INVALID_IMAGE_KNOWN_FORMAT_ERROR = _(
-    "Not a valid %s image."
-)
-
-MAX_UPLOAD_SIZE = getattr(settings, 'WAGTAILIMAGES_MAX_UPLOAD_SIZE', 10 * 1024 * 1024)
-
-if MAX_UPLOAD_SIZE is not None:
-    MAX_UPLOAD_SIZE_TEXT = filesizeformat(MAX_UPLOAD_SIZE)
-
-    FILE_TOO_LARGE_ERROR = _(
-        "This file is too big. Maximum filesize %s."
-    ) % (MAX_UPLOAD_SIZE_TEXT, )
-
-    FILE_TOO_LARGE_KNOWN_SIZE_ERROR = _(
-        "This file is too big (%%s). Maximum filesize %s."
-    ) % (MAX_UPLOAD_SIZE_TEXT, )
-
-    IMAGE_FIELD_HELP_TEXT = _(
-        "Supported formats: %s. Maximum filesize: %s."
-    ) % (SUPPORTED_FORMATS_TEXT, MAX_UPLOAD_SIZE_TEXT, )
-else:
-    MAX_UPLOAD_SIZE_TEXT = ""
-    FILE_TOO_LARGE_ERROR = ""
-    FILE_TOO_LARGE_KNOWN_SIZE_ERROR = ""
-
-    IMAGE_FIELD_HELP_TEXT = _(
-        "Supported formats: %s."
-    ) % (SUPPORTED_FORMATS_TEXT, )
+ALLOWED_EXTENSIONS = ['gif', 'jpg', 'jpeg', 'png', 'webp']
+SUPPORTED_FORMATS_TEXT = _("GIF, JPEG, PNG, WEBP")
 
 
 class WagtailImageField(ImageField):
@@ -48,19 +16,45 @@ class WagtailImageField(ImageField):
         super().__init__(*args, **kwargs)
 
         # Get max upload size from settings
-        self.max_upload_size = MAX_UPLOAD_SIZE
+        self.max_upload_size = getattr(settings, 'WAGTAILIMAGES_MAX_UPLOAD_SIZE', 10 * 1024 * 1024)
+        self.max_image_pixels = getattr(settings, 'WAGTAILIMAGES_MAX_IMAGE_PIXELS', 128 * 1000000)
         max_upload_size_text = filesizeformat(self.max_upload_size)
 
         # Help text
-        self.help_text = IMAGE_FIELD_HELP_TEXT
+        if self.max_upload_size is not None:
+            self.help_text = _(
+                "Supported formats: %(supported_formats)s. Maximum filesize: %(max_upload_size)s."
+            ) % {
+                'supported_formats': SUPPORTED_FORMATS_TEXT,
+                'max_upload_size': max_upload_size_text,
+            }
+        else:
+            self.help_text = _(
+                "Supported formats: %(supported_formats)s."
+            ) % {
+                'supported_formats': SUPPORTED_FORMATS_TEXT,
+            }
 
         # Error messages
-        self.error_messages['invalid_image'] = INVALID_IMAGE_ERROR
-        self.error_messages['invalid_image_known_format'] = \
-            INVALID_IMAGE_KNOWN_FORMAT_ERROR
-        self.error_messages['file_too_large'] = FILE_TOO_LARGE_KNOWN_SIZE_ERROR
-        self.error_messages['file_too_large_unknown_size'] = \
-            FILE_TOO_LARGE_ERROR
+        self.error_messages['invalid_image'] = _(
+            "Not a supported image format. Supported formats: %s."
+        ) % SUPPORTED_FORMATS_TEXT
+
+        self.error_messages['invalid_image_known_format'] = _(
+            "Not a valid %s image."
+        )
+
+        self.error_messages['file_too_large'] = _(
+            "This file is too big (%%s). Maximum filesize %s."
+        ) % max_upload_size_text
+
+        self.error_messages['file_too_many_pixels'] = _(
+            "This file has too many pixels (%%s). Maximum pixels %s."
+        ) % self.max_image_pixels
+
+        self.error_messages['file_too_large_unknown_size'] = _(
+            "This file is too big. Maximum filesize %s."
+        ) % max_upload_size_text
 
     def check_image_file_format(self, f):
         # Check file extension
@@ -95,11 +89,28 @@ class WagtailImageField(ImageField):
                 filesizeformat(f.size),
             ), code='file_too_large')
 
+    def check_image_pixel_size(self, f):
+        # Upload pixel size checking can be disabled by setting max upload pixel to None
+        if self.max_image_pixels is None:
+            return
+
+        # Check the pixel size
+        image = willow.Image.open(f)
+        width, height = image.get_size()
+        frames = image.get_frame_count()
+        num_pixels = width * height * frames
+
+        if num_pixels > self.max_image_pixels:
+            raise ValidationError(self.error_messages['file_too_many_pixels'] % (
+                num_pixels
+            ), code='file_too_many_pixels')
+
     def to_python(self, data):
         f = super().to_python(data)
 
         if f is not None:
             self.check_image_file_size(f)
             self.check_image_file_format(f)
+            self.check_image_pixel_size(f)
 
         return f

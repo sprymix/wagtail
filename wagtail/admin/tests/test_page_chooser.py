@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -200,6 +202,57 @@ class TestChooserBrowseChild(TestCase, WagtailTestUtils):
         response = self.get({'page_type': 'foo'})
         self.assertEqual(response.status_code, 404)
 
+    def test_with_admin_display_title(self):
+        # Check the display of the child page title when it's a child
+        response = self.get({'page_type': 'wagtailcore.Page'})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailadmin/chooser/browse.html')
+
+        html = response.json().get('html')
+        self.assertInHTML("foobarbaz (simple page)", html)
+
+        # The data-title attribute should not use the custom admin display title,
+        # because JS code that uses that attribute (e.g. the rich text editor)
+        # should use the real page title.
+        self.assertIn('data-title="foobarbaz"', html)
+
+    def test_parent_with_admin_display_title(self):
+        # Add another child under child_page so it renders a chooser list
+        leaf_page = SimplePage(title="quux", content="goodbye")
+        self.child_page.add_child(instance=leaf_page)
+
+        # Use the child page as the chooser parent
+        response = self.client.get(
+            reverse('wagtailadmin_choose_page_child', args=(self.child_page.id,)),
+            params={'page_type': 'wagtailcore.Page'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailadmin/chooser/browse.html')
+
+        self.assertInHTML("foobarbaz (simple page)", response.json().get('html'))
+        self.assertInHTML("quux (simple page)", response.json().get('html'))
+
+    def test_admin_display_title_breadcrumb(self):
+        # Add another child under child_page so we get breadcrumbs
+        leaf_page = SimplePage(title="quux", content="goodbye")
+        self.child_page.add_child(instance=leaf_page)
+
+        # Use the leaf page as the chooser parent, so child is in the breadcrumbs
+        response = self.client.get(
+            reverse('wagtailadmin_choose_page_child', args=(leaf_page.id,))
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailadmin/chooser/browse.html')
+
+        # Look for a link element in the breadcrumbs with the admin title
+        self.assertTagInHTML(
+            '<li><a href="/admin/choose-page/{page_id}/?" class="navigate-pages">{page_title}</a></li>'.format(
+                page_id=self.child_page.id,
+                page_title="foobarbaz (simple page)",
+            ),
+            response.json().get('html')
+        )
+
     def setup_pagination_test_data(self):
         # Create lots of pages
         for i in range(100):
@@ -253,7 +306,7 @@ class TestChooserSearch(TestCase, WagtailTestUtils):
         response = self.get({'q': "foobarbaz"})
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wagtailadmin/chooser/_search_results.html')
-        self.assertContains(response, "There is one match")
+        self.assertContains(response, "There is 1 match")
         self.assertContains(response, "foobarbaz")
 
     def test_result_uses_custom_admin_display_title(self):
@@ -305,7 +358,7 @@ class TestChooserSearch(TestCase, WagtailTestUtils):
         response = self.get({'q': "foobarbaz", 'page_type': ''})
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wagtailadmin/chooser/_search_results.html')
-        self.assertContains(response, "There is one match")
+        self.assertContains(response, "There is 1 match")
         self.assertContains(response, "foobarbaz")
 
     def test_with_multiple_page_types(self):
@@ -465,52 +518,118 @@ class TestChooserExternalLink(TestCase, WagtailTestUtils):
         self.assertContains(response, 'https://torchbox.com/')
 
     def test_create_link(self):
-        response = self.post({'url': 'http://www.example.com/', 'link_text': 'example'})
+        response = self.post({'external-link-chooser-url': 'http://www.example.com/', 'external-link-chooser-link_text': 'example'})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "'onload'")  # indicates success / post back to calling page
-        self.assertContains(response, '"url": "http://www.example.com/"')
-        self.assertContains(response, '"title": "example"')  # When link text is given, it is used
-        self.assertContains(response, '"prefer_this_title_as_link_text": true')
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(response_json['step'], 'external_link_chosen')
+        self.assertEqual(response_json['result']['url'], "http://www.example.com/")
+        self.assertEqual(response_json['result']['title'], "example")  # When link text is given, it is used
+        self.assertEqual(response_json['result']['prefer_this_title_as_link_text'], True)
 
     def test_create_link_without_text(self):
-        response = self.post({'url': 'http://www.example.com/'})
+        response = self.post({'external-link-chooser-url': 'http://www.example.com/'})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "'onload'")  # indicates success / post back to calling page
-        self.assertContains(response, '"url": "http://www.example.com/"')
-        self.assertContains(response, '"title": "http://www.example.com/"')  # When no text is given, it uses the url
-        self.assertContains(response, '"prefer_this_title_as_link_text": false')
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(response_json['step'], 'external_link_chosen')
+        self.assertEqual(response_json['result']['url'], "http://www.example.com/")
+        self.assertEqual(response_json['result']['title'], "http://www.example.com/")  # When no text is given, it uses the url
+        self.assertEqual(response_json['result']['prefer_this_title_as_link_text'], False)
 
     def test_notice_changes_to_link_text(self):
         response = self.post(
-            {'url': 'http://www.example.com/', 'link_text': 'example'},  # POST data
+            {'external-link-chooser-url': 'http://www.example.com/', 'external-link-chooser-link_text': 'example'},  # POST data
             {'link_url': 'http://old.example.com/', 'link_text': 'example'}  # GET params - initial data
         )
-        self.assertContains(response, '"url": "http://www.example.com/"')
-        self.assertContains(response, '"title": "example"')
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "http://www.example.com/")
+        self.assertEqual(result['title'], "example")
         # no change to link text, so prefer the existing link/selection content where available
-        self.assertContains(response, '"prefer_this_title_as_link_text": false')
+        self.assertEqual(result['prefer_this_title_as_link_text'], False)
 
         response = self.post(
-            {'url': 'http://www.example.com/', 'link_text': 'new example'},  # POST data
+            {'external-link-chooser-url': 'http://www.example.com/', 'external-link-chooser-link_text': 'new example'},  # POST data
             {'link_url': 'http://old.example.com/', 'link_text': 'example'}  # GET params - initial data
         )
-        self.assertContains(response, '"url": "http://www.example.com/"')
-        self.assertContains(response, '"title": "new example"')
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "http://www.example.com/")
+        self.assertEqual(result['title'], "new example")
         # link text has changed, so tell the caller to use it
-        self.assertContains(response, '"prefer_this_title_as_link_text": true')
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
 
     def test_invalid_url(self):
-        response = self.post({'url': 'ntp://www.example.com', 'link_text': 'example'})
+        response = self.post({'external-link-chooser-url': 'ntp://www.example.com', 'external-link-chooser-link_text': 'example'})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "'html'")  # indicates failure / show error message
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(response_json['step'], 'external_link')  # indicates failure / show error message
         self.assertContains(response, "Enter a valid URL.")
 
     def test_allow_local_url(self):
-        response = self.post({'url': '/admin/', 'link_text': 'admin'})
+        response = self.post({'external-link-chooser-url': '/admin/', 'external-link-chooser-link_text': 'admin'})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "'onload'")  # indicates success / post back to calling page
-        self.assertContains(response, '"url": "/admin/"')
-        self.assertContains(response, '"title": "admin"')
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(response_json['step'], 'external_link_chosen')  # indicates success / post back to calling page
+        self.assertEqual(response_json['result']['url'], "/admin/")
+        self.assertEqual(response_json['result']['title'], "admin")
+
+
+class TestChooserAnchorLink(TestCase, WagtailTestUtils):
+    def setUp(self):
+        self.login()
+
+    def get(self, params={}):
+        return self.client.get(reverse('wagtailadmin_choose_page_anchor_link'), params)
+
+    def post(self, post_data={}, url_params={}):
+        url = reverse('wagtailadmin_choose_page_anchor_link')
+        if url_params:
+            url += '?' + urlencode(url_params)
+        return self.client.post(url, post_data)
+
+    def test_simple(self):
+        response = self.get()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailadmin/chooser/anchor_link.html')
+
+    def test_prepopulated_form(self):
+        response = self.get({'link_text': 'Example Anchor Text', 'link_url': 'exampleanchor'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Example Anchor Text')
+        self.assertContains(response, 'exampleanchor')
+
+    def test_create_link(self):
+        response = self.post({'anchor-link-chooser-url': 'exampleanchor', 'anchor-link-chooser-link_text': 'Example Anchor Text'})
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "#exampleanchor")
+        self.assertEqual(result['title'], "Example Anchor Text")  # When link text is given, it is used
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
+
+    def test_create_link_without_text(self):
+        response = self.post({'anchor-link-chooser-url': 'exampleanchor'})
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "#exampleanchor")
+        self.assertEqual(result['title'], "exampleanchor")  # When no link text is given, it uses anchor
+        self.assertEqual(result['prefer_this_title_as_link_text'], False)
+
+    def test_notice_changes_to_link_text(self):
+        response = self.post(
+            {'anchor-link-chooser-url': 'exampleanchor2', 'email-link-chooser-link_text': 'Example Text'},  # POST data
+            {'link_url': 'exampleanchor2', 'link_text': 'Example Text'}  # GET params - initial data
+        )
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "#exampleanchor2")
+        self.assertEqual(result['title'], "exampleanchor2")
+        # no change to link text, so prefer the existing link/selection content where available
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
+
+        response = self.post(
+            {'anchor-link-chooser-url': 'exampleanchor2', 'anchor-link-chooser-link_text': 'Example Anchor Test 2.1'},  # POST data
+            {'link_url': 'exampleanchor', 'link_text': 'Example Anchor Text'}  # GET params - initial data
+        )
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "#exampleanchor2")
+        self.assertEqual(result['title'], "Example Anchor Test 2.1")
+        # link text has changed, so tell the caller to use it
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
 
 
 class TestChooserEmailLink(TestCase, WagtailTestUtils):
@@ -538,35 +657,99 @@ class TestChooserEmailLink(TestCase, WagtailTestUtils):
         self.assertContains(response, 'example@example.com')
 
     def test_create_link(self):
-        response = self.post({'email_address': 'example@example.com', 'link_text': 'contact'})
-        self.assertContains(response, '"url": "mailto:example@example.com"')
-        self.assertContains(response, '"title": "contact"')  # When link text is given, it is used
-        self.assertContains(response, '"prefer_this_title_as_link_text": true')
+        response = self.post({'email-link-chooser-email_address': 'example@example.com', 'email-link-chooser-link_text': 'contact'})
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "mailto:example@example.com")
+        self.assertEqual(result['title'], "contact")  # When link text is given, it is used
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
 
     def test_create_link_without_text(self):
-        response = self.post({'email_address': 'example@example.com'})
-        self.assertContains(response, '"url": "mailto:example@example.com"')
-        self.assertContains(response, '"title": "example@example.com"')  # When no link text is given, it uses the email
-        self.assertContains(response, '"prefer_this_title_as_link_text": false')
+        response = self.post({'email-link-chooser-email_address': 'example@example.com'})
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "mailto:example@example.com")
+        self.assertEqual(result['title'], "example@example.com")  # When no link text is given, it uses the email
+        self.assertEqual(result['prefer_this_title_as_link_text'], False)
 
     def test_notice_changes_to_link_text(self):
         response = self.post(
-            {'email_address': 'example2@example.com', 'link_text': 'example'},  # POST data
+            {'email-link-chooser-email_address': 'example2@example.com', 'email-link-chooser-link_text': 'example'},  # POST data
             {'link_url': 'example@example.com', 'link_text': 'example'}  # GET params - initial data
         )
-        self.assertContains(response, '"url": "mailto:example2@example.com"')
-        self.assertContains(response, '"title": "example"')
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "mailto:example2@example.com")
+        self.assertEqual(result['title'], "example")
         # no change to link text, so prefer the existing link/selection content where available
-        self.assertContains(response, '"prefer_this_title_as_link_text": false')
+        self.assertEqual(result['prefer_this_title_as_link_text'], False)
 
         response = self.post(
-            {'email_address': 'example2@example.com', 'link_text': 'new example'},  # POST data
+            {'email-link-chooser-email_address': 'example2@example.com', 'email-link-chooser-link_text': 'new example'},  # POST data
             {'link_url': 'example@example.com', 'link_text': 'example'}  # GET params - initial data
         )
-        self.assertContains(response, '"url": "mailto:example2@example.com"')
-        self.assertContains(response, '"title": "new example"')
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "mailto:example2@example.com")
+        self.assertEqual(result['title'], "new example")
         # link text has changed, so tell the caller to use it
-        self.assertContains(response, '"prefer_this_title_as_link_text": true')
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
+
+
+class TestChooserPhoneLink(TestCase, WagtailTestUtils):
+    def setUp(self):
+        self.login()
+
+    def get(self, params={}):
+        return self.client.get(reverse('wagtailadmin_choose_page_phone_link'), params)
+
+    def post(self, post_data={}, url_params={}):
+        url = reverse('wagtailadmin_choose_page_phone_link')
+        if url_params:
+            url += '?' + urlencode(url_params)
+        return self.client.post(url, post_data)
+
+    def test_simple(self):
+        response = self.get()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wagtailadmin/chooser/phone_link.html')
+
+    def test_prepopulated_form(self):
+        response = self.get({'link_text': 'Example', 'link_url': '+123456789'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Example')
+        self.assertContains(response, '+123456789')
+
+    def test_create_link(self):
+        response = self.post({'phone-link-chooser-phone_number': '+123456789', 'phone-link-chooser-link_text': 'call'})
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "tel:+123456789")
+        self.assertEqual(result['title'], "call")
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
+
+    def test_create_link_without_text(self):
+        response = self.post({'phone-link-chooser-phone_number': '+123456789'})
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "tel:+123456789")
+        self.assertEqual(result['title'], "+123456789")  # When no link text is given, it uses the phone number
+        self.assertEqual(result['prefer_this_title_as_link_text'], False)
+
+    def test_notice_changes_to_link_text(self):
+        response = self.post(
+            {'phone-link-chooser-phone_number': '+222222222', 'phone-link-chooser-link_text': 'example'},  # POST data
+            {'link_url': '+111111111', 'link_text': 'example'}  # GET params - initial data
+        )
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "tel:+222222222")
+        self.assertEqual(result['title'], "example")
+        # no change to link text, so prefer the existing link/selection content where available
+        self.assertEqual(result['prefer_this_title_as_link_text'], False)
+
+        response = self.post(
+            {'phone-link-chooser-phone_number': '+222222222', 'phone-link-chooser-link_text': 'new example'},  # POST data
+            {'link_url': '+111111111', 'link_text': 'example'}  # GET params - initial data
+        )
+        result = json.loads(response.content.decode())['result']
+        self.assertEqual(result['url'], "tel:+222222222")
+        self.assertEqual(result['title'], "new example")
+        # link text has changed, so tell the caller to use it
+        self.assertEqual(result['prefer_this_title_as_link_text'], True)
 
 
 class TestCanChoosePage(TestCase, WagtailTestUtils):

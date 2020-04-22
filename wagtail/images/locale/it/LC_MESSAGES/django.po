@@ -4,13 +4,16 @@
 #
 # Translators:
 # Giacomo Ghizzani <giacomo.ghz@gmail.com>, 2015-2018
+# giammi <gian-maria.daffre@giammi.org>, 2018
+# Guglielmo Celata <guglielmo.celata@gmail.com>, 2019
+# Sandro Badalamenti <sandro@mailinator.com>, 2019
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-02-07 19:12+0000\n"
-"Last-Translator: Giacomo Ghizzani <giacomo.ghz@gmail.com>\n"
+"POT-Creation-Date: 2019-10-16 17:59+0100\n"
+"PO-Revision-Date: 2019-10-16 17:05+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Italian (http://www.transifex.com/torchbox/wagtail/language/"
 "it/)\n"
 "MIME-Version: 1.0\n"
@@ -19,8 +22,8 @@ msgstr ""
 "Language: it\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "GIF, JPEG, PNG"
-msgstr "GIF, JPEG, PNG"
+msgid "Wagtail images"
+msgstr "Immagini Wagtail"
 
 #, python-format
 msgid ""
@@ -45,6 +48,12 @@ msgstr "Immagine %s non valida"
 #, python-format
 msgid "This file is too big (%%s). Maximum filesize %s."
 msgstr "Questo file è troppo grande (%%s). Dimensione massima del file %s."
+
+#, python-format
+msgid "This file has too many pixels (%%s). Maximum pixels %s."
+msgstr ""
+"La risoluzione di questo file è di troppi pixel (%%). Il numero massimo di "
+"pixel è %s."
 
 #, python-format
 msgid "This file is too big. Maximum filesize %s."
@@ -122,6 +131,12 @@ msgstr "caricato dall'utente"
 msgid "tags"
 msgstr "tags"
 
+msgid "image"
+msgstr "Immagine"
+
+msgid "images"
+msgstr "Immagini"
+
 msgid "Choose an image"
 msgstr "Scegli una immagine"
 
@@ -137,16 +152,10 @@ msgstr "Tags popolari"
 msgid "Uploading…"
 msgstr "Caricamento…"
 
-msgid "Server Error"
-msgstr "Errore del Server"
-
-msgid "Report this error to your webmaster with the following information:"
-msgstr "Presenta questo errore al tuo webmaster con le seguenti informazioni:"
-
 #, python-format
 msgid ""
 "\n"
-"            There is one match\n"
+"            There is %(counter)s match\n"
 "        "
 msgid_plural ""
 "\n"
@@ -154,7 +163,7 @@ msgid_plural ""
 "        "
 msgstr[0] ""
 "\n"
-"            C'è una corrispondenza\n"
+"            C'è %(counter)s corrispondenza\n"
 "        "
 msgstr[1] ""
 "\n"
@@ -173,20 +182,22 @@ msgstr "Inserisci immagine"
 #, python-format
 msgid ""
 "\n"
-"        <span>%(total)s</span> Image\n"
+"        <span>%(total)s</span> Image <span class=\"visuallyhidden\">created "
+"in %(site_name)s</span>\n"
 "    "
 msgid_plural ""
 "\n"
-"        <span>%(total)s</span> Images\n"
+"        <span>%(total)s</span> Images <span class=\"visuallyhidden\">created "
+"in %(site_name)s</span>\n"
 "    "
 msgstr[0] ""
 "\n"
-"        <span>%(total)s</span> Immagine\n"
-"    "
+"<span>%(total)s</span>immagine <span class=\"visuallyhidden\">creata in "
+"%(site_name)s</span>"
 msgstr[1] ""
 "\n"
-"        <span>%(total)s</span> Immagini\n"
-"    "
+"<span>%(total)s</span>immagini <span class=\"visuallyhidden\">create in "
+"%(site_name)s</span>"
 
 msgid "Change image file:"
 msgstr "Cambia immagine"
@@ -215,6 +226,9 @@ msgstr "Sei sicuro di voler eliminare questa immagine?"
 msgid "Yes, delete"
 msgstr "Si, elimina"
 
+msgid "No, don't delete"
+msgstr "No, non rimuovere"
+
 #, python-format
 msgid "Editing image %(title)s"
 msgstr "Modifica immagine %(title)s"
@@ -222,24 +236,27 @@ msgstr "Modifica immagine %(title)s"
 msgid "Editing"
 msgstr "Modifica"
 
-msgid "Focal point (optional)"
-msgstr "Punto focale (optional)"
+msgid "URL Generator"
+msgstr "URL Generator"
+
+msgid "Focal point"
+msgstr "Punto focale"
+
+msgid "(optional)"
+msgstr "(opzionale)"
 
 msgid ""
 "To define this image's most important region, drag a box over the image "
-"below."
+"above."
 msgstr ""
-"Per definire la regione più importante di questa immagine, fai il drag di un "
-"box sopra l'immagine qui sotto."
+"Per definire la regione più importante di questa immagine, selezionala "
+"sull'immagine qui sotto."
 
 msgid "Current focal point shown"
 msgstr "Punto focale corrente indicato"
 
 msgid "Remove focal area"
 msgstr "Elimina focal area"
-
-msgid "URL Generator"
-msgstr "URL Generator"
 
 msgid "Max dimensions"
 msgstr "Dimensioni massime"
@@ -256,6 +273,9 @@ msgstr "Uso"
 msgid "Images"
 msgstr "Immagini"
 
+msgid "pixels"
+msgstr "pixel"
+
 #, python-format
 msgid "Sorry, no images match \"<em>%(query_string)s</em>\""
 msgstr ""
@@ -266,7 +286,7 @@ msgid ""
 "You haven't uploaded any images in this collection. Why not <a href="
 "\"%(wagtailimages_add_image_url)s\">upload one now</a>?"
 msgstr ""
-"Non hai caricato nessuna immagine in questa collezione. Perché non <a href="
+"Non hai caricato nessuna immagine in questa raccolta. Perché non <a href="
 "\"%(wagtailimages_add_image_url)s\">ne aggiungi una adesso</a>?"
 
 #, python-format
@@ -330,7 +350,7 @@ msgid "Or choose from your computer"
 msgstr "Oppure sceglila dal tuo computer"
 
 msgid "Add to collection:"
-msgstr "Aggiungi alla collezione:"
+msgstr "Aggiungi alla raccolta:"
 
 msgid ""
 "Upload successful. Please update this image with a more appropriate title, "
@@ -342,6 +362,12 @@ msgstr ""
 
 msgid "Sorry, upload failed."
 msgstr "Spiacente, caricamento fallito."
+
+msgid "Server Error"
+msgstr "Errore del Server"
+
+msgid "Report this error to your webmaster with the following information:"
+msgstr "Presenta questo errore al tuo webmaster con le seguenti informazioni:"
 
 msgid "Image updated."
 msgstr "Immagine aggiornata."
@@ -361,7 +387,6 @@ msgstr "Aggiungi un permesso per l'immagine"
 msgid "Search images"
 msgstr "Cerca immagini"
 
-#, python-brace-format
 msgid "Image '{0}' updated."
 msgstr "Immagine '{0}' aggiornata."
 
@@ -378,11 +403,9 @@ msgstr ""
 "Il file dell'immagine non è stato trovato. Cambia il file oppure elimina "
 "l'immagine."
 
-#, python-brace-format
 msgid "Image '{0}' deleted."
 msgstr "Immagine '{0}' eliminata."
 
-#, python-brace-format
 msgid "Image '{0}' added."
 msgstr "Immagine '{0}' aggiunta."
 
