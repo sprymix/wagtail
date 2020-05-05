@@ -38,4 +38,5 @@ class AdminDocumentChooser(AdminChooser):
         return forms.Media(js=[
             versioned_static('wagtaildocs/js/document-chooser-modal.js'),
             versioned_static('wagtaildocs/js/document-chooser.js'),
+            versioned_static('wagtaildocs/js/add-multiple.js'),
         ])
