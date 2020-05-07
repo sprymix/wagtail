@@ -15,6 +15,7 @@
 # Никита Викторович <hnknta@gmail.com>, 2014
 # Matt Westcott <matthew@torchbox.com>, 2015
 # Mikalai Radchuk <radchuk.m@gmail.com>, 2016-2017
+# Mikhail Sidorov <pevzi23@gmail.com>, 2019
 # Nikita Tonkoshkur <humapen@gmail.com>, 2018
 # Sergey Komarov <sjkomarov@gmail.com>, 2014
 # Sergey Khalymon <sergiykhalimon@gmail.com>, 2015
@@ -26,8 +27,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-16 18:00+0100\n"
-"PO-Revision-Date: 2019-10-16 17:04+0000\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:13+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Russian (http://www.transifex.com/torchbox/wagtail/language/"
 "ru/)\n"
@@ -423,7 +424,10 @@ msgid "Update"
 msgstr "Обновить"
 
 msgid "Change email"
-msgstr "Выбрать email"
+msgstr "Изменить email"
+
+msgid "Change name"
+msgstr "Изменить имя"
 
 msgid "Change password"
 msgstr "Изменить пароль"
@@ -639,11 +643,27 @@ msgstr ""
 "Это ваша панель управления, на ней отображается полезная информация о "
 "созданном вами контенте."
 
-msgid "Pages awaiting moderation"
-msgstr "Страницы ожидающие модерации"
-
 msgid "Title"
 msgstr "Заголовок"
+
+msgid "Edit this page"
+msgstr "Редактировать эту страницу"
+
+msgid "Edit"
+msgstr "Редактировать"
+
+msgid "Draft"
+msgstr "Черновик"
+
+msgid "Live"
+msgstr "Опубликовано"
+
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s назад"
+
+msgid "Pages awaiting moderation"
+msgstr "Страницы ожидающие модерации"
 
 msgid "Parent"
 msgstr "Родительский элемент"
@@ -654,9 +674,6 @@ msgstr "Тип"
 msgid "Edited"
 msgstr "Редактировано"
 
-msgid "Edit this page"
-msgstr "Редактировать эту страницу"
-
 msgid "Preview this page"
 msgstr "Предпросмотр этой страницы"
 
@@ -666,15 +683,8 @@ msgstr "Одобрить"
 msgid "Reject"
 msgstr "Отклонить"
 
-msgid "Edit"
-msgstr "Редактировать"
-
 msgid "Preview"
 msgstr "Предпросмотр"
-
-#, python-format
-msgid "%(time_period)s ago"
-msgstr "%(time_period)s назад"
 
 msgid "Your most recent edits"
 msgstr "Ваши последние правки"
@@ -685,14 +695,40 @@ msgstr "Дата"
 msgid "Status"
 msgstr "Статус"
 
-msgid "Draft"
-msgstr "Черновик"
-
-msgid "Live"
-msgstr "Опубликовано"
-
 msgid "Site summary"
 msgstr "Общая информация"
+
+#, python-format
+msgid ""
+"\n"
+"            <span>%(total)s</span> Page <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>\n"
+"        "
+msgid_plural ""
+"\n"
+"            <span>%(total)s</span> Pages <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>\n"
+"        "
+msgstr[0] ""
+"\n"
+"            <span>%(total)s</span> Страница <span class=\"visuallyhidden"
+"\">создана в %(site_name)s</span>\n"
+"        "
+msgstr[1] ""
+"\n"
+"            <span>%(total)s</span> Страницы <span class=\"visuallyhidden"
+"\">созданы в %(site_name)s</span>\n"
+"        "
+msgstr[2] ""
+"\n"
+"            <span>%(total)s</span> Страниц <span class=\"visuallyhidden"
+"\">создано в %(site_name)s</span>\n"
+"        "
+msgstr[3] ""
+"\n"
+"            <span>%(total)s</span> Страниц <span class=\"visuallyhidden"
+"\">создано в %(site_name)s</span>\n"
+"        "
 
 msgid "Sign in"
 msgstr "Войти"
@@ -760,15 +796,6 @@ msgstr "Страница приватна в соответствии с род�
 
 msgid "Privacy changes apply to all children of this page too."
 msgstr "Изменения приватности также накладываются и на дочерние страницы."
-
-msgid "Edit lock"
-msgstr "Заблокировать редактирование"
-
-msgid "Locked"
-msgstr "Заблокировано"
-
-msgid "Unlocked"
-msgstr "Разблокировано"
 
 msgid "Publishing…"
 msgstr "Публикуется..."
@@ -904,7 +931,7 @@ msgid "Yes, unpublish it"
 msgstr "Да, отменить публикацию"
 
 msgid "No, don't unpublish"
-msgstr "Нет, оставить неопубликованным"
+msgstr "Нет, оставить опубликованным"
 
 #, python-format
 msgid "Pages using %(page_class_verbose_name)s"
@@ -1077,6 +1104,9 @@ msgstr "Эта страница защищена от публичного пр�
 
 msgid "Disable ordering of child pages"
 msgstr "Отключить упорядочение дочерних страниц"
+
+msgid "Sort"
+msgstr "Порядок"
 
 msgid "Enable ordering of child pages"
 msgstr "Включить упорядочение дочерних страниц"
@@ -1273,6 +1303,9 @@ msgstr "Нет страниц использующих"
 msgid "Collection"
 msgstr "Коллекция"
 
+msgid "Locked"
+msgstr "Заблокировано"
+
 #, python-format
 msgid "Page %(page_num)s of %(total_pages)s."
 msgstr "Страница %(page_num)s из %(total_pages)s."
@@ -1298,15 +1331,6 @@ msgstr "Выйти"
 msgid "Other searches"
 msgstr "Другие поиски"
 
-msgid ""
-"You are using an <strong>outdated</strong> browser not supported by this "
-"software. Please <a href=\"http://browsehappy.com/\">upgrade your browser</"
-"a>."
-msgstr ""
-"Вы используете <strong>устаревший</strong> браузер не поддерживаемый этим "
-"сайтом. Пожалуйста, <a href=\"http://browsehappy.com/\">обновите ваш "
-"браузер</a>."
-
 msgid "Go to Wagtail admin interface"
 msgstr "Идти в интерфейс управления Wagtail"
 
@@ -1325,8 +1349,14 @@ msgstr "Ваш пароль был успешно изменен!"
 msgid "Your email has been changed successfully!"
 msgstr "Ваш email успешно поменялся"
 
+msgid "Your name has been changed successfully!"
+msgstr "Ваше имя было успешно изменено!"
+
 msgid "Your preferences have been updated."
 msgstr "Ваши настройки были обновлены."
+
+msgid "Your preferences have been updated successfully!"
+msgstr "Ваши настройки были успешно обновлены!"
 
 msgid "You have been successfully logged out."
 msgstr "Вы успешно вышли"
@@ -1455,9 +1485,6 @@ msgstr "Публикация страницы '{0}' отклонена."
 msgid "Failed to send rejection notifications"
 msgstr "Не удалось отправить уведомления об отклонении"
 
-msgid "Page '{0}' is now locked."
-msgstr "Страница '{0}' заблокирована."
-
 msgid "Page '{0}' is now unlocked."
 msgstr "Страница '{0}' разблокирована."
 
@@ -1487,6 +1514,12 @@ msgstr "Больше"
 msgid "Set profile picture"
 msgstr "Установить фото профиля"
 
+msgid "Change your profile picture."
+msgstr "Изменить фотографию вашего профиля."
+
+msgid "Change the email address linked to your account."
+msgstr "Изменить адрес электронной почты, привязанный к вашему профилю."
+
 msgid "Change the password you use to log in."
 msgstr "Изменить пароль, который вы используете для входа."
 
@@ -1498,6 +1531,15 @@ msgstr "Языковые настройки"
 
 msgid "Choose the language you want to use here."
 msgstr "Выберите язык, который вы хотите использовать."
+
+msgid "Current Time Zone"
+msgstr "Текущий часовой пояс"
+
+msgid "Choose your current time zone."
+msgstr "Выбрать текущий часовой пояс."
+
+msgid "Change your first and last name on your account."
+msgstr "Изменить имя и фамилию в вашем профиле."
 
 msgid "Bulleted list"
 msgstr "Маркированный список"

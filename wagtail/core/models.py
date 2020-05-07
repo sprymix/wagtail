@@ -309,6 +309,16 @@ class Page(AbstractPage, index.Indexed, ClusterableModel, metaclass=PageBase):
     expired = models.BooleanField(verbose_name=_('expired'), default=False, editable=False)
 
     locked = models.BooleanField(verbose_name=_('locked'), default=False, editable=False)
+    locked_at = models.DateTimeField(verbose_name=_('locked at'), null=True, editable=False)
+    locked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_('locked by'),
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.SET_NULL,
+        related_name='locked_pages'
+    )
 
     first_published_at = models.DateTimeField(
         verbose_name=_('first published at'),
@@ -1531,6 +1541,8 @@ class Page(AbstractPage, index.Indexed, ClusterableModel, metaclass=PageBase):
         * ``has_unpublished_changes``
         * ``owner``
         * ``locked``
+        * ``locked_by``
+        * ``locked_at``
         * ``latest_revision_created_at``
         * ``first_published_at``
         """
@@ -1557,6 +1569,8 @@ class Page(AbstractPage, index.Indexed, ClusterableModel, metaclass=PageBase):
         obj.has_unpublished_changes = self.has_unpublished_changes
         obj.owner = self.owner
         obj.locked = self.locked
+        obj.locked_by = self.locked_by
+        obj.locked_at = self.locked_at
         obj.latest_revision_created_at = self.latest_revision_created_at
         obj.first_published_at = self.first_published_at
 
@@ -1594,7 +1608,12 @@ class PageRevision(models.Model):
         on_delete=models.SET_NULL
     )
     content_json = models.TextField(verbose_name=_('content JSON'))
-    approved_go_live_at = models.DateTimeField(verbose_name=_('approved go live at'), null=True, blank=True)
+    approved_go_live_at = models.DateTimeField(
+        verbose_name=_('approved go live at'),
+        null=True,
+        blank=True,
+        db_index=True
+    )
 
     objects = models.Manager()
     submitted_revisions = SubmittedRevisionsManager()
@@ -1719,7 +1738,8 @@ PAGE_PERMISSION_TYPES = [
     ('publish', _("Publish"), _("Publish any page")),
     ('preview', _("Preview"), _("Preview any page")),
     ('bulk_delete', _("Bulk delete"), _("Delete pages with children")),
-    ('lock', _("Lock"), _("Lock/unlock any page")),
+    ('lock', _("Lock"), _("Lock/unlock pages you've locked")),
+    ('unlock', _("Unlock"), _("Unlock any page")),
 ]
 
 PAGE_PERMISSION_TYPE_CHOICES = [
@@ -1878,6 +1898,15 @@ class UserPagePermissionsProxy:
         """Return True if the user has permission to publish any pages"""
         return self.publishable_pages().exists()
 
+    def can_remove_locks(self):
+        """Returns True if the user has permission to unlock pages they have not locked"""
+        if self.user.is_superuser:
+            return True
+        if not self.user.is_active:
+            return False
+        else:
+            return self.permissions.filter(permission_type='unlock').exists()
+
 
 class PagePermissionTester:
     def __init__(self, user_perms, page):
@@ -1891,6 +1920,21 @@ class PagePermissionTester:
                 perm.permission_type for perm in user_perms.permissions
                 if self.page.path.startswith(perm.page.path)
             )
+
+    def user_has_lock(self):
+        return self.page.locked_by_id == self.user.pk
+
+    def page_locked(self):
+        if not self.page.locked:
+            # Page is not locked
+            return False
+
+        if getattr(settings, 'WAGTAILADMIN_GLOBAL_PAGE_EDIT_LOCK', False):
+            # All locks are global
+            return True
+        else:
+            # Locked only if the current user was not the one who locked the page
+            return not self.user_has_lock()
 
     def can_add_subpage(self):
         if not self.user.is_active:
@@ -1952,7 +1996,7 @@ class PagePermissionTester:
             return False
         if (not self.page.live) or self.page_is_root:
             return False
-        if self.page.locked:
+        if self.page_locked():
             return False
 
         return self.user.is_superuser or ('publish' in self.permissions)
@@ -1983,6 +2027,9 @@ class PagePermissionTester:
 
     def can_lock(self):
         return self.user.is_superuser or ('lock' in self.permissions)
+
+    def can_unlock(self):
+        return self.user.is_superuser or self.user_has_lock() or ('unlock' in self.permissions)
 
     def can_publish_subpage(self):
         """

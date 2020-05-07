@@ -108,7 +108,6 @@ class Menu:
         rendered_menu_items = []
         for item in sorted(menu_items, key=lambda i: i.order):
             rendered_menu_items.append(item.render_html(request))
-
         return mark_safe(''.join(rendered_menu_items))
 
 
@@ -136,3 +135,4 @@ class SubmenuMenuItem(MenuItem):
 
 admin_menu = Menu(register_hook_name='register_admin_menu_item', construct_hook_name='construct_main_menu')
 settings_menu = Menu(register_hook_name='register_settings_menu_item', construct_hook_name='construct_settings_menu')
+reports_menu = Menu(register_hook_name='register_reports_menu_item', construct_hook_name='construct_reports_menu')

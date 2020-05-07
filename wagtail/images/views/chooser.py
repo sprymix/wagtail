@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import hashlib
 import json
 import uuid
@@ -21,9 +19,9 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
+from wagtail.admin.auth import PermissionPolicyChecker, permission_required
 from wagtail.admin.forms.search import SearchForm
 from wagtail.admin.modal_workflow import render_modal_workflow
-from wagtail.admin.auth import PermissionPolicyChecker, permission_required
 from wagtail.admin.models import popular_tags_for_model
 from wagtail.core import hooks
 from wagtail.core.models import Collection
