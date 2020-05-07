@@ -20,6 +20,7 @@ Core team
 * Jonny Scholes (Neon Jungle)
 * Andy Babic (Torchbox)
 * Dan Braghis (Torchbox)
+* Dawn Wages
 
 Core team alumni
 ================
@@ -405,7 +406,6 @@ Contributors
 * Kiril Staikov
 * Saptak Sengupta
 * Dawid Bugajewski
-* Dawn Wages
 * Jacob Topp-Mugglestone
 * Brian Whitton
 * Tim White
@@ -418,6 +418,16 @@ Contributors
 * ryanomor
 * Thijs Baaijen
 * Stefani Castellanos
+* Aliosha Padovani
+* Tom Readings
+* Andrey Smirnov
+* Tim Gates
+* Timothy Bautista
+* Pete Andrew
+* Benedikt Willi
+* Johannes Vogel
+* Sam Costigan
+* Eric Sherman
 * Vlad Gerasimenko
 
 Translators
@@ -433,17 +443,18 @@ Translators
 * Catalan: Antoni Aloy, David Llop, Roger Pons
 * Chinese: hanfeng, Lihan Li, Leway Colin, Orangle Liu, shengsheng gz
 * Chinese (Simplified): Ed, hanfeng, Yi Huang, Daniel Hwang, Jian Li, Aosp T, Listeng Teng, Feng Wang, whuim, Fred Zeng, Joey Zhao, Vincent Zhao, zhushajun
-* Chinese (Traditional): c o, gogobook, Lihan Li, Jp Shieh, Yeh Yen-Ke
+* Chinese (Traditional): c o, gogobook, Lihan Li, Jp Shieh, Yeh Yen-Ke, Yu Hsun Lee
 * Croatian (Croatia): Ivica Dosen, Luka Matijević
 * Czech: Ales Dvorak, Martin Galda, IT Management, Eva Mikesova, Mořeplavec, Sophy O, Martina Oleksakova, Ivan Pomykacz, Jiri Stepanek, Marek Turnovec, Mirek Zvolský
 * Danish: Mads Kronborg, MRostgaard, Asger Sørensen
 * Dutch: benny_AT_it_digin.com, Bram, Brecht Dervaux, Huib Keemink, Thijs Kramer, Samuel Leeuwenburg, mahulst, Rob Moorman, Michael van Tellingen, Arne Turpyn
 * Dutch (Netherlands): Bram, Kees Hink, Coen van der Kamp, Franklin Kingma, Maarten Kling, Thijs Kramer, Meteor0id
+* Estonian: Ragnar Rebase
 * Finnish: Eetu Häivälä, Niklas Jerva, Aarni Koskela, Rauli Laine, Glen Somerville, Juha Yrjölä
 * French: Adrien, Timothy Allen, Sebastien Andrivet, Bertrand Bordage, André Bouatchidzé, Aurélien Debord, Romain Dorgueil, Tom Dyson, Antonin Enfrun, Axel Haustant, Léo, Pierre Marfoure, nahuel, Sophy O, Dominique Peretti, fpoulain, Loïc Teixeira, Benoît Vogel
 * Galician: fooflare
 * Georgian: André Bouatchidzé
-* German: Ettore Atalan, Patrick Craston, Peter Dreuw, Johannes Fleck, Henrik Kröger, Tammo van Lessen, Martin Löhle, Wasilis Mandratzis-Walz, Daniel Manser, Matthias Martin, m0rph3u5, Max Pfeiffer, Moritz Pfeiffer, Herbert Poul, Karl Sander, Tobias Schmidt, Johannes Spielmann, Raphael Stolt, Benjamin Thurm, Norman Uekermann, Jannis Vajen, Vorlif, Matthew Westcott
+* German: Ettore Atalan, Bohreromir, Patrick Craston, Peter Dreuw, Henrik Kröger, Tammo van Lessen, Martin Löhle, Wasilis Mandratzis-Walz, Daniel Manser, Matthias Martin, m0rph3u5, Max Pfeiffer, Moritz Pfeiffer, Herbert Poul, Karl Sander, Tobias Schmidt, Johannes Spielmann, Raphael Stolt, Benjamin Thurm, Norman Uekermann, Jannis Vajen, Vorlif, Matthew Westcott, Benedikt Willi
 * Greek: Jim Dal, George Giannoulopoulos, Yiannis Inglessis, Wasilis Mandratzis-Walz, Nick Mavrakis, NeotheOne, Serafeim Papastefanos
 * Hebrew (Israel): Lior Abazon, bjesus, Yossi Lalum, Adi Ron, Oleg Sverdlov
 * Hungarian: Istvan Farkas, Laszlo Molnar, Kornél Novák Mergulhão, BN, Aron Santa
@@ -456,20 +467,20 @@ Translators
 * Lithuanian: Matas Dailyda
 * Mongolian: Myagmarjav Enkhbileg, Delgermurun Purevkhuu
 * Norwegian Bokmål: Eirik Krogstad, Robin Skahjem-Eriksen, Stein Strindhaug
-* Persian: Mohammad reza Jelveh, Mohammad Hossein Mojtahedi, Py Zenberg
-* Polish: Konrad Lalik, Miron Levitsky, Mateusz, Miłosz Miśkiewicz, Bartek Sielicki, utek, Grzegorz Wasilewski, Bartosz Wiśniewski
-* Portuguese (Brazil): Claudemiro Alves Feitosa Neto, Bruno Bertoldi, Luiz Boaretto, Gladson Brito, Thiago Cangussu, Gilson Filho, Joao Garcia, João Luiz Lorencetti, Marcio Mazza, Douglas Miranda, Guilherme Nabanete
-* Portuguese (Portugal): Gladson Brito, Thiago Cangussu, Tiago Henriques, Jose Lourenco, Nuno Matos, Douglas Miranda, Manuela Silva
-* Romanian: Dan Braghis
-* Russian: ajk, Andrey Avdey, Daniil, Mikhail Gerasimov, gsstver, Sergey Khalymon, Sergey Komarov, Miron Levitskiy, Arseni M, Eugene MechanisM, Rustam Mirzaev, Alexander Penshin, Mikalai Radchuk, Alexandr Romantsov, Nikita Tonkoshkur, Tatsiana Tsygan, Nikita Viktorovich, Vassiliy Vorobyov
+* Persian: Mohammad reza Jelveh, Mohammad Hossein Mojtahedi, Hamed Najand, Py Zenberg
+* Polish: Łukasz Bołdys, Konrad Lalik, Miron Levitsky, Mateusz, Miłosz Miśkiewicz, Bartek Sielicki, Grzegorz Wasilewski, Bartosz Wiśniewski
+* Portuguese (Brazil): Claudemiro Alves Feitosa Neto, Bruno Bertoldi, Luiz Boaretto, Gladson Brito, Thiago Cangussu, Daniel Carvalho, Gilson Filho, Joao Garcia, João Luiz Lorencetti, Marcio Mazza, Douglas Miranda, Guilherme Nabanete
+* Portuguese (Portugal): Gladson Brito, Thiago Cangussu, Tiago Henriques, Jose Lourenco, Rui Martins, Nuno Matos, Douglas Miranda, Manuela Silva
+* Romanian: Dan Braghis, Bogdan Mateescu
+* Russian: ajk, Andrey Avdey, Daniil, Mikhail Gerasimov, gsstver, Sergey Khalymon, Sergey Komarov, Miron Levitskiy, Arseni M, Eugene MechanisM, Rustam Mirzaev, Alexander Penshin, Mikalai Radchuk, Alexandr Romantsov, Mikhail Sidorov, Nikita Tonkoshkur, Tatsiana Tsygan, Nikita Viktorovich, Vassiliy Vorobyov
 * Slovak (Slovakia): Stevo Backor, dellax, Martin Janšto, Jozef Karabelly
 * Slovenian: Mitja Pagon, Matej Stavanja
 * Spanish: Mauricio Baeza, Daniel Chimeno, fonso, fooflare, José Luis, Joaquín Tita, Unai Zalakain
 * Swedish: Philip Andersen, Andreas Bergström, Jim Brouzoulis, Alexander Holmbäck, André Karlsson, Jon Karlsson, Ludwig Kjellström, Thomas Kunambi, Andreas Lans, Hannes Lohmander
 * Tetum: Alessandro, Joanico Barros, Peter Coward, Mariano de Deus, Onorio de Jesus Afonso, Mario Alves Pinto
 * Thai: Amawalee Combe, Jon Combe, Walaksawan Vervoort
-* Turkish: Umut Bektaş, Zafer Cengiz, Cihad Gündoǧdu, Ahmet Sarıcan, Ragıp Ünal
-* Turkish (Turkey): Saadettin Yasir Akel, Cihad Gündoǧdu, José Luis, Ragıp Ünal
-* Ukrainian: Mikolai Incognito, Sergiy Shkodenko, Viktor Shytiuk, Zoriana Zaiats, Mykola Zamkovoi
+* Turkish: Saadettin Yasir Akel, Umut Bektaş, Zafer Cengiz, Cihad Gündoǧdu, José Luis, Py Data, Ahmet Sarıcan, Ragıp Ünal
+* Turkish (Turkey): Saadettin Yasir Akel, Umut Bektaş, lzm dgl, Cihad Gündoǧdu, Ahmet Serdar Karadeniz, Fatih Koç koç, José Luis, Py Data, Ragıp Ünal
+* Ukrainian: Vladislav Gerasimenko, Mikolai Incognito, Sergiy Shkodenko, Viktor Shytiuk, Zoriana Zaiats, Mykola Zamkovoi
 * Vietnamese: Hồng Quân Nguyễn, Luan Nguyen
 * Welsh: Adam Hughes

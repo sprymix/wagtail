@@ -62,6 +62,14 @@ def index(request):
         except (ValueError, Collection.DoesNotExist):
             pass
 
+    # Filter by tag
+    current_tag = request.GET.get('tag')
+    if current_tag:
+        try:
+            images = images.filter(tags__name=current_tag)
+        except (AttributeError):
+            current_tag = None
+
     paginator = Paginator(images, per_page=INDEX_PAGE_SIZE)
     images = paginator.get_page(request.GET.get('p'))
 
@@ -88,6 +96,7 @@ def index(request):
 
             'search_form': form,
             'popular_tags': popular_tags_for_model(Image),
+            'current_tag': current_tag,
             'collections': collections,
             'current_collection': current_collection,
             'user_can_add': permission_policy.user_has_permission(request.user, 'add'),

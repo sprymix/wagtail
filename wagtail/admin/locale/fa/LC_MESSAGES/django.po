@@ -3,6 +3,7 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Hamed NAJAND <hmd.nzhd@gmail.com>, 2020
 # Mohammad reza Jelveh <mrj.eleven@gmail.com>, 2015
 # pyzenberg <pyzenberg@gmail.com>, 2017
 # pyzenberg <pyzenberg@gmail.com>, 2017
@@ -10,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-16 18:00+0100\n"
-"PO-Revision-Date: 2019-10-16 17:04+0000\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:13+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Persian (http://www.transifex.com/torchbox/wagtail/language/"
 "fa/)\n"
@@ -33,8 +34,14 @@ msgstr "لغو انتشار"
 msgid "Delete"
 msgstr "حذف"
 
+msgid "Save Draft"
+msgstr "ذخیره پیش نویس"
+
 msgid "Page locked"
 msgstr "صفحه قفل شده"
+
+msgid "Wagtail admin"
+msgstr "ادمین وگتیل"
 
 msgid "Sorry, you do not have permission to access this area."
 msgstr "متاسفانه مجوز لازم برای دسترسی به این ناحیه را ندارید."
@@ -151,8 +158,14 @@ msgstr "این فیلد لازم است."
 msgid "Please select at least one group."
 msgstr "لطفا دست کم یک گروه را انتخاب نمایید."
 
+msgid "Arabic"
+msgstr "عربی"
+
 msgid "Catalan"
 msgstr "کاتالان"
+
+msgid "Czech"
+msgstr "چک"
 
 msgid "German"
 msgstr "آلمانی"
@@ -175,14 +188,29 @@ msgstr "فرانسوی"
 msgid "Galician"
 msgstr "گالیسیایی"
 
+msgid "Hungarian"
+msgstr "مجارستان"
+
+msgid "Indonesian"
+msgstr "اندونزی"
+
 msgid "Icelandic"
 msgstr "ایسلندی"
 
 msgid "Italian"
 msgstr "ایتالیایی"
 
+msgid "Japanese"
+msgstr "ژاپنی"
+
+msgid "Korean"
+msgstr "کره ای"
+
 msgid "Lithuanian"
 msgstr "لیتوانیایی"
+
+msgid "Mongolian"
+msgstr "مغولی"
 
 msgid "Norwegian Bokmål"
 msgstr "بوکمال نروژی"
@@ -207,6 +235,15 @@ msgstr "رومانیایی"
 
 msgid "Russian"
 msgstr "روسی"
+
+msgid "Swedish"
+msgstr "سوئدی"
+
+msgid "Slovak"
+msgstr "اسلواکیایی"
+
+msgid "Thai"
+msgstr "تایلندی"
 
 msgid "Page"
 msgstr "صفحه"
@@ -451,11 +488,27 @@ msgstr ""
 "اینجا پیشخوان شماست و در آن اطلاعات مفیدی مربوط به محتوایی که تولید کرده اید "
 "نمایش داده میشود."
 
-msgid "Pages awaiting moderation"
-msgstr "صفحه های نیازمند نظارت"
-
 msgid "Title"
 msgstr "عنوان"
+
+msgid "Edit this page"
+msgstr "ویرایش صفحه"
+
+msgid "Edit"
+msgstr "تصحیح"
+
+msgid "Draft"
+msgstr "پیشنویس"
+
+msgid "Live"
+msgstr "زنده"
+
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s پیش"
+
+msgid "Pages awaiting moderation"
+msgstr "صفحه های نیازمند نظارت"
 
 msgid "Parent"
 msgstr "والد"
@@ -466,24 +519,14 @@ msgstr "نوع"
 msgid "Edited"
 msgstr "تصحیح شده"
 
-msgid "Edit this page"
-msgstr "ویرایش صفحه"
-
 msgid "Approve"
 msgstr "تایید"
 
 msgid "Reject"
 msgstr "رد"
 
-msgid "Edit"
-msgstr "تصحیح"
-
 msgid "Preview"
 msgstr "نمایش"
-
-#, python-format
-msgid "%(time_period)s ago"
-msgstr "%(time_period)s پیش"
 
 msgid "Your most recent edits"
 msgstr "ویرایش‌های اخیر شما"
@@ -493,12 +536,6 @@ msgstr "تاریخ"
 
 msgid "Status"
 msgstr "وضعیت"
-
-msgid "Draft"
-msgstr "پیشنویس"
-
-msgid "Live"
-msgstr "زنده"
 
 msgid "Site summary"
 msgstr "خلاصه سایت"
@@ -564,15 +601,6 @@ msgstr "این صفحه توسط صفحه والد شخصی شده."
 
 msgid "Privacy changes apply to all children of this page too."
 msgstr "تغییرات حریم که به همه صفحه های زیرگروه این صفحه اعمال میشود."
-
-msgid "Edit lock"
-msgstr "ویرایش قفل"
-
-msgid "Locked"
-msgstr "قفل"
-
-msgid "Unlocked"
-msgstr "گشوده"
 
 msgid "Publish this revision"
 msgstr "انتشار این بازبینی"
@@ -996,6 +1024,9 @@ msgstr "صفحه ای استفاده نمی‌کند"
 msgid "Collection"
 msgstr "مجموعه"
 
+msgid "Locked"
+msgstr "قفل"
+
 #, python-format
 msgid "Page %(page_num)s of %(total_pages)s."
 msgstr "صفحه %(page_num)s از %(total_pages)s."
@@ -1017,15 +1048,6 @@ msgstr "خروج"
 
 msgid "Other searches"
 msgstr "جستجوهای دیگر"
-
-msgid ""
-"You are using an <strong>outdated</strong> browser not supported by this "
-"software. Please <a href=\"http://browsehappy.com/\">upgrade your browser</"
-"a>."
-msgstr ""
-"شما از یک مرورگر <strong>قدیمی</strong> استفاده می‌کنید که توسط این نرم افزار "
-"پشتیبانی نمی‌شود. لطفا مرورگر خود را <a href=\"http://browsehappy.com/"
-"\">بروزرسانی</a> کنید."
 
 msgid "Go to Wagtail admin interface"
 msgstr "رفتن به رابط راهبری وگتیل"
@@ -1164,9 +1186,6 @@ msgstr "صفحه '{0}' برای انتشار رد شد."
 
 msgid "Failed to send rejection notifications"
 msgstr "فرستادن آگاهسازی رد انتشار ناموفق بود"
-
-msgid "Page '{0}' is now locked."
-msgstr "صفحه '{0}' قفل شده است."
 
 msgid "Page '{0}' is now unlocked."
 msgstr "صفحه '{0}' باز شده است."
