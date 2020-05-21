@@ -18,9 +18,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 20:06+0000\n"
-"Last-Translator: José Luis <alagunajs@gmail.com>\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:14+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Spanish (http://www.transifex.com/torchbox/wagtail/language/"
 "es/)\n"
 "MIME-Version: 1.0\n"
@@ -29,9 +29,8 @@ msgstr ""
 "Language: es\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#, python-brace-format
-msgid "{label}: this block has no options."
-msgstr "{label}: este bloque no tiene opciones."
+msgid "Wagtail core"
+msgstr "Núcleo Wagtail"
 
 msgid "This block has no options."
 msgstr "Este bloque no tiene opciones."
@@ -246,9 +245,6 @@ msgstr "Eliminar páginas con hijos."
 msgid "Lock"
 msgstr "Bloquear"
 
-msgid "Lock/unlock any page"
-msgstr "Bloquear/desbloquear cualquier página"
-
 msgid "group"
 msgstr "grupo"
 
@@ -310,7 +306,10 @@ msgid "permission"
 msgstr "permiso"
 
 msgid "group collection permission"
-msgstr "grupo de permisos de colección"
+msgstr "permiso de colección de grupo"
+
+msgid "group collection permissions"
+msgstr "permisos de colección de grupo"
 
 msgid "Log in"
 msgstr "Ingresar"

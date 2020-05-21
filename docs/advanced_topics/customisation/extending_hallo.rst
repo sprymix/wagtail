@@ -1,3 +1,5 @@
+.. _extending_hallo:
+
 Extending the Hallo Editor
 ==========================
 
@@ -37,10 +39,10 @@ A plugin ``halloblockquote``, implemented in ``myapp/js/hallo-blockquote.js``, t
 
 The constructor for ``HalloPlugin`` accepts the following keyword arguments:
 
- * ``name`` - the plugin name as defined in the Javascript code. ``hallo.js`` plugin names are prefixed with the ``"IKS."`` namespace, but the name passed here should be without the prefix.
- * ``options`` - a dictionary (or other JSON-serialisable object) of options to be passed to the Javascript plugin code on initialisation
- * ``js`` - a list of Javascript files to be imported for this plugin, defined in the same way as a `Django form media <https://docs.djangoproject.com/en/1.11/topics/forms/media/>`_ definition
- * ``css`` - a dictionary of CSS files to be imported for this plugin, defined in the same way as a `Django form media <https://docs.djangoproject.com/en/1.11/topics/forms/media/>`_ definition
+ * ``name`` - the plugin name as defined in the JavaScript code. ``hallo.js`` plugin names are prefixed with the ``"IKS."`` namespace, but the name passed here should be without the prefix.
+ * ``options`` - a dictionary (or other JSON-serialisable object) of options to be passed to the JavaScript plugin code on initialisation
+ * ``js`` - a list of JavaScript files to be imported for this plugin, defined in the same way as a :doc:`Django form media <django:topics/forms/media>` definition
+ * ``css`` - a dictionary of CSS files to be imported for this plugin, defined in the same way as a :doc:`Django form media <django:topics/forms/media>` definition
  * ``order`` - an index number (default 100) specifying the order in which plugins should be listed, which in turn determines the order buttons will appear in the toolbar
 
 When writing the front-end code for the plugin, Wagtail’s Hallo implementation offers two extension points:
@@ -71,6 +73,6 @@ The following code will add the ``<blockquote>`` element to the whitelist whenev
             WhitelistRule('blockquote', allow_without_attributes),
         ])
 
-``WhitelistRule`` is passed the element name, and a callable which will perform some kind of manipulation of the element whenever it is encountered. This callable receives the element as a `BeautifulSoup <http://www.crummy.com/software/BeautifulSoup/bs4/doc/>`_ Tag object.
+``WhitelistRule`` is passed the element name, and a callable which will perform some kind of manipulation of the element whenever it is encountered. This callable receives the element as a `BeautifulSoup <https://www.crummy.com/software/BeautifulSoup/bs4/doc/>`_ Tag object.
 
 The ``wagtail.core.whitelist`` module provides a few helper functions to assist in defining these handlers: ``allow_without_attributes``, a handler which preserves the element but strips out all of its attributes, and ``attribute_rule`` which accepts a dict specifying how to handle each attribute, and returns a handler function. This dict will map attribute names to either True (indicating that the attribute should be kept), False (indicating that it should be dropped), or a callable (which takes the initial attribute value and returns either a final value for the attribute, or None to drop the attribute).

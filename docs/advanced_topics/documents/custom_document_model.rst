@@ -1,3 +1,5 @@
+.. _custom_document_model:
+
 =====================
 Custom document model
 =====================
@@ -54,7 +56,7 @@ Then in your settings module:
     When changing an existing site to use a custom document model, no documents
     will be copied to the new model automatically. Copying old documents to the
     new model would need to be done manually with a
-    `data migration <https://docs.djangoproject.com/en/1.8/topics/migrations/#data-migrations>`_.
+    :ref:`data migration <django:data-migrations>`.
 
     Any templates that reference the builtin document model will still continue
     to work as before.
@@ -62,6 +64,8 @@ Then in your settings module:
 Referring to the document model
 ===============================
 
-.. module:: wagtail.documents.models
+.. module:: wagtail.documents
 
 .. autofunction:: get_document_model
+
+.. autofunction:: get_document_model_string

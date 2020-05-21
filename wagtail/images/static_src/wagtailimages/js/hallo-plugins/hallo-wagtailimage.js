@@ -15,7 +15,7 @@
                     uuid: this.options.uuid,
                     editable: this.options.editable,
                     label: 'Images',
-                    icon: 'icon-picture',
+                    icon: 'icon-image',
                     command: null
                 });
                 toolbar.append(button);
@@ -26,6 +26,7 @@
                     insertionPoint = $(lastSelection.endContainer).parentsUntil('[data-hallo-editor]').last();
                     return ModalWorkflow({
                         url: window.chooserUrls.imageChooser + '?select_format=true',
+                        onload: IMAGE_CHOOSER_MODAL_ONLOAD_HANDLERS,
                         responses: {
                             imageChosen: function(imageData) {
                                 var elem;

@@ -56,7 +56,7 @@ class StreamField(models.Field):
 
     def deconstruct(self):
         name, path, _, kwargs = super().deconstruct()
-        block_types = self.stream_block.child_blocks.items()
+        block_types = list(self.stream_block.child_blocks.items())
         args = [block_types]
         return name, path, args, kwargs
 
@@ -105,7 +105,7 @@ class StreamField(models.Field):
         else:
             return json.dumps(self.stream_block.get_prep_value(value), cls=DjangoJSONEncoder)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
 
     def formfield(self, **kwargs):

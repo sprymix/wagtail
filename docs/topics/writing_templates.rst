@@ -5,10 +5,10 @@ Writing templates
 =================
 
 Wagtail uses Django's templating language. For developers new to Django, start with Django's own template documentation:
-https://docs.djangoproject.com/en/dev/topics/templates/
+:doc:`django:topics/templates`
 
 Python programmers new to Django/Wagtail may prefer more technical documentation:
-https://docs.djangoproject.com/en/dev/ref/templates/api/
+:doc:`ref/templates/api`
 
 You should be familiar with Django templating basics before continuing with this documentation.
 
@@ -31,10 +31,7 @@ Template files are assumed to exist here::
             models.py
 
 
-For more information, see the Django documentation for the `application directories template loader`_.
-
-.. _application directories template loader: https://docs.djangoproject.com/en/dev/ref/templates/api/
-
+For more information, see the Django documentation for the :doc:`application directories template loader <ref/templates/api>`.
 
 Page content
 ~~~~~~~~~~~~
@@ -77,7 +74,7 @@ Read more about the image manipulation syntax here :ref:`image_tag`.
 Template tags & filters
 =======================
 
-In addition to Django's standard tags and filters, Wagtail provides some of its own, which can be ``load``-ed `just like any other <https://docs.djangoproject.com/en/dev/topics/templates/#custom-tag-and-filter-libraries>`_.
+In addition to Django's standard tags and filters, Wagtail provides some of its own, which can be ``load``-ed :doc:`just like any other <howto/custom-template-tags>`.
 
 
 Images (tag)
@@ -122,10 +119,13 @@ Only fields using ``RichTextField`` need this applied in the template.
     ...
     {{ page.body|richtext }}
 
+
+.. _responsive-embeds:
+
 Responsive Embeds
 -----------------
 
-Wagtail includes embeds and images at their full width, which may overflow the bounds of the content container you've defined in your templates. To make images and embeds responsive -- meaning they'll resize to fit their container -- include the following CSS.
+By default, Wagtail includes embeds and images at their full width, which may overflow the bounds of the content container you've defined in your templates. To address this, Wagtail provides the ability to make images and embeds responsive -- meaning they'll resize to fit their container. Responsive embeds can be enabled by setting ``WAGTAILEMBEDS_RESPONSIVE_HTML = True`` in your project settings; this adds a CSS class of ``responsive-object`` and an inline ``padding-bottom`` style to the embed, to be used in conjunction with CSS such as the following:
 
 .. code-block:: css
 
@@ -149,6 +149,11 @@ Wagtail includes embeds and images at their full width, which may overflow the b
     }
 
 
+.. versionchanged:: 2.8
+
+  The ``WAGTAILEMBEDS_RESPONSIVE_HTML`` setting was added. Previous versions always added the class and style attributes.
+
+
 Internal links (tag)
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -163,7 +168,23 @@ Takes a Page object and returns a relative URL (``/foo/bar/``) if within the sam
 
     {% load wagtailcore_tags %}
     ...
-    <a href="{% pageurl page.blog_page %}">
+    <a href="{% pageurl page.get_parent %}">Back to index</a>
+
+
+A ``fallback`` keyword argument can be provided - this should be a URL route name that takes no parameters, and will be used as a substitute URL when the passed page is ``None``.
+
+.. code-block:: html+django
+
+    {% load wagtailcore_tags %}
+
+    {% for publication in page.related_publications.all %}
+        <li>
+            <a href="{% pageurl publication.detail_page fallback='coming_soon' %}">
+                {{ publication.title }}
+            </a>
+        </li>
+    {% endfor %}
+
 
 .. _slugurl_tag:
 
@@ -221,7 +242,7 @@ By default the User Bar appears in the bottom right of the browser window, inset
     {% wagtailuserbar 'bottom-right' %}
     ...
 
-The userbar can be positioned where it works best with your design. Alternatively, you can position it with a css rule in your own CSS files, for example:
+The userbar can be positioned where it works best with your design. Alternatively, you can position it with a CSS rule in your own CSS files, for example:
 
 .. code-block:: css
 

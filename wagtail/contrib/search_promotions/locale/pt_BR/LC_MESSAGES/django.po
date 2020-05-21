@@ -4,16 +4,17 @@
 #
 # Translators:
 # Claudemiro Alves Feitosa Neto <dimiro1@gmail.com>, 2015
+# Daniel Carvalho <dnc331@gmail.com>, 2019
 # Gladson <gladsonbrito@gmail.com>, 2014
 # Luiz Boaretto <lboaretto@gmail.com>, 2016
-# Luiz Boaretto <lboaretto@gmail.com>, 2016
+# Luiz Boaretto <lboaretto@gmail.com>, 2016,2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 16:06+0000\n"
-"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
+"POT-Creation-Date: 2020-01-20 20:13+0000\n"
+"PO-Revision-Date: 2019-11-16 04:11+0000\n"
+"Last-Translator: Daniel Carvalho <dnc331@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/torchbox/"
 "wagtail/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
@@ -21,6 +22,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: pt_BR\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Wagtail search promotions"
+msgstr "Wagtail promoção de pesquisa"
 
 msgid "Please specify at least one recommendation for this search term."
 msgstr "Especifique pelo menos uma recomendação para este termo de busca."
@@ -134,7 +138,7 @@ msgstr "Nenhum"
 #, python-format
 msgid ""
 "\n"
-"            There is one match\n"
+"            There is %(counter)s match\n"
 "        "
 msgid_plural ""
 "\n"
@@ -142,7 +146,7 @@ msgid_plural ""
 "        "
 msgstr[0] ""
 "\n"
-"            Há um resultado\n"
+"            Há %(counter)s resultado\n"
 "        "
 msgstr[1] ""
 "\n"
@@ -164,7 +168,6 @@ msgstr ""
 msgid "Search promoted results"
 msgstr "Pesquisar resultados promovidos"
 
-#, python-brace-format
 msgid "Editor's picks for '{0}' created."
 msgstr "Sugestões dos editores para '{0}' criados."
 
@@ -174,7 +177,6 @@ msgstr "Editar"
 msgid "Recommendations have not been created due to errors"
 msgstr "As recomendações não poderiam ser criadas devido a erros"
 
-#, python-brace-format
 msgid "Editor's picks for '{0}' updated."
 msgstr "Sugestões do editor para '{0}' atualizado."
 

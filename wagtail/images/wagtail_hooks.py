@@ -1,22 +1,23 @@
 from django.conf.urls import include, url
-from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.urls import reverse
-from django.utils.html import format_html, format_html_join
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ugettext, ungettext
 
 import wagtail.admin.rich_text.editors.draftail.features as draftail_features
 from wagtail.admin.menu import MenuItem
+from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.rich_text import HalloPlugin
 from wagtail.admin.search import SearchArea
 from wagtail.admin.site_summary import SummaryItem
 from wagtail.core import hooks
 from wagtail.images import admin_urls, get_image_model, image_operations
-from wagtail.images.api.admin.endpoints import ImagesAdminAPIEndpoint
+from wagtail.images.api.admin.views import ImagesAdminAPIViewSet
 from wagtail.images.forms import GroupImagePermissionFormSet
 from wagtail.images.permissions import permission_policy
-from wagtail.images.rich_text import (
-    ContentstateImageConversionRule, EditorHTMLImageConversionRule, image_embedtype_handler)
+from wagtail.images.rich_text import ImageEmbedHandler
+from wagtail.images.rich_text.contentstate import ContentstateImageConversionRule
+from wagtail.images.rich_text.editor_html import EditorHTMLImageConversionRule
 
 
 @hooks.register('register_admin_urls')
@@ -28,7 +29,7 @@ def register_admin_urls():
 
 @hooks.register('construct_admin_api')
 def construct_admin_api(router):
-    router.register_endpoint('images', ImagesAdminAPIEndpoint)
+    router.register_endpoint('images', ImagesAdminAPIViewSet)
 
 
 class ImagesMenuItem(MenuItem):
@@ -48,23 +49,7 @@ def register_images_menu_item():
 
 @hooks.register('insert_editor_js')
 def editor_js():
-    js_files = [
-        static('wagtailimages/js/image-chooser.js'),
-        static('wagtailimages/js/add-multiple.js'),
-        static('wagtailimages/js/vendor/jquery.Jcrop.min.js'),
-        static('wagtailimages/js/vendor/load-image.min.js'),
-        static('wagtailimages/js/vendor/canvas-to-blob.min.js'),
-        static('wagtailadmin/js/vendor/jquery.iframe-transport.js'),
-        static('wagtailadmin/js/vendor/jquery.fileupload.js'),
-        static('wagtailadmin/js/vendor/jquery.fileupload-process.js'),
-        static('wagtailimages/js/vendor/jquery.fileupload-image.js'),
-        static('wagtailimages/js/vendor/jquery.fileupload-validate.js'),
-    ]
-    js_includes = format_html_join(
-        '\n', '<script src="{0}"></script>',
-        ((filename, ) for filename in js_files)
-    )
-    return js_includes + format_html(
+    return format_html(
         """
         <script>
             window.chooserUrls.imageChooser = '{0}';
@@ -77,14 +62,17 @@ def editor_js():
 @hooks.register('register_rich_text_features')
 def register_image_feature(features):
     # define a handler for converting <embed embedtype="image"> tags into frontend HTML
-    features.register_embed_type('image', image_embedtype_handler)
+    features.register_embed_type(ImageEmbedHandler)
 
     # define a hallo.js plugin to use when the 'image' feature is active
     features.register_editor_plugin(
         'hallo', 'image',
         HalloPlugin(
             name='hallowagtailimage',
-            js=['wagtailimages/js/hallo-plugins/hallo-wagtailimage.js'],
+            js=[
+                'wagtailimages/js/image-chooser-modal.js',
+                'wagtailimages/js/hallo-plugins/hallo-wagtailimage.js',
+            ],
         )
     )
 
@@ -105,7 +93,9 @@ def register_image_feature(features):
             'whitelist': {
                 'id': True,
             }
-        })
+        }, js=[
+            'wagtailimages/js/image-chooser-modal.js',
+        ])
     )
 
     # define how to convert between contentstate's representation of images and
@@ -129,6 +119,7 @@ def register_image_operations():
         ('forcewidth', image_operations.ForceWidthHeightOperation),
         ('forceheight', image_operations.ForceWidthHeightOperation),
         ('forcefit', image_operations.ForceFitOperation),
+        ('scale', image_operations.ScaleOperation),
         ('jpegquality', image_operations.JPEGQualityOperation),
         ('format', image_operations.FormatOperation),
         ('bgcolor', image_operations.BackgroundColorOperation),
@@ -142,9 +133,11 @@ class ImagesSummaryItem(SummaryItem):
     template = 'wagtailimages/homepage/site_summary_images.html'
 
     def get_context(self):
+        site_name = get_site_for_user(self.request.user)['site_name']
+
         return {
-            'total_images':
-                get_image_model().objects.filter(show_in_catalogue=True).count()
+            'total_images': get_image_model().objects.filter(show_in_catalogue=True).count(),
+            'site_name': site_name,
         }
 
     def is_shown(self):

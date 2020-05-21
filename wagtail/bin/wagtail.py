@@ -10,6 +10,14 @@ from difflib import unified_diff
 from django.core.management import ManagementUtility
 
 
+CURRENT_PYTHON = sys.version_info[:2]
+REQUIRED_PYTHON = (3, 5)
+
+if CURRENT_PYTHON < REQUIRED_PYTHON:
+    sys.stderr.write("This version of Wagtail requires Python {}.{} or above - you are running {}.{}\n".format(*(REQUIRED_PYTHON + CURRENT_PYTHON)))
+    sys.exit(1)
+
+
 def pluralize(value, arg='s'):
     return '' if value == 1 else arg
 

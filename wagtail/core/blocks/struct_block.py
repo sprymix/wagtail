@@ -1,12 +1,16 @@
 import collections
 
 from django import forms
-from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.core.exceptions import ValidationError
 from django.forms.utils import ErrorList
 from django.template.loader import render_to_string
 from django.utils.functional import cached_property
 from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
+
+from wagtail.admin.staticfiles import versioned_static
+
+from wagtail.admin.staticfiles import versioned_static
 
 from .base import Block, DeclarativeSubBlocksMetaclass
 from .utils import js_dict
@@ -15,7 +19,7 @@ __all__ = ['BaseStructBlock', 'StructBlock', 'StructValue']
 
 
 class StructValue(collections.OrderedDict):
-    """ A class that generates a StructBlock value from provded sub-blocks """
+    """ A class that generates a StructBlock value from provided sub-blocks """
     def __init__(self, block, *args):
         super().__init__(*args)
         self.block = block
@@ -73,7 +77,7 @@ class BaseStructBlock(Block):
 
     @property
     def media(self):
-        return forms.Media(js=[static('wagtailadmin/js/blocks/struct.js')])
+        return forms.Media(js=[versioned_static('wagtailadmin/js/blocks/struct.js')])
 
     def get_form_context(self, value, prefix='', errors=None):
         if errors:
@@ -105,7 +109,7 @@ class BaseStructBlock(Block):
     def render_form(self, value, prefix='', errors=None):
         context = self.get_form_context(value, prefix=prefix, errors=errors)
 
-        return render_to_string(self.meta.form_template, context)
+        return mark_safe(render_to_string(self.meta.form_template, context))
 
     def value_from_datadict(self, data, files, prefix):
         return self._to_struct_value([
@@ -183,7 +187,7 @@ class BaseStructBlock(Block):
         to a custom subclass in the user's models.py that may or may not stick around.
         """
         path = 'wagtail.core.blocks.StructBlock'
-        args = [self.child_blocks.items()]
+        args = [list(self.child_blocks.items())]
         kwargs = self._constructor_kwargs
         return (path, args, kwargs)
 

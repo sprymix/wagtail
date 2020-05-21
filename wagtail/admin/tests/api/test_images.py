@@ -13,11 +13,10 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
     fixtures = ['demosite.json']
 
     def get_response(self, **params):
-        return self.client.get(reverse('wagtailadmin_api_v1:images:listing'), params)
+        return self.client.get(reverse('wagtailadmin_api:images:listing'), params)
 
     def get_image_id_list(self, content):
         return [image['id'] for image in content['items']]
-
 
     # BASIC TESTS
 
@@ -47,14 +46,13 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
         for image in content['items']:
             self.assertIn('meta', image)
             self.assertIsInstance(image['meta'], dict)
-            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags'})
+            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags', 'download_url'})
 
             # Type should always be wagtailimages.Image
             self.assertEqual(image['meta']['type'], 'wagtailimages.Image')
 
             # Check detail url
-            self.assertEqual(image['meta']['detail_url'], 'http://localhost/admin/api/v2beta/images/%d/' % image['id'])
-
+            self.assertEqual(image['meta']['detail_url'], 'http://localhost/admin/api/main/images/%d/' % image['id'])
 
     #  FIELDS
 
@@ -64,7 +62,7 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
 
         for image in content['items']:
             self.assertEqual(set(image.keys()), {'id', 'meta', 'title', 'width', 'height', 'thumbnail'})
-            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags'})
+            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'download_url', 'tags'})
 
     def test_fields(self):
         response = self.get_response(fields='width,height')
@@ -72,7 +70,7 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
 
         for image in content['items']:
             self.assertEqual(set(image.keys()), {'id', 'meta', 'title', 'width', 'height', 'thumbnail'})
-            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags'})
+            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'download_url', 'tags'})
 
     def test_remove_fields(self):
         response = self.get_response(fields='-title')
@@ -87,14 +85,14 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
 
         for image in content['items']:
             self.assertEqual(set(image.keys()), {'id', 'meta', 'title', 'width', 'height', 'thumbnail'})
-            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url'})
+            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'download_url'})
 
     def test_remove_all_meta_fields(self):
         response = self.get_response(fields='-type,-detail_url,-tags')
         content = json.loads(response.content.decode('UTF-8'))
 
         for image in content['items']:
-            self.assertEqual(set(image.keys()), {'id', 'title', 'width', 'height', 'thumbnail'})
+            self.assertEqual(set(image.keys()), {'id', 'title', 'width', 'height', 'thumbnail', 'meta'})
 
     def test_remove_id_field(self):
         response = self.get_response(fields='-id')
@@ -109,7 +107,7 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
 
         for image in content['items']:
             self.assertEqual(set(image.keys()), {'id', 'meta', 'title', 'width', 'height', 'thumbnail'})
-            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags'})
+            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags', 'download_url'})
 
     def test_all_fields_then_remove_something(self):
         response = self.get_response(fields='*,-title,-tags')
@@ -117,7 +115,7 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
 
         for image in content['items']:
             self.assertEqual(set(image.keys()), {'id', 'meta', 'width', 'height', 'thumbnail'})
-            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url'})
+            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'download_url'})
 
     def test_fields_tags(self):
         response = self.get_response(fields='tags')
@@ -125,7 +123,7 @@ class TestAdminImageListing(AdminAPITestCase, TestImageListing):
 
         for image in content['items']:
             self.assertEqual(set(image.keys()), {'id', 'meta', 'title', 'width', 'height', 'thumbnail'})
-            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags'})
+            self.assertEqual(set(image['meta'].keys()), {'type', 'detail_url', 'tags', 'download_url'})
             self.assertIsInstance(image['meta']['tags'], list)
 
 
@@ -133,7 +131,7 @@ class TestAdminImageDetail(AdminAPITestCase, TestImageDetail):
     fixtures = ['demosite.json']
 
     def get_response(self, image_id, **params):
-        return self.client.get(reverse('wagtailadmin_api_v1:images:detail', args=(image_id, )), params)
+        return self.client.get(reverse('wagtailadmin_api:images:detail', args=(image_id, )), params)
 
     def test_basic(self):
         response = self.get_response(5)
@@ -158,7 +156,7 @@ class TestAdminImageDetail(AdminAPITestCase, TestImageDetail):
 
         # Check the meta detail_url
         self.assertIn('detail_url', content['meta'])
-        self.assertEqual(content['meta']['detail_url'], 'http://localhost/admin/api/v2beta/images/5/')
+        self.assertEqual(content['meta']['detail_url'], 'http://localhost/admin/api/main/images/5/')
 
         # Check the thumbnail
 

@@ -1,3 +1,5 @@
+.. _api_v2_configuration:
+
 ==================================
 Wagtail API v2 Configuration Guide
 ==================================
@@ -43,13 +45,13 @@ can hook into the rest of your project.
 
 Wagtail provides three endpoint classes you can use:
 
- - Pages :class:`wagtail.api.v2.endpoints.PagesAPIEndpoint`
- - Images :class:`wagtail.images.api.v2.endpoints.ImagesAPIEndpoint`
- - Documents :class:`wagtail.documents.api.v2.endpoints.DocumentsAPIEndpoint`
+ - Pages :class:`wagtail.api.v2.views.PagesAPIViewSet`
+ - Images :class:`wagtail.images.api.v2.views.ImagesAPIViewSet`
+ - Documents :class:`wagtail.documents.api.v2.views.DocumentsAPIViewSet`
 
 You can subclass any of these endpoint classes to customise their functionality.
 Additionally, there is a base endpoint class you can use for adding different
-content types to the API: :class:`wagtail.api.v2.endpoints.BaseAPIEndpoint`
+content types to the API: :class:`wagtail.api.v2.views.BaseAPIViewSet`
 
 For this example, we will create an API that includes all three builtin content
 types in their default configuration:
@@ -58,10 +60,10 @@ types in their default configuration:
 
     # api.py
 
-    from wagtail.api.v2.endpoints import PagesAPIEndpoint
+    from wagtail.api.v2.views import PagesAPIViewSet
     from wagtail.api.v2.router import WagtailAPIRouter
-    from wagtail.images.api.v2.endpoints import ImagesAPIEndpoint
-    from wagtail.documents.api.v2.endpoints import DocumentsAPIEndpoint
+    from wagtail.images.api.v2.views import ImagesAPIViewSet
+    from wagtail.documents.api.v2.views import DocumentsAPIViewSet
 
     # Create the router. "wagtailapi" is the URL namespace
     api_router = WagtailAPIRouter('wagtailapi')
@@ -70,9 +72,9 @@ types in their default configuration:
     # The first parameter is the name of the endpoint (eg. pages, images). This
     # is used in the URL of the endpoint
     # The second parameter is the endpoint class that handles the requests
-    api_router.register_endpoint('pages', PagesAPIEndpoint)
-    api_router.register_endpoint('images', ImagesAPIEndpoint)
-    api_router.register_endpoint('documents', DocumentsAPIEndpoint)
+    api_router.register_endpoint('pages', PagesAPIViewSet)
+    api_router.register_endpoint('images', ImagesAPIViewSet)
+    api_router.register_endpoint('documents', DocumentsAPIViewSet)
 
 Next, register the URLs so Django can route requests into the API:
 
@@ -125,7 +127,7 @@ For example:
     class BlogPage(Page):
         published_date = models.DateTimeField()
         body = RichTextField()
-        feed_image = models.ForeignKey('wagtailimages.Image', on_delete=models.CASCADE, ...)
+        feed_image = models.ForeignKey('wagtailimages.Image', on_delete=models.SET_NULL, null=True, ...)
         private_field = models.CharField(max_length=255)
 
         # Export fields over the API
@@ -157,7 +159,7 @@ JSON format. You can override the serialiser for any field using the
 
         api_fields = [
             # Change the format of the published_date field to "Thursday 06 April 2017"
-            APIField('published_date', serializer=DateField(format='%A $d %B %Y')),
+            APIField('published_date', serializer=DateField(format='%A %d %B %Y')),
             ...
         ]
 
@@ -189,8 +191,8 @@ This adds two fields to the API (other fields omitted for brevity):
         "published_date_display": "Thursday 06 April 2017"
     }
 
-.. _Serialisers: http://www.django-rest-framework.org/api-guide/fields/
-.. _source: http://www.django-rest-framework.org/api-guide/fields/#source
+.. _Serialisers: https://www.django-rest-framework.org/api-guide/fields/
+.. _source: https://www.django-rest-framework.org/api-guide/fields/#source
 
 Images in the API
 -----------------
@@ -228,6 +230,7 @@ This would add the following to the JSON:
             "meta": {
                 "type": "wagtailimages.Image",
                 "detail_url": "http://www.example.com/api/v2/images/12/",
+                "download_url": "/media/images/a_test_image.jpg",
                 "tags": []
             },
             "title": "A test image",
@@ -235,11 +238,17 @@ This would add the following to the JSON:
             "height": 1125
         },
         "feed_image_thumbnail": {
-            "url": "http://www.example.com/media/images/a_test_image.fill-100x100.jpg",
+            "url": "/media/images/a_test_image.fill-100x100.jpg",
             "width": 100,
             "height": 100
         }
     }
+
+
+Note: ``download_url`` is the original uploaded file path, whereas
+``feed_image_thumbnail['url']`` is the url of the rendered image.
+When you are using another storage backend, such as S3, ``download_url`` will return
+a URL to the image if your media files are properly configured.
 
 Additional settings
 ===================

@@ -3,15 +3,6 @@
 Frontend cache invalidator
 ==========================
 
-.. versionchanged:: 0.7
-
-   * Multiple backend support added
-   * Cloudflare support added
-
-.. versionchanged:: 1.7
-
-   * Amazon CloudFront support added
-
 Many websites use a frontend cache such as Varnish, Squid, Cloudflare or CloudFront to gain extra performance. The downside of using a frontend cache though is that they don't respond well to updating content and will often keep an old version of a page cached after it has been updated.
 
 This document describes how to configure Wagtail to purge old versions of pages from a frontend cache whenever a page gets updated.
@@ -29,10 +20,6 @@ Firstly, add ``"wagtail.contrib.frontend_cache"`` to your INSTALLED_APPS:
 
         "wagtail.contrib.frontend_cache"
      ]
-
-.. versionchanged:: 0.8
-
-    Signal handlers are now automatically registered
 
 The ``wagtailfrontendcache`` module provides a set of signal handlers which will automatically purge the cache whenever a page is published or deleted. These signal handlers are automatically registered when the ``wagtail.contrib.frontend_cache`` app is loaded.
 
@@ -52,12 +39,15 @@ Add a new item into the ``WAGTAILFRONTENDCACHE`` setting and set the ``BACKEND``
             'LOCATION': 'http://localhost:8000',
         },
     }
+	WAGTAILFRONTENDCACHE_LANGUAGES = []
 
+
+Set ``WAGTAILFRONTENDCACHE_LANGUAGES`` to a list of languages (typically equal to ``[l[0] for l in settings.LANGUAGES]``) to also purge the urls for each language of a purging url. This setting needs ``settings.USE_I18N`` to be ``True`` to work. Its default is an empty list.
 
 Finally, make sure you have configured your frontend cache to accept PURGE requests:
 
  - `Varnish <https://www.varnish-cache.org/docs/3.0/tutorial/purging.html>`_
- - `Squid <http://wiki.squid-cache.org/SquidFaq/OperatingSquid#How_can_I_purge_an_object_from_my_cache.3F>`_
+ - `Squid <https://wiki.squid-cache.org/SquidFaq/OperatingSquid#How_can_I_purge_an_object_from_my_cache.3F>`_
 
 
 .. _frontendcache_cloudflare:
@@ -67,10 +57,17 @@ Cloudflare
 
 Firstly, you need to register an account with Cloudflare if you haven't already got one. You can do this here: `Cloudflare Sign up <https://www.cloudflare.com/sign-up>`_
 
-Add an item into the ``WAGTAILFRONTENDCACHE`` and set the ``BACKEND`` parameter to ``wagtail.contrib.frontend_cache.backends.CloudflareBackend``. This backend requires three extra parameters, ``EMAIL`` (your Cloudflare account email), ``TOKEN`` (your API token from Cloudflare), and ``ZONEID`` (for zone id for your domain, see below).
+Add an item into the ``WAGTAILFRONTENDCACHE`` and set the ``BACKEND`` parameter to ``wagtail.contrib.frontend_cache.backends.CloudflareBackend``. 
 
-To find the ``ZONEID`` for your domain, read the `Cloudflare API Documentation <https://api.cloudflare.com/#getting-started-resource-ids>`_
+This backend can be configured to use an account-wide API key, or an API token with restricted access.
 
+To use an account-wide API key, find the key `as described in the Cloudflare documentation <https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys#12345682>`_ and specify ``EMAIL`` and ``API_KEY`` parameters.
+
+To use a limited API token, `create a token <https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys#12345680>`_ configured with the 'Zone, Cache Purge' permission and specify the ``BEARER_TOKEN`` parameter.
+
+A ``ZONEID`` parameter will need to be set for either option. To find the ``ZONEID`` for your domain, read the `Cloudflare API Documentation <https://api.cloudflare.com/#getting-started-resource-ids>`_
+
+With an API key:
 
 .. code-block:: python
 
@@ -80,7 +77,21 @@ To find the ``ZONEID`` for your domain, read the `Cloudflare API Documentation <
         'cloudflare': {
             'BACKEND': 'wagtail.contrib.frontend_cache.backends.CloudflareBackend',
             'EMAIL': 'your-cloudflare-email-address@example.com',
-            'TOKEN': 'your cloudflare api token',
+            'API_KEY': 'your cloudflare api key',
+            'ZONEID': 'your cloudflare domain zone id',
+        },
+    }
+
+With an API token:
+
+.. code-block:: python
+
+    # settings.py
+
+    WAGTAILFRONTENDCACHE = {
+        'cloudflare': {
+            'BACKEND': 'wagtail.contrib.frontend_cache.backends.CloudflareBackend',
+            'BEARER_TOKEN': 'your cloudflare bearer token',
             'ZONEID': 'your cloudflare domain zone id',
         },
     }
@@ -103,7 +114,7 @@ Add an item into the ``WAGTAILFRONTENDCACHE`` and set the ``BACKEND`` parameter 
         },
     }
 
-Configuration of credentials can done in multiple ways. You won't need to store them in your Django settings file. You can read more about this here: `Boto 3 Docs <http://boto3.readthedocs.org/en/latest/guide/configuration.html>`_
+Configuration of credentials can done in multiple ways. You won't need to store them in your Django settings file. You can read more about this here: `Boto 3 Docs <https://boto3.readthedocs.org/en/latest/guide/configuration.html>`_
 
 In case you run multiple sites with Wagtail and each site has its CloudFront distribution, provide a mapping instead of a single distribution. Make sure the mapping matches with the hostnames provided in your site settings.
 
@@ -212,8 +223,6 @@ For example, this could be useful for purging a single page on a blog index:
 
 The ``PurgeBatch`` class
 ^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 1.13
 
 All of the methods available on ``PurgeBatch`` are listed below:
 

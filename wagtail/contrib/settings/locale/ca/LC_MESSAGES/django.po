@@ -4,13 +4,13 @@
 #
 # Translators:
 # Matt Westcott <matthew@torchbox.com>, 2017
-# Roger Pons <rogerpons@gmail.com>, 2017
+# Roger Pons <rogerpons@gmail.com>, 2017-2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 16:07+0000\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2019-10-16 17:06+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Catalan (http://www.transifex.com/torchbox/wagtail/language/"
 "ca/)\n"
@@ -36,9 +36,10 @@ msgstr "Desar"
 msgid "Settings"
 msgstr "Configuració"
 
-#, python-brace-format
-msgid "{setting_type} updated."
-msgstr "{setting_type} actualitzat."
+msgid "This setting could not be opened because there is no site defined."
+msgstr ""
+"No es pot obrir aquest paràmetre de configuració perquè no hi ha cap lloc "
+"web definit."
 
 msgid "The setting could not be saved due to errors."
 msgstr "El paràmetre de configuració no pot ser desat per causa d'errors."

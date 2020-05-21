@@ -3,14 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Dan Braghis, 2014-2016,2018
+# Bogdan Mateescu, 2019
+# Dan Braghis, 2014-2016,2018-2019
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 23:45+0000\n"
-"Last-Translator: Dan Braghis\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:14+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/torchbox/wagtail/language/"
 "ro/)\n"
 "MIME-Version: 1.0\n"
@@ -20,8 +21,11 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?"
 "2:1));\n"
 
-msgid "GIF, JPEG, PNG"
-msgstr "GIF, JPEG, PNG"
+msgid "Wagtail images"
+msgstr "Imagini Wagtail"
+
+msgid "GIF, JPEG, PNG, WEBP"
+msgstr "GIF, JPEG, PNG, WEBP"
 
 #, python-format
 msgid ""
@@ -45,6 +49,10 @@ msgstr "Imaginea %s nu este validă."
 #, python-format
 msgid "This file is too big (%%s). Maximum filesize %s."
 msgstr "Acest fișier este prea mare (%%s). Mărime maximă: %s."
+
+#, python-format
+msgid "This file has too many pixels (%%s). Maximum pixels %s."
+msgstr "Acest fișier are prea mulți pixeli (%%s). Maximum de pixeli %s."
 
 #, python-format
 msgid "This file is too big. Maximum filesize %s."
@@ -122,6 +130,12 @@ msgstr "încărcată de utlizator"
 msgid "tags"
 msgstr "etichete"
 
+msgid "image"
+msgstr "imagine"
+
+msgid "images"
+msgstr "imagini"
+
 msgid "Choose an image"
 msgstr "Alege imagine"
 
@@ -137,16 +151,10 @@ msgstr "Etichete populare"
 msgid "Uploading…"
 msgstr "În curs de încărcare…"
 
-msgid "Server Error"
-msgstr "Eroare de server"
-
-msgid "Report this error to your webmaster with the following information:"
-msgstr "Raportează această eroare webmasterului cu următoarele informații:"
-
 #, python-format
 msgid ""
 "\n"
-"            There is one match\n"
+"            There is %(counter)s match\n"
 "        "
 msgid_plural ""
 "\n"
@@ -154,13 +162,16 @@ msgid_plural ""
 "        "
 msgstr[0] ""
 "\n"
-"Există o potrivire"
+"            Există %(counter)s potrivire\n"
+"        "
 msgstr[1] ""
 "\n"
-"Sunt %(counter)s potriviri"
+"            Sunt %(counter)s potriviri\n"
+"        "
 msgstr[2] ""
 "\n"
-"Sunt %(counter)s potriviri"
+"            Sunt %(counter)s potriviri\n"
+"        "
 
 msgid "Latest images"
 msgstr "Imagini recente"
@@ -174,21 +185,29 @@ msgstr "Inserează imagine"
 #, python-format
 msgid ""
 "\n"
-"        <span>%(total)s</span> Image\n"
+"        <span>%(total)s</span> Image <span class=\"visuallyhidden\">created "
+"in %(site_name)s</span>\n"
 "    "
 msgid_plural ""
 "\n"
-"        <span>%(total)s</span> Images\n"
+"        <span>%(total)s</span> Images <span class=\"visuallyhidden\">created "
+"in %(site_name)s</span>\n"
 "    "
 msgstr[0] ""
 "\n"
-"<span>%(total)s</span> imagine"
+"        <span>%(total)s</span> imagine <span class=\"visuallyhidden\">creată "
+"în %(site_name)s</span>\n"
+"    "
 msgstr[1] ""
 "\n"
-"<span>%(total)s</span> imagini"
+"        <span>%(total)s</span> imagini <span class=\"visuallyhidden\">create "
+"în %(site_name)s</span>\n"
+"    "
 msgstr[2] ""
 "\n"
-"<span>%(total)s</span> imagini"
+"        <span>%(total)s</span> de imagini <span class=\"visuallyhidden"
+"\">create în %(site_name)s</span>\n"
+"    "
 
 msgid "Change image file:"
 msgstr "Schimbă fișierul imaginii:"
@@ -208,15 +227,18 @@ msgstr "Șterge imagine"
 #, python-format
 msgid "Used %(usage_count)s time"
 msgid_plural "Used %(usage_count)s times"
-msgstr[0] "%(usage_count)s utilizări"
+msgstr[0] "%(usage_count)s utilizare"
 msgstr[1] "%(usage_count)s utilizări"
-msgstr[2] "%(usage_count)s utilizări"
+msgstr[2] "%(usage_count)s de utilizări"
 
 msgid "Are you sure you want to delete this image?"
 msgstr "Sigur doriți să ștergeți această imagine?"
 
 msgid "Yes, delete"
 msgstr "Da, șterge"
+
+msgid "No, don't delete"
+msgstr "Nu, nu șterge"
 
 #, python-format
 msgid "Editing image %(title)s"
@@ -225,24 +247,27 @@ msgstr "Editare imagine %(title)s"
 msgid "Editing"
 msgstr "Editare"
 
-msgid "Focal point (optional)"
-msgstr "Punct focal (opțional)"
+msgid "URL Generator"
+msgstr "Generator URL"
+
+msgid "Focal point"
+msgstr "Punct focal"
+
+msgid "(optional)"
+msgstr "(opțional)"
 
 msgid ""
 "To define this image's most important region, drag a box over the image "
-"below."
+"above."
 msgstr ""
 "Pentru a defini regiunea cea mai importantă a imaginii, trageți un perimetru "
-"peste imaginea de mai jos."
+"peste imaginea de mai sus."
 
 msgid "Current focal point shown"
 msgstr "Punctul focal curent este afișat"
 
 msgid "Remove focal area"
 msgstr "Șterge zona focală"
-
-msgid "URL Generator"
-msgstr "Generator URL"
 
 msgid "Max dimensions"
 msgstr "Dimensiuni maxime"
@@ -258,6 +283,9 @@ msgstr "Utilizare"
 
 msgid "Images"
 msgstr "Imagini"
+
+msgid "pixels"
+msgstr "pixeli"
 
 #, python-format
 msgid "Sorry, no images match \"<em>%(query_string)s</em>\""
@@ -340,12 +368,18 @@ msgid ""
 "if necessary. You may also delete the image completely if the upload wasn't "
 "required."
 msgstr ""
-"Încărcare de succsess. Dacă este necesar, actualizați această imagine cu un "
+"Încărcare de success. Dacă este necesar, actualizați această imagine cu un "
 "titlu potrivit. Puteți deasemenea să ștergeți imaginea în întregime dacă "
 "încărcarea nu a fost necesară."
 
 msgid "Sorry, upload failed."
 msgstr "Încărcarea a eșuat."
+
+msgid "Server Error"
+msgstr "Eroare de server"
+
+msgid "Report this error to your webmaster with the following information:"
+msgstr "Raportează această eroare webmasterului cu următoarele informații:"
 
 msgid "Image updated."
 msgstr "Imaginea a fost actualizată."
@@ -365,7 +399,6 @@ msgstr "Adaugă o permisiune imagine"
 msgid "Search images"
 msgstr "Caută imagini"
 
-#, python-brace-format
 msgid "Image '{0}' updated."
 msgstr "Imaginea '{0}' a fost actualizată."
 
@@ -382,11 +415,9 @@ msgstr ""
 "Fișierul sursă al imaginii nu a fost găsit. Schimbă sursa sau sterge "
 "imaginea."
 
-#, python-brace-format
 msgid "Image '{0}' deleted."
 msgstr "Imaginea '{0}' a fost ștearsă."
 
-#, python-brace-format
 msgid "Image '{0}' added."
 msgstr "Imaginea '{0}' a fost adăugată."
 
@@ -401,7 +432,7 @@ msgid "%(count)s image"
 msgid_plural "%(count)s images"
 msgstr[0] "%(count)s imagine"
 msgstr[1] "%(count)s imagini"
-msgstr[2] "%(count)s imagini"
+msgstr[2] "%(count)s de imagini"
 
 msgid "Change image"
 msgstr "Schimbă imaginea"

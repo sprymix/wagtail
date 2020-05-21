@@ -8,6 +8,9 @@ function ModalWorkflow(opts) {
         'url' (required): initial
         'responses' (optional): dict of callbacks to be called when the modal content
             calls modal.respond(callbackName, params)
+        'onload' (optional): dict of callbacks to be called when loading a step of the workflow.
+            The 'step' field in the response identifies the callback to call, passing it the
+            modal object and response data as arguments
     */
 
     var self = {};
@@ -18,7 +21,7 @@ function ModalWorkflow(opts) {
     $('body > .modal[aria-hidden="true"]').remove();
 
     // set default contents of container
-    var container = $('<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">\n    <div class="modal-dialog">\n        <div class="modal-content">\n            <button type="button" class="button close icon text-replace icon-cross" data-dismiss="modal" aria-hidden="true">&times;</button>\n            <div class="modal-body"></div>\n        </div><!-- /.modal-content -->\n    </div><!-- /.modal-dialog -->\n</div>');
+    var container = $('<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">\n    <div class="modal-dialog">\n        <div class="modal-content">\n            <button type="button" class="button close icon text-replace icon-cross" data-dismiss="modal">' + wagtailConfig.STRINGS.CLOSE + '</button>\n            <div class="modal-body"></div>\n        </div><!-- /.modal-content -->\n    </div><!-- /.modal-dialog -->\n</div>');
 
     // add container to body and hide it, so content can be added to it before display
     $('body').append(container);
@@ -51,23 +54,23 @@ function ModalWorkflow(opts) {
         });
     };
 
-    self.loadResponseText = function(responseText) {
-        var response = eval('(' + responseText + ')');
-
+    self.loadResponseText = function(responseText, textStatus, xhr) {
+        var response = JSON.parse(responseText);
         self.loadBody(response);
     };
 
     self.loadBody = function(response) {
         if (response.html) {
-            // if the response is html
+            // if response contains an 'html' item, replace modal body with it
             self.body.html(response.html);
             initCollapsibleBlocks(self.body);
             container.modal('show');
         }
 
-        if (response.onload) {
-            // if the response is a function
-            response.onload(self);
+        /* If response contains a 'step' identifier, and that identifier is found in
+        the onload dict, call that onload handler */
+        if (opts.onload && response.step && (response.step in opts.onload)) {
+            opts.onload[response.step](self, response);
         }
     };
 

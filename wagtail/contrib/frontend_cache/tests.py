@@ -1,4 +1,7 @@
-import mock
+from unittest import mock
+from urllib.error import HTTPError, URLError
+
+import requests
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -39,8 +42,9 @@ class TestBackendConfiguration(TestCase):
             'cloudflare': {
                 'BACKEND': 'wagtail.contrib.frontend_cache.backends.CloudflareBackend',
                 'EMAIL': 'test@test.com',
-                'TOKEN': 'this is the token',
+                'API_KEY': 'this is the api key',
                 'ZONEID': 'this is a zone id',
+                'BEARER_TOKEN': 'this is a bearer token'
             },
         })
 
@@ -48,7 +52,8 @@ class TestBackendConfiguration(TestCase):
         self.assertIsInstance(backends['cloudflare'], CloudflareBackend)
 
         self.assertEqual(backends['cloudflare'].cloudflare_email, 'test@test.com')
-        self.assertEqual(backends['cloudflare'].cloudflare_token, 'this is the token')
+        self.assertEqual(backends['cloudflare'].cloudflare_api_key, 'this is the api key')
+        self.assertEqual(backends['cloudflare'].cloudflare_token, 'this is a bearer token')
 
     def test_cloudfront(self):
         backends = get_backends(backend_settings={
@@ -62,6 +67,60 @@ class TestBackendConfiguration(TestCase):
         self.assertIsInstance(backends['cloudfront'], CloudfrontBackend)
 
         self.assertEqual(backends['cloudfront'].cloudfront_distribution_id, 'frontend')
+
+    def test_http(self):
+        """Test that `HTTPBackend.purge` works when urlopen succeeds"""
+        self._test_http_with_side_effect(urlopen_side_effect=None)
+
+    def test_http_httperror(self):
+        """Test that `HTTPBackend.purge` can handle `HTTPError`"""
+        http_error = HTTPError(
+            url='http://localhost:8000/home/events/christmas/',
+            code=500,
+            msg='Internal Server Error',
+            hdrs={},
+            fp=None
+        )
+        with self.assertLogs(level='ERROR') as log_output:
+            self._test_http_with_side_effect(urlopen_side_effect=http_error)
+
+        self.assertIn(
+            "Couldn't purge 'http://www.wagtail.io/home/events/christmas/' from HTTP cache. HTTPError: 500 Internal Server Error",
+            log_output.output[0]
+        )
+
+    def test_http_urlerror(self):
+        """Test that `HTTPBackend.purge` can handle `URLError`"""
+        url_error = URLError(reason='just for tests')
+        with self.assertLogs(level='ERROR') as log_output:
+            self._test_http_with_side_effect(urlopen_side_effect=url_error)
+        self.assertIn(
+            "Couldn't purge 'http://www.wagtail.io/home/events/christmas/' from HTTP cache. URLError: just for tests",
+            log_output.output[0]
+        )
+
+    @mock.patch('wagtail.contrib.frontend_cache.backends.urlopen')
+    def _test_http_with_side_effect(self, urlopen_mock, urlopen_side_effect):
+        # given a backends configuration with one HTTP backend
+        backends = get_backends(backend_settings={
+            'varnish': {
+                'BACKEND': 'wagtail.contrib.frontend_cache.backends.HTTPBackend',
+                'LOCATION': 'http://localhost:8000',
+            },
+        })
+        self.assertEqual(set(backends.keys()), set(['varnish']))
+        self.assertIsInstance(backends['varnish'], HTTPBackend)
+        # and mocked urlopen that may or may not raise network-related exception
+        urlopen_mock.side_effect = urlopen_side_effect
+
+        # when making a purge request
+        backends.get('varnish').purge('http://www.wagtail.io/home/events/christmas/')
+
+        # then no exception is raised
+        # and mocked urlopen is called with a proper purge request
+        self.assertEqual(urlopen_mock.call_count, 1)
+        (purge_request,), _call_kwargs = urlopen_mock.call_args
+        self.assertEqual(purge_request.full_url, 'http://localhost:8000/home/events/christmas/')
 
     def test_cloudfront_validate_distribution_id(self):
         with self.assertRaises(ImproperlyConfigured):
@@ -95,7 +154,7 @@ class TestBackendConfiguration(TestCase):
             'cloudflare': {
                 'BACKEND': 'wagtail.contrib.frontend_cache.backends.CloudflareBackend',
                 'EMAIL': 'test@test.com',
-                'TOKEN': 'this is the token',
+                'API_KEY': 'this is the api key',
                 'ZONEID': 'this is a zone id',
             }
         })
@@ -111,7 +170,7 @@ class TestBackendConfiguration(TestCase):
             'cloudflare': {
                 'BACKEND': 'wagtail.contrib.frontend_cache.backends.CloudflareBackend',
                 'EMAIL': 'test@test.com',
-                'TOKEN': 'this is the token',
+                'API_KEY': 'this is the api key',
                 'ZONEID': 'this is a zone id',
             }
         }, backends=['cloudflare'])
@@ -137,6 +196,17 @@ class MockBackend(BaseBackend):
 
     def purge(self, url):
         PURGED_URLS.append(url)
+
+
+class MockCloudflareBackend(CloudflareBackend):
+    def __init__(self, config):
+        pass
+
+    def _purge_urls(self, urls):
+        if len(urls) > self.CHUNK_SIZE:
+            raise Exception("Cloudflare backend is not chunking requests as expected")
+
+        PURGED_URLS.extend(urls)
 
 
 @override_settings(WAGTAILFRONTENDCACHE={
@@ -180,6 +250,25 @@ class TestCachePurgingFunctions(TestCase):
 
 
 @override_settings(WAGTAILFRONTENDCACHE={
+    'cloudflare': {
+        'BACKEND': 'wagtail.contrib.frontend_cache.tests.MockCloudflareBackend',
+    },
+})
+class TestCloudflareCachePurgingFunctions(TestCase):
+    def setUp(self):
+        # Reset PURGED_URLS to an empty list
+        PURGED_URLS[:] = []
+
+    def test_cloudflare_purge_batch_chunked(self):
+        batch = PurgeBatch()
+        urls = ['https://localhost/foo{}'.format(i) for i in range(1, 65)]
+        batch.add_urls(urls)
+        batch.purge()
+
+        self.assertCountEqual(PURGED_URLS, urls)
+
+
+@override_settings(WAGTAILFRONTENDCACHE={
     'varnish': {
         'BACKEND': 'wagtail.contrib.frontend_cache.tests.MockBackend',
     },
@@ -208,6 +297,18 @@ class TestCachePurgingSignals(TestCase):
         root.add_child(instance=page)
         page.save_revision().publish()
         self.assertEqual(PURGED_URLS, [])
+
+    @override_settings(ROOT_URLCONF='wagtail.tests.urls_multilang',
+                       LANGUAGE_CODE='en',
+                       WAGTAILFRONTENDCACHE_LANGUAGES=['en'])
+    def test_purge_on_publish_in_multilang_env(self):
+        from django.conf import settings
+        PURGED_URLS[:] = []  # reset PURGED_URLS to the empty list
+        page = EventIndex.objects.get(url_path='/home/events/')
+        page.save_revision().publish()
+        self.assertEqual(len(PURGED_URLS), len(settings.WAGTAILFRONTENDCACHE_LANGUAGES) * 2)
+        for isocode, description in settings.WAGTAILFRONTENDCACHE_LANGUAGES:
+            self.assertIn('http://localhost/%s/events/' % isocode, PURGED_URLS)
 
 
 class TestPurgeBatchClass(TestCase):
@@ -251,3 +352,34 @@ class TestPurgeBatchClass(TestCase):
         batch.purge()
 
         self.assertEqual(batch.urls, ['http://localhost/events/', 'http://localhost/events/past/', 'http://localhost/foo'])
+
+    @mock.patch('wagtail.contrib.frontend_cache.backends.requests.delete')
+    def test_http_error_on_cloudflare_purge_batch(self, requests_delete_mock):
+        backend_settings = {
+            'cloudflare': {
+                'BACKEND': 'wagtail.contrib.frontend_cache.backends.CloudflareBackend',
+                'EMAIL': 'test@test.com',
+                'API_KEY': 'this is the api key',
+                'ZONEID': 'this is a zone id',
+            },
+        }
+
+        class MockResponse:
+            def __init__(self, status_code=200):
+                self.status_code = status_code
+
+        http_error = requests.exceptions.HTTPError(response=MockResponse(status_code=500))
+        requests_delete_mock.side_effect = http_error
+
+        page = EventIndex.objects.get(url_path='/home/events/')
+
+        batch = PurgeBatch()
+        batch.add_page(page)
+
+        with self.assertLogs(level='ERROR') as log_output:
+            batch.purge(backend_settings=backend_settings)
+
+        self.assertIn(
+            "Couldn't purge 'http://localhost/events/' from Cloudflare. HTTPError: 500",
+            log_output.output[0]
+        )

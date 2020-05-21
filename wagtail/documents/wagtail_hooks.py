@@ -1,28 +1,27 @@
 from django.conf import settings
 from django.conf.urls import include, url
-from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import format_html, format_html_join
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ugettext, ungettext
 
 import wagtail.admin.rich_text.editors.draftail.features as draftail_features
 from wagtail.admin.menu import MenuItem
+from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.rich_text import HalloPlugin
 from wagtail.admin.search import SearchArea
 from wagtail.admin.site_summary import SummaryItem
 from wagtail.core import hooks
 from wagtail.core.models import BaseViewRestriction
 from wagtail.core.wagtail_hooks import require_wagtail_login
-from wagtail.documents import admin_urls
-from wagtail.documents.api.admin.endpoints import DocumentsAdminAPIEndpoint
+from wagtail.documents import admin_urls, get_document_model
+from wagtail.documents.api.admin.views import DocumentsAdminAPIViewSet
 from wagtail.documents.forms import GroupDocumentPermissionFormSet
-from wagtail.documents.models import get_document_model
 from wagtail.documents.permissions import permission_policy
-from wagtail.documents.rich_text import (
-    ContentstateDocumentLinkConversionRule, EditorHTMLDocumentLinkConversionRule,
-    document_linktype_handler)
+from wagtail.documents.rich_text import DocumentLinkHandler
+from wagtail.documents.rich_text.contentstate import ContentstateDocumentLinkConversionRule
+from wagtail.documents.rich_text.editor_html import EditorHTMLDocumentLinkConversionRule
 
 
 @hooks.register('register_admin_urls')
@@ -34,7 +33,7 @@ def register_admin_urls():
 
 @hooks.register('construct_admin_api')
 def construct_admin_api(router):
-    router.register_endpoint('documents', DocumentsAdminAPIEndpoint)
+    router.register_endpoint('documents', DocumentsAdminAPIViewSet)
 
 
 class DocumentsMenuItem(MenuItem):
@@ -57,18 +56,7 @@ def register_documents_menu_item():
 
 @hooks.register('insert_editor_js')
 def editor_js():
-    js_files = [
-        static('wagtaildocs/js/document-chooser.js'),
-        static('wagtaildocs/js/add-multiple.js'),
-        static('wagtailadmin/js/vendor/jquery.iframe-transport.js'),
-        static('wagtailadmin/js/vendor/jquery.fileupload.js'),
-        static('wagtailadmin/js/vendor/jquery.fileupload-process.js'),
-    ]
-    js_includes = format_html_join(
-        '\n', '<script src="{0}"></script>',
-        ((filename, ) for filename in js_files)
-    )
-    return js_includes + format_html(
+    return format_html(
         """
         <script>
             window.chooserUrls.documentChooser = '{0}';
@@ -80,13 +68,16 @@ def editor_js():
 
 @hooks.register('register_rich_text_features')
 def register_document_feature(features):
-    features.register_link_type('document', document_linktype_handler)
+    features.register_link_type(DocumentLinkHandler)
 
     features.register_editor_plugin(
         'hallo', 'document-link',
         HalloPlugin(
             name='hallowagtaildoclink',
-            js=['wagtaildocs/js/hallo-plugins/hallo-wagtaildoclink.js'],
+            js=[
+                'wagtaildocs/js/document-chooser-modal.js',
+                'wagtaildocs/js/hallo-plugins/hallo-wagtaildoclink.js',
+            ],
         )
     )
     features.register_editor_plugin(
@@ -94,7 +85,7 @@ def register_document_feature(features):
             'type': 'DOCUMENT',
             'icon': 'doc-full',
             'description': ugettext('Document'),
-        })
+        }, js=['wagtaildocs/js/document-chooser-modal.js'])
     )
 
     features.register_converter_rule(
@@ -112,8 +103,11 @@ class DocumentsSummaryItem(SummaryItem):
     template = 'wagtaildocs/homepage/site_summary_documents.html'
 
     def get_context(self):
+        site_name = get_site_for_user(self.request.user)['site_name']
+
         return {
             'total_docs': get_document_model().objects.count(),
+            'site_name': site_name,
         }
 
     def is_shown(self):

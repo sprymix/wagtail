@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
@@ -27,7 +28,7 @@ class Embed(models.Model):
     title = models.TextField(blank=True)
     author_name = models.TextField(blank=True)
     provider_name = models.TextField(blank=True)
-    thumbnail_url = models.URLField(null=True, blank=True)
+    thumbnail_url = models.URLField(max_length=255, null=True, blank=True)
     width = models.IntegerField(null=True, blank=True)
     height = models.IntegerField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -35,6 +36,7 @@ class Embed(models.Model):
     class Meta:
         unique_together = ('url', 'max_width')
         verbose_name = _('embed')
+        verbose_name_plural = _('embeds')
 
     @property
     def ratio(self):
@@ -49,6 +51,8 @@ class Embed(models.Model):
 
     @property
     def is_responsive(self):
+        if not getattr(settings, 'WAGTAILEMBEDS_RESPONSIVE_HTML', False):
+            return False
         return self.ratio is not None
 
     def __str__(self):

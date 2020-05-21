@@ -4,9 +4,10 @@ function createImageChooser(id) {
     var input = $('#' + id);
     var editLink = chooserElement.find('.edit-link');
 
-    $('.action-choose', chooserElement).click(function() {
+    $('.action-choose', chooserElement).on('click', function() {
         ModalWorkflow({
             url: window.chooserUrls.imageChooser,
+            onload: IMAGE_CHOOSER_MODAL_ONLOAD_HANDLERS,
             responses: {
                 imageChosen: function(imageData) {
                     input.val(imageData.id);
@@ -14,7 +15,8 @@ function createImageChooser(id) {
                         src: imageData.preview.url,
                         width: imageData.preview.width,
                         height: imageData.preview.height,
-                        alt: imageData.title
+                        alt: imageData.title,
+                        title: imageData.title
                     });
                     chooserElement.removeClass('blank');
                     editLink.attr('href', imageData.edit_link);
@@ -23,7 +25,7 @@ function createImageChooser(id) {
         });
     });
 
-    $('.action-clear', chooserElement).click(function() {
+    $('.action-clear', chooserElement).on('click', function() {
         input.val('');
         chooserElement.addClass('blank');
     });
@@ -99,7 +101,7 @@ function createRenditionChooser(id) {
         return params.join('');
     }
 
-    $('.action-choose', chooserElement).click(function() {
+    $('.action-choose', chooserElement).on('click', function() {
         var additional_params = get_params(true);
 
         // build URL with the additional params
@@ -109,6 +111,7 @@ function createRenditionChooser(id) {
 
         ModalWorkflow({
             'url': url,
+            'onload': IMAGE_CHOOSER_MODAL_ONLOAD_HANDLERS,
             'responses': {
                 'imageChosen': function(imageData) {
                     input.val(imageData.id).trigger('change', imageData);
@@ -119,7 +122,7 @@ function createRenditionChooser(id) {
         return false;
     });
 
-    $('.edit-link', chooserElement).click(function() {
+    $('.edit-link', chooserElement).on('click', function() {
         var additional_params = get_params(),
             image_id = chooserElement.attr('data-original-image-id');
 
@@ -130,6 +133,7 @@ function createRenditionChooser(id) {
 
         ModalWorkflow({
             'url': url,
+            'onload': IMAGE_CHOOSER_MODAL_ONLOAD_HANDLERS,
             'responses': {
                 'imageChosen': function(imageData) {
                     input.val(imageData.id).trigger('change', imageData);
@@ -140,7 +144,7 @@ function createRenditionChooser(id) {
         return false;
     });
 
-    $('.action-clear', chooserElement).click(function() {
+    $('.action-clear', chooserElement).on('click', function() {
         input.val('').trigger('change');
     });
 }

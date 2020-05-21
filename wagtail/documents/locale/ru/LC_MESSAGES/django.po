@@ -3,18 +3,21 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Alexander Penshin <apenshin@gmail.com>, 2018
 # Andrey Avdey <talkerbox@live.com>, 2016
-# Eugene MechanisM <eugene@mechanism.pro>, 2014-2016
-# Eugene MechanisM <eugene@mechanism.pro>, 2017
+# Eugene <eugene.mechanism@gmail.com>, 2014-2016
+# Eugene <eugene.mechanism@gmail.com>, 2017
 # Никита Викторович <hnknta@gmail.com>, 2014
 # Matt Westcott <matthew@torchbox.com>, 2015
 # Mikalai Radchuk <radchuk.m@gmail.com>, 2016-2017
+# Mikhail Sidorov <pevzi23@gmail.com>, 2019
+# Михаил Герасимов, 2019
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 15:59+0000\n"
+"POT-Creation-Date: 2020-01-20 20:13+0000\n"
+"PO-Revision-Date: 2020-01-20 20:14+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Russian (http://www.transifex.com/torchbox/wagtail/language/"
 "ru/)\n"
@@ -65,33 +68,8 @@ msgstr "Поиск"
 msgid "Upload"
 msgstr "Загрузка"
 
-msgid "Server Error"
-msgstr "Ошибка Сервера"
-
-msgid "Report this error to your webmaster with the following information:"
-msgstr "Сообщите об этой ошибке администратору и укажите следующую информацию:"
-
-#, python-format
-msgid ""
-"\n"
-"            There is one match\n"
-"        "
-msgid_plural ""
-"\n"
-"            There are %(counter)s matches\n"
-"        "
-msgstr[0] ""
-"\n"
-"Найдено одно совпадение"
-msgstr[1] ""
-"\n"
-"Найдено %(counter)s совпадений"
-msgstr[2] ""
-"\n"
-"Найдено %(counter)s совпадений"
-msgstr[3] ""
-"\n"
-"Найдено %(counter)s совпадений"
+msgid "Uploading…"
+msgstr "Загрузка..."
 
 msgid "Latest documents"
 msgstr "Последние документы"
@@ -148,9 +126,6 @@ msgstr "Заголовок"
 msgid "File"
 msgstr "Файл"
 
-msgid "Uploaded"
-msgstr "Загружено"
-
 #, python-format
 msgid "%(time_period)s ago"
 msgstr "%(time_period)s назад"
@@ -193,27 +168,33 @@ msgstr "Редактировать эту страницу"
 #, python-format
 msgid ""
 "\n"
-"        <span>%(total)s</span> Document\n"
+"        <span>%(total)s</span> Document <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>\n"
 "    "
 msgid_plural ""
 "\n"
-"        <span>%(total)s</span> Documents\n"
+"        <span>%(total)s</span> Documents <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>\n"
 "    "
 msgstr[0] ""
 "\n"
-"        <span>%(total)s</span> Документ\n"
+"        <span>%(total)s</span> Документ <span class=\"visuallyhidden"
+"\">создан в %(site_name)s</span>\n"
 "    "
 msgstr[1] ""
 "\n"
-"        <span>%(total)s</span> Документа\n"
+"        <span>%(total)s</span> Документа <span class=\"visuallyhidden"
+"\">созданы в %(site_name)s</span>\n"
 "    "
 msgstr[2] ""
 "\n"
-"        <span>%(total)s</span> Документов\n"
+"        <span>%(total)s</span> Документов <span class=\"visuallyhidden"
+"\">создано в %(site_name)s</span>\n"
 "    "
 msgstr[3] ""
 "\n"
-"        <span>%(total)s</span> Документов\n"
+"        <span>%(total)s</span> Документов <span class=\"visuallyhidden"
+"\">создано в %(site_name)s</span>\n"
 "    "
 
 msgid "Add multiple documents"
@@ -232,13 +213,13 @@ msgid "Add to collection:"
 msgstr "Добавить в коллекцию:"
 
 msgid ""
-"Upload successful. Please update this documents with a more appropriate "
+"Upload successful. Please update this document with a more appropriate "
 "title, if necessary. You may also delete the document completely if the "
 "upload wasn't required."
 msgstr ""
-"Загрузка успешна. Пожалуйста, обновите заголовки для этих документов на "
-"более подходящие, если это необходимо. Так же вы можете полностью удалить "
-"изображение если его загрузка не требовалась."
+"Загрузка успешна. Пожалуйста, обновите заголовок для этого документа на "
+"более подходящий, если это необходимо. Также вы можете полностью удалить "
+"документ, если его загрузка не требовалась."
 
 msgid "Sorry, upload failed."
 msgstr "Извините, загрузка не удалась."
@@ -258,17 +239,21 @@ msgstr "Доступ к документу"
 msgid "Add a document permission"
 msgstr "Добавить права доступа к документу"
 
+msgid "Server Error"
+msgstr "Ошибка Сервера"
+
+msgid "Report this error to your webmaster with the following information:"
+msgstr "Сообщите об этой ошибке администратору и укажите следующую информацию:"
+
 msgid "Search documents"
 msgstr "Поиск документов"
 
-#, python-brace-format
 msgid "Document '{0}' added."
 msgstr "Документ '{0}' добавлен."
 
 msgid "The document could not be saved due to errors."
 msgstr "Документ не может быть сохранен из-за ошибок."
 
-#, python-brace-format
 msgid "Document '{0}' updated"
 msgstr "Документ '{0}' обновлен"
 
@@ -278,9 +263,11 @@ msgstr ""
 "Файл не может быть найден. Пожалуйста, измените исходный файл или удалите "
 "документ"
 
-#, python-brace-format
 msgid "Document '{0}' deleted."
 msgstr "Документ '{0}' удален."
+
+msgid "Document"
+msgstr "Документ"
 
 #, python-format
 msgid "%(count)s document"

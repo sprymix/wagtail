@@ -18,9 +18,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 20:13+0000\n"
-"Last-Translator: José Luis <alagunajs@gmail.com>\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:14+0000\n"
+"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Spanish (http://www.transifex.com/torchbox/wagtail/language/"
 "es/)\n"
 "MIME-Version: 1.0\n"
@@ -29,8 +29,8 @@ msgstr ""
 "Language: es\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "GIF, JPEG, PNG"
-msgstr "GIF, JPEG, PNG"
+msgid "Wagtail images"
+msgstr "Imágenes Wagtail"
 
 #, python-format
 msgid ""
@@ -133,6 +133,12 @@ msgstr "subido por el usuario"
 msgid "tags"
 msgstr "etiquetas"
 
+msgid "image"
+msgstr "Imagen"
+
+msgid "images"
+msgstr "Imágenes"
+
 msgid "Choose an image"
 msgstr "Seleccionar una imagen"
 
@@ -148,17 +154,10 @@ msgstr "Etiquetas populares"
 msgid "Uploading…"
 msgstr "Subiendo..."
 
-msgid "Server Error"
-msgstr "Error de servidor"
-
-msgid "Report this error to your webmaster with the following information:"
-msgstr ""
-"Reporte este error a tu administrador web con la siguiente información:"
-
 #, python-format
 msgid ""
 "\n"
-"            There is one match\n"
+"            There is %(counter)s match\n"
 "        "
 msgid_plural ""
 "\n"
@@ -166,7 +165,7 @@ msgid_plural ""
 "        "
 msgstr[0] ""
 "\n"
-"            Hay una coincidencia\n"
+"            Hay %(counter)s coincidencia\n"
 "        "
 msgstr[1] ""
 "\n"
@@ -181,24 +180,6 @@ msgstr "Selecciona un formato"
 
 msgid "Insert image"
 msgstr "Insertar imagen"
-
-#, python-format
-msgid ""
-"\n"
-"        <span>%(total)s</span> Image\n"
-"    "
-msgid_plural ""
-"\n"
-"        <span>%(total)s</span> Images\n"
-"    "
-msgstr[0] ""
-"\n"
-"                <span>%(total)s</span> Imágen\n"
-"            "
-msgstr[1] ""
-"\n"
-"                <span>%(total)s</span> Imágenes\n"
-"            "
 
 msgid "Change image file:"
 msgstr "Cambiar archivo de imagen:"
@@ -234,12 +215,18 @@ msgstr "Editando imagen %(title)s"
 msgid "Editing"
 msgstr "Editando"
 
-msgid "Focal point (optional)"
-msgstr "Punto focal (opcional)"
+msgid "URL Generator"
+msgstr "Generador de URL"
+
+msgid "Focal point"
+msgstr "Punto focal"
+
+msgid "(optional)"
+msgstr "(opcional)"
 
 msgid ""
 "To define this image's most important region, drag a box over the image "
-"below."
+"above."
 msgstr ""
 "Para definir la región más importante de esta imagen, arrastre un cuadro "
 "sobre la imagen de abajo."
@@ -249,9 +236,6 @@ msgstr "Mostrando punto focal actual"
 
 msgid "Remove focal area"
 msgstr "Remover área focal"
-
-msgid "URL Generator"
-msgstr "Generador de URL"
 
 msgid "Max dimensions"
 msgstr "Dimensiones máximas"
@@ -358,6 +342,13 @@ msgstr ""
 msgid "Sorry, upload failed."
 msgstr "Lo sentimos, su subida ha fallado."
 
+msgid "Server Error"
+msgstr "Error de servidor"
+
+msgid "Report this error to your webmaster with the following information:"
+msgstr ""
+"Reporte este error a tu administrador web con la siguiente información:"
+
 msgid "Image updated."
 msgstr "Imagen actualizada"
 
@@ -376,7 +367,6 @@ msgstr "Añadir un permiso de imagen"
 msgid "Search images"
 msgstr "Buscar imágenes"
 
-#, python-brace-format
 msgid "Image '{0}' updated."
 msgstr "Imagen '{0}' actualizada."
 
@@ -393,11 +383,9 @@ msgstr ""
 "El archivo origen de la imagen no pudo ser encontrado. Por favor, cambia el "
 "origen o elimina esta imagen."
 
-#, python-brace-format
 msgid "Image '{0}' deleted."
 msgstr "Imagen '{0}' eliminada."
 
-#, python-brace-format
 msgid "Image '{0}' added."
 msgstr "Imagen '{0}' añadida."
 

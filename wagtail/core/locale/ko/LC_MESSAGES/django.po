@@ -5,13 +5,13 @@
 # Translators:
 # Jihan Chung <jihanchung20@gmail.com>, 2015
 # Jihan Chung <jihanchung20@gmail.com>, 2015
-# Kyungil Choi <hanpama@gmail.com>, 2015,2017
+# Kyungil Choi <hanpama@gmail.com>, 2015,2017,2019
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 15:58+0000\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:14+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Korean (http://www.transifex.com/torchbox/wagtail/language/"
 "ko/)\n"
@@ -21,9 +21,8 @@ msgstr ""
 "Language: ko\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#, python-brace-format
-msgid "{label}: this block has no options."
-msgstr "{label}: 이 블록에는 옵션이 없습니다."
+msgid "Wagtail core"
+msgstr "웨그테일 코어"
 
 msgid "This block has no options."
 msgstr "이 블록에는 옵션이 없습니다."
@@ -174,6 +173,9 @@ msgstr "예약됨"
 msgid "draft"
 msgstr "초안"
 
+msgid "live + scheduled"
+msgstr "라이브 + 예약됨"
+
 msgid "live + draft"
 msgstr "라이브 + 초안"
 
@@ -233,9 +235,6 @@ msgstr "하위 페이지들과 함께 지우기"
 
 msgid "Lock"
 msgstr "잠금"
-
-msgid "Lock/unlock any page"
-msgstr "페이지 잠금/잠금해제"
 
 msgid "group"
 msgstr "그룹"
@@ -298,6 +297,9 @@ msgid "permission"
 msgstr "권한"
 
 msgid "group collection permission"
+msgstr "그룹 모음 권한"
+
+msgid "group collection permissions"
 msgstr "그룹 모음 권한"
 
 msgid "Log in"

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-02-16 11:33+0000\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:13+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Georgian (http://www.transifex.com/torchbox/wagtail/language/"
 "ka/)\n"
@@ -17,16 +17,16 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: ka\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "Publish"
+msgstr "გამოქვეყნება"
+
+msgid "Delete"
+msgstr "წაშლა"
 
 msgid "Content"
 msgstr "შიგთავსი"
-
-msgid "Search"
-msgstr "ძიება"
-
-msgid "Search term"
-msgstr "ძიების ტერმინი"
 
 msgid "Enter password"
 msgstr "შეიყვანეთ პაროლი"
@@ -35,74 +35,14 @@ msgstr "შეიყვანეთ პაროლი"
 msgid "Enter your %s"
 msgstr "შეიყვანეთ თქვენი %s"
 
-msgid "Please fill your email address."
-msgstr "გთხოვთ, შეიყვანოთ თქვენი ელფოსტის მისამართი."
-
 msgid "New title"
 msgstr "ახალი სათაური"
 
-msgid "Account"
-msgstr "ანგარიში"
+msgid "Search"
+msgstr "ძიება"
 
-msgid "Reset password"
-msgstr "პაროლის აღდგენა"
-
-msgid "Login"
-msgstr "შესვლა"
-
-msgid "Check your email"
-msgstr "შეამოწმეთ თქვენი ელფოსტა"
-
-msgid "Delete"
-msgstr "წაშლა"
-
-msgid "Menu"
-msgstr "მენიუ"
-
-msgid "Internal link"
-msgstr "შიდა ბმული"
-
-msgid "Save"
-msgstr "შენახვა"
-
-msgid "Title"
-msgstr "სათაური"
-
-msgid "Type"
-msgstr "ტიპი"
-
-msgid "Edit this page"
-msgstr "ამ გვერდის რედაქტირება"
-
-msgid "Date"
-msgstr "თარიღი"
-
-msgid "Status"
-msgstr "სტატუსი"
-
-msgid "You can view the page here:"
-msgstr "გვერდის ნახვა შეგიძლიათ აქ:"
-
-msgid "You can edit the page here:"
-msgstr "გვერდის რესქტირება შეგიძლიათ აქ:"
-
-msgid "Copy"
-msgstr "კოპირება"
-
-msgid "New"
-msgstr "ახალი"
-
-msgid "Publish"
-msgstr "გამოქვეყნება"
-
-msgid "Previous"
-msgstr "წინა"
-
-msgid "Next"
-msgstr "შემდეგი"
-
-msgid "Order"
-msgstr "მიმდევრობა"
+msgid "Search term"
+msgstr "ძიების ტერმინი"
 
 msgid "January"
 msgstr "იანვარი"
@@ -139,6 +79,60 @@ msgstr "ნოემბერი"
 
 msgid "December"
 msgstr "დეკემბერი"
+
+msgid "Account"
+msgstr "ანგარიში"
+
+msgid "Reset password"
+msgstr "პაროლის აღდგენა"
+
+msgid "Login"
+msgstr "შესვლა"
+
+msgid "Check your email"
+msgstr "შეამოწმეთ თქვენი ელფოსტა"
+
+msgid "Menu"
+msgstr "მენიუ"
+
+msgid "Internal link"
+msgstr "შიდა ბმული"
+
+msgid "Save"
+msgstr "შენახვა"
+
+msgid "Title"
+msgstr "სათაური"
+
+msgid "Edit this page"
+msgstr "ამ გვერდის რედაქტირება"
+
+msgid "Type"
+msgstr "ტიპი"
+
+msgid "Date"
+msgstr "თარიღი"
+
+msgid "Status"
+msgstr "სტატუსი"
+
+msgid "You can view the page here:"
+msgstr "გვერდის ნახვა შეგიძლიათ აქ:"
+
+msgid "You can edit the page here:"
+msgstr "გვერდის რესქტირება შეგიძლიათ აქ:"
+
+msgid "Copy"
+msgstr "კოპირება"
+
+msgid "New"
+msgstr "ახალი"
+
+msgid "Previous"
+msgstr "წინა"
+
+msgid "Next"
+msgstr "შემდეგი"
 
 msgid "Log out"
 msgstr "გამოსვლა"

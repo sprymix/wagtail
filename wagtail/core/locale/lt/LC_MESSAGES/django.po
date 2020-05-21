@@ -3,13 +3,13 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Matas Dailyda <matas@dailyda.com>, 2017
+# Matas Dailyda <matas@dailyda.com>, 2017-2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 15:58+0000\n"
+"POT-Creation-Date: 2020-01-20 20:12+0000\n"
+"PO-Revision-Date: 2020-01-20 20:14+0000\n"
 "Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
 "Language-Team: Lithuanian (http://www.transifex.com/torchbox/wagtail/"
 "language/lt/)\n"
@@ -17,12 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: lt\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n"
-"%100<10 || n%100>=20) ? 1 : 2);\n"
-
-#, python-brace-format
-msgid "{label}: this block has no options."
-msgstr "{label}: šis blokas neturi jokių nustatymų."
+"Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < "
+"11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
+"1 : n % 1 != 0 ? 2: 3);\n"
 
 msgid "This block has no options."
 msgstr "Šis blokas neturi jokių nustatymų."
@@ -174,6 +171,9 @@ msgstr "planuotas"
 msgid "draft"
 msgstr "juodraštis"
 
+msgid "live + scheduled"
+msgstr "veikiantis + suplanuotas"
+
 msgid "live + draft"
 msgstr "veikiantis + juodraštis"
 
@@ -233,9 +233,6 @@ msgstr "Trinti puslapius su vidiniais puslapiais"
 
 msgid "Lock"
 msgstr "Užrakinti"
-
-msgid "Lock/unlock any page"
-msgstr "Užrakinti/atrakinti bet kurį puslapį"
 
 msgid "group"
 msgstr "grupė"

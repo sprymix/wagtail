@@ -8,7 +8,7 @@ Theory
 Introduction to Trees
 ~~~~~~~~~~~~~~~~~~~~~
 
-If you're unfamiliar with trees as an abstract data type, you might want to `review the concepts involved. <http://en.wikipedia.org/wiki/Tree_(data_structure)>`_
+If you're unfamiliar with trees as an abstract data type, you might want to `review the concepts involved. <https://en.wikipedia.org/wiki/Tree_(data_structure)>`_
 
 As a web developer, though, you probably already have a good understanding of trees as filesystem directories or paths. Wagtail pages can create the same structure, as each page in the tree has its own URL path, like so::
 
@@ -94,7 +94,7 @@ For going beyond the basics of model definition and interrelation, it might help
     #.  ``serve()`` finds a template to pass it to using ``get_template()``
     #.  A response object is returned by ``serve()`` and Django responds to the requester.
 
-You can apply custom behavior to this process by overriding ``Page`` class methods such as ``route()`` and ``serve()`` in your own models. For examples, see :ref:`model_recipes`.
+You can apply custom behaviour to this process by overriding ``Page`` class methods such as ``route()`` and ``serve()`` in your own models. For examples, see :ref:`model_recipes`.
 
 
 .. _scheduled_publishing:
@@ -114,6 +114,6 @@ The basic workflow is as follows:
 The *Revisions* view for a given page will show which revision is scheduled and when it is scheduled for. A scheduled revision in the list will also provide an *Unschedule* button to cancel it.
 
 
- 
+
 
 

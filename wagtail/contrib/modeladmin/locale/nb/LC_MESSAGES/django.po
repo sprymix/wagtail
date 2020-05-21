@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Stein Strindhaug <stein.strindhaug@gmail.com>, 2016-2017
+# Stein Strindhaug <stein.strindhaug@gmail.com>, 2016-2019
 msgid ""
 msgstr ""
 "Project-Id-Version: Wagtail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-16 11:28+0000\n"
-"PO-Revision-Date: 2018-01-26 16:07+0000\n"
-"Last-Translator: Matt Westcott <matthew@torchbox.com>\n"
+"POT-Creation-Date: 2020-01-20 20:13+0000\n"
+"PO-Revision-Date: 2019-11-07 12:53+0000\n"
+"Last-Translator: Stein Strindhaug <stein.strindhaug@gmail.com>\n"
 "Language-Team: Norwegian Bokmål (http://www.transifex.com/torchbox/wagtail/"
 "language/nb/)\n"
 "MIME-Version: 1.0\n"
@@ -18,6 +18,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: nb\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Wagtail ModelAdmin"
+msgstr "Wagtail-modelladmin"
 
 msgid "Parent page"
 msgstr "Foreldreside"
@@ -69,7 +72,7 @@ msgid "image"
 msgstr "bilde"
 
 msgid "Choose a parent page"
-msgstr "Veld en foreldreside"
+msgstr "Velg en foreldreside"
 
 #, python-format
 msgid ""
@@ -107,6 +110,9 @@ msgstr "Tilbake til listen"
 
 msgid "Yes, delete"
 msgstr "Ja, slett"
+
+msgid "No, don't delete"
+msgstr "Nei, ikke slett"
 
 msgid "Home"
 msgstr "Hjem"
@@ -153,6 +159,9 @@ msgstr ""
 "\"%(url)s\">legg til en</a>?\n"
 "                                            "
 
+msgid "Pagination"
+msgstr "Paginering"
+
 #, python-format
 msgid "Page %(current_page)s of %(num_pages)s."
 msgstr "Side %(current_page)s av %(num_pages)s."
@@ -167,9 +176,9 @@ msgstr "Forrige"
 msgid "Next"
 msgstr "Neste"
 
-#, python-brace-format
-msgid "{model_name} '{instance}' created."
-msgstr "{model_name} '{instance}' opprettet."
+#, python-format
+msgid "%(model_name)s '%(instance)s' created."
+msgstr "%(model_name)s «%(instance)s» opprettet."
 
 #, python-format
 msgid "The %s could not be created due to errors."
@@ -189,9 +198,9 @@ msgstr "Redigerer"
 msgid "Editing %s"
 msgstr "Redigerer %s"
 
-#, python-brace-format
-msgid "{model_name} '{instance}' updated."
-msgstr "{model_name} '{instance}' oppdatert."
+#, python-format
+msgid "%(model_name)s '%(instance)s' updated."
+msgstr "%(model_name)s «%(instance)s» oppdatert."
 
 #, python-format
 msgid "The %s could not be saved due to errors."
@@ -209,9 +218,9 @@ msgstr ""
 "Er du sikker på at du vil slette %s? Hvis andre ting på nettstedet er "
 "relatert kan de også bli påvirket."
 
-#, python-brace-format
-msgid "{model} '{instance}' deleted."
-msgstr "{model} '{instance}' slettet."
+#, python-format
+msgid "%(model_name)s '%(instance)s' deleted."
+msgstr "%(model_name)s «%(instance)s» slettet."
 
 msgid "Inspecting"
 msgstr "Inspiserer"

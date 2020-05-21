@@ -5,13 +5,6 @@ from django.db import connections
 
 from wagtail.search.index import Indexed, RelatedFields, SearchField
 
-try:
-    # Only use the GPLv2 licensed unidecode if it's installed.
-    from unidecode import unidecode
-except ImportError:
-    def unidecode(value):
-        return value
-
 
 def get_postgresql_connections():
     return [connection for connection in connections.all()
@@ -94,6 +87,19 @@ def determine_boosts_weights(boosts=()):
             for i, weight in enumerate(WEIGHTS)]
 
 
+def set_weights():
+    BOOSTS_WEIGHTS.extend(determine_boosts_weights())
+    weights = [w for w, c in BOOSTS_WEIGHTS]
+    min_weight = min(weights)
+    if min_weight <= 0:
+        if min_weight == 0:
+            min_weight = -0.1
+        weights = [w - min_weight for w in weights]
+    max_weight = max(weights)
+    WEIGHTS_VALUES.extend([w / max_weight
+                           for w in reversed(weights)])
+
+
 def get_weight(boost):
     if boost is None:
         return WEIGHTS[-1]
@@ -101,3 +107,7 @@ def get_weight(boost):
         if boost >= max_boost:
             return weight
     return weight
+
+
+def get_sql_weights():
+    return '{' + ','.join(map(str, WEIGHTS_VALUES)) + '}'

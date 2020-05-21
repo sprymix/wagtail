@@ -7,7 +7,7 @@ from django.http import Http404
 from django.shortcuts import render
 from django.template.loader import render_to_string
 
-from wagtail.admin.navigation import get_explorable_root_page
+from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.site_summary import SiteSummaryPanel
 from wagtail.core import hooks
 from wagtail.core.models import Page, PageRevision, UserPagePermissionsProxy
@@ -44,6 +44,23 @@ class PagesForModerationPanel:
     def render(self):
         return render_to_string('wagtailadmin/home/pages_for_moderation.html', {
             'page_revisions_for_moderation': self.page_revisions_for_moderation,
+        }, request=self.request)
+
+
+class LockedPagesPanel:
+    name = 'locked_pages'
+    order = 250
+
+    def __init__(self, request):
+        self.request = request
+
+    def render(self):
+        return render_to_string('wagtailadmin/home/locked_pages.html', {
+            'locked_pages': Page.objects.filter(
+                locked=True,
+                locked_by=self.request.user,
+            ),
+            'can_remove_locks': UserPagePermissionsProxy(self.request.user).can_remove_locks()
         }, request=self.request)
 
 
@@ -95,26 +112,19 @@ def home(request):
         SiteSummaryPanel(request),
         UpgradeNotificationPanel(request),
         PagesForModerationPanel(request),
+        LockedPagesPanel(request),
         RecentEditsPanel(request),
     ]
 
     for fn in hooks.get_hooks('construct_homepage_panels'):
         fn(request, panels)
 
-    root_page = get_explorable_root_page(request.user)
-    if root_page:
-        root_site = root_page.get_site()
-    else:
-        root_site = None
-
-    real_site_name = None
-    if root_site:
-        real_site_name = root_site.site_name if root_site.site_name else root_site.hostname
+    site_details = get_site_for_user(request.user)
 
     return render(request, "wagtailadmin/home.html", {
-        'root_page': root_page,
-        'root_site': root_site,
-        'site_name': real_site_name if real_site_name else settings.WAGTAIL_SITE_NAME,
+        'root_page': site_details['root_page'],
+        'root_site': site_details['root_site'],
+        'site_name': site_details['site_name'],
         'panels': sorted(panels, key=lambda p: p.order),
         'user': request.user
     })

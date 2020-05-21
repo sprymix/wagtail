@@ -100,6 +100,28 @@ Database fields
 
             To set the global default for all pages, set ``Page.show_in_menus_default = True`` once where you first import the ``Page`` model.
 
+    .. attribute:: locked
+
+        (boolean)
+
+        When set to ``True``, the Wagtail editor will not allow any users to edit
+        the content of the page.
+
+        If ``locked_by`` is also set, only that user can edit the page.
+
+    .. attribute:: locked_by
+
+       (foreign key to user model)
+
+        The user who has currently locked the page. Only this user can edit the page.
+
+        If this is ``None`` when ``locked`` is ``True``, nobody can edit the page.
+
+    .. attribute:: locked_at
+
+        (date/time)
+
+        The date/time when the page was locked.
 
 Methods and properties
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -108,7 +130,7 @@ In addition to the model fields provided, ``Page`` has many properties and metho
 
 .. note::
 
-    See also `django-treebeard <http://django-treebeard.readthedocs.io/en/latest/index.html>`_'s `node API <http://django-treebeard.readthedocs.io/en/latest/api.html>`_. ``Page`` is a subclass of `materialized path tree <http://django-treebeard.readthedocs.io/en/latest/mp_tree.html>`_ nodes.
+    See also `django-treebeard <https://django-treebeard.readthedocs.io/en/latest/index.html>`_'s `node API <https://django-treebeard.readthedocs.io/en/latest/api.html>`_. ``Page`` is a subclass of `materialized path tree <https://django-treebeard.readthedocs.io/en/latest/mp_tree.html>`_ nodes.
 
 
 .. class:: Page
@@ -117,7 +139,7 @@ In addition to the model fields provided, ``Page`` has many properties and metho
 
     .. autoattribute:: specific_class
 
-    .. autoattribute:: url
+    .. automethod:: get_url
 
     .. autoattribute:: full_url
 
@@ -197,7 +219,15 @@ In addition to the model fields provided, ``Page`` has many properties and metho
 
     .. attribute:: is_creatable
 
-        Controls if this page can be created through the Wagtail administration. Defaults to True, and is not inherited by subclasses. This is useful when using `multi-table inheritance <https://docs.djangoproject.com/en/1.8/topics/db/models/#multi-table-inheritance>`_, to stop the base model from being created as an actual page.
+        Controls if this page can be created through the Wagtail administration. Defaults to ``True``, and is not inherited by subclasses. This is useful when using :ref:`multi-table inheritance <django:multi-table-inheritance>`, to stop the base model from being created as an actual page.
+
+    .. attribute:: max_count
+
+        Controls the maximum number of pages of this type that can be created through the Wagtail administration interface. This is useful when needing "allow at most 3 of these pages to exist", or for singleton pages.
+
+    .. attribute:: max_count_per_parent
+
+        Controls the maximum number of pages of this type that can be created under any one parent page.
 
     .. attribute:: exclude_fields_in_copy
 
@@ -217,6 +247,8 @@ In addition to the model fields provided, ``Page`` has many properties and metho
         This attribute can be set on a model to customise the Page editor form.
         Forms must be a subclass of :class:`~wagtail.admin.forms.WagtailAdminPageForm`.
         See :ref:`custom_edit_handler_forms` for more information.
+
+    .. automethod:: with_content_json
 
 .. _site-model-ref:
 

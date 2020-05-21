@@ -18,7 +18,7 @@ from taggit.managers import TaggableManager
 from unidecode import unidecode
 from willow.image import Image as WillowImage
 
-from wagtail.admin.utils import get_object_usage
+from wagtail.admin.models import get_object_usage
 from wagtail.core import hooks
 from wagtail.core.models import CollectionMember
 from wagtail.images.exceptions import InvalidFilterSpecError
@@ -32,6 +32,7 @@ FORMAT_EXTENSIONS = {
     'jpeg': 'jpg',
     'png': 'png',
     'gif': 'gif',
+    'webp': 'webp',
 }
 
 
@@ -179,6 +180,8 @@ class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWr
     focal_point_height = models.PositiveIntegerField(null=True, blank=True)
 
     file_size = models.PositiveIntegerField(null=True, editable=False)
+    # A SHA-1 hash of the file contents
+    file_hash = models.CharField(max_length=40, blank=True, editable=False)
 
     objects = ImageQuerySet.as_manager()
 
@@ -186,13 +189,29 @@ class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWr
         if self.file_size is None:
             try:
                 self.file_size = self.file.size
-            except OSError:
-                # File doesn't exist
-                return
+            except Exception as e:
+                # File not found
+                #
+                # Have to catch everything, because the exception
+                # depends on the file subclass, and therefore the
+                # storage being used.
+                raise SourceImageIOError(str(e))
 
             self.save(update_fields=['file_size'])
 
         return self.file_size
+
+    def _set_file_hash(self, file_contents):
+        self.file_hash = hashlib.sha1(file_contents).hexdigest()
+
+    def get_file_hash(self):
+        if self.file_hash == '':
+            with self.open_file() as f:
+                self._set_file_hash(f.read())
+
+            self.save(update_fields=['file_hash'])
+
+        return self.file_hash
 
     def get_upload_to(self, filename):
         folder_name = 'original_images'
@@ -223,9 +242,11 @@ class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWr
 
     search_fields = CollectionMember.search_fields + [
         index.SearchField('title', partial_match=True, boost=10),
+        index.AutocompleteField('title'),
         index.FilterField('title'),
         index.RelatedFields('tags', [
             index.SearchField('name', partial_match=True, boost=10),
+            index.AutocompleteField('name'),
         ]),
         index.FilterField('uploaded_by_user'),
         index.FilterField('show_in_catalogue'),
@@ -233,6 +254,43 @@ class AbstractImage(CollectionMember, index.Indexed, models.Model, WillowImageWr
 
     def __str__(self):
         return self.title
+
+    # @contextmanager
+    # def open_file(self):
+    #     # Open file if it is closed
+    #     close_file = False
+    #     try:
+    #         image_file = self.file
+
+    #         if self.file.closed:
+    #             # Reopen the file
+    #             if self.is_stored_locally():
+    #                 self.file.open('rb')
+    #             else:
+    #                 # Some external storage backends don't allow reopening
+    #                 # the file. Get a fresh file instance. #1397
+    #                 storage = self._meta.get_field('file').storage
+    #                 image_file = storage.open(self.file.name, 'rb')
+
+    #             close_file = True
+    #     except IOError as e:
+    #         # re-throw this as a SourceImageIOError so that calling code can distinguish
+    #         # these from IOErrors elsewhere in the process
+    #         raise SourceImageIOError(str(e))
+
+    #     # Seek to beginning
+    #     image_file.seek(0)
+
+    #     try:
+    #         yield image_file
+    #     finally:
+    #         if close_file:
+    #             image_file.close()
+
+    # @contextmanager
+    # def get_willow_image(self):
+    #     with self.open_file() as image_file:
+    #         yield WillowImage.open(image_file)
 
     def get_rect(self):
         return Rect(0, 0, self.width, self.height)
@@ -391,6 +449,10 @@ class Image(AbstractImage):
         'focal_point_height',
     )
 
+    class Meta:
+        verbose_name = _('image')
+        verbose_name_plural = _('images')
+
 
 class Filter:
     """
@@ -438,16 +500,23 @@ class Filter:
                 # Developer specified an output format
                 output_format = env['output-format']
             else:
-                # Default to outputting in original format
-                output_format = original_format
-
-                # Convert BMP files to PNG
-                if original_format == 'bmp':
-                    output_format = 'png'
+                # Convert bmp and webp to png by default
+                default_conversions = {
+                    'bmp': 'png',
+                    'webp': 'png',
+                }
 
                 # Convert unanimated GIFs to PNG as well
-                if original_format == 'gif' and not willow.has_animation():
-                    output_format = 'png'
+                if not willow.has_animation():
+                    default_conversions['gif'] = 'png'
+
+                # Allow the user to override the conversions
+                conversion = getattr(settings, 'WAGTAILIMAGES_FORMAT_CONVERSIONS', {})
+                default_conversions.update(conversion)
+
+                # Get the converted output format falling back to the original
+                output_format = default_conversions.get(
+                    original_format, original_format)
 
             if output_format == 'jpeg':
                 # Allow changing of JPEG compression quality
@@ -464,9 +533,11 @@ class Filter:
 
                 return willow.save_as_jpeg(output, quality=quality, progressive=True, optimize=True)
             elif output_format == 'png':
-                return willow.save_as_png(output)
+                return willow.save_as_png(output, optimize=True)
             elif output_format == 'gif':
                 return willow.save_as_gif(output)
+            elif output_format == 'webp':
+                return willow.save_as_webp(output)
 
     def get_cache_key(self, image):
         return (
