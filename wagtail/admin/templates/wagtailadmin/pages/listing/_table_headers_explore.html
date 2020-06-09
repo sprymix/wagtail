@@ -38,7 +38,7 @@ ordering: the current sort parameter
     </th>
     <th class="private-title">
         {% if sortable %}
-            <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "private_title" %}-{% endif %}private_title" class="icon icon-arrow-{% if ordering == "-private_title" %}up-after{% else %}down-after{% endif %} {% if ordering == "private_title" or ordering == "-private_title" %}teal {% endif %}">
+            <a href="{{ request.path }}?ordering={% if ordering == "private_title" %}-{% endif %}private_title{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="icon icon-arrow-{% if ordering == "-private_title" %}up-after{% else %}down-after{% endif %} {% if ordering == "private_title" or ordering == "-private_title" %}teal {% endif %}">
                 {% trans 'Private title' %}
             </a>
         {% else %}
@@ -70,7 +70,7 @@ ordering: the current sort parameter
     </th>
     <th class="owner">
         {% if sortable %}
-            <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "owner" %}-{% endif %}owner" class="icon icon-arrow-{% if ordering == "-owner" %}up-after{% else %}down-after{% endif %} {% if ordering == "owner" or ordering == "-owner" %}teal {% endif %}">
+            <a href="{{ request.path }}?ordering={% if ordering == "owner" %}-{% endif %}owner{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="icon icon-arrow-{% if ordering == "-owner" %}up-after{% else %}down-after{% endif %} {% if ordering == "owner" or ordering == "-owner" %}teal {% endif %}">
                 {% trans 'Created by' %}
             </a>
         {% else %}
@@ -79,7 +79,7 @@ ordering: the current sort parameter
     </th>
     <th class="publish-date">
         {% if sortable %}
-            <a href="{% url 'wagtailadmin_explore' parent_page.id %}?ordering={% if ordering == "go_live_at" %}-{% endif %}go_live_at" class="icon icon-arrow-{% if ordering == "-go_live_at" %}up-after{% else %}down-after{% endif %} {% if ordering == "go_live_at" or ordering == "-go_live_at" %}teal {% endif %}">
+            <a href="{{ request.path }}?ordering={% if ordering == "go_live_at" %}-{% endif %}go_live_at{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="icon icon-arrow-{% if ordering == "-go_live_at" %}up-after{% else %}down-after{% endif %} {% if ordering == "go_live_at" or ordering == "-go_live_at" %}teal {% endif %}">
                 {% trans 'Publish date' %}
             </a>
         {% else %}
