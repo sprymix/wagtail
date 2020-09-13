@@ -266,7 +266,7 @@ def delete(request, image_id):
         dependants = {
             m._meta: ii for m, ii in collector.data.items()
             if not issubclass(m, (AbstractRendition, image.__class__)) and
-            not isinstance(m, IndexEntry) and
+            not m is IndexEntry and
             not getattr(m, 'exclude_from_search_index', False)
         }
 
