@@ -15,6 +15,7 @@ from wagtail.admin import messages
 from wagtail.admin.auth import PermissionPolicyChecker, permission_denied
 from wagtail.admin.forms.search import SearchForm
 from wagtail.admin.models import popular_tags_for_model
+from wagtail.contrib.postgres_search.models import IndexEntry
 from wagtail.core.models import Collection, Site
 from wagtail.images import get_image_model
 from wagtail.images.exceptions import InvalidFilterSpecError
@@ -265,6 +266,7 @@ def delete(request, image_id):
         dependants = {
             m._meta: ii for m, ii in collector.data.items()
             if not issubclass(m, (AbstractRendition, image.__class__)) and
+            not m is IndexEntry and
             not getattr(m, 'exclude_from_search_index', False)
         }
 
