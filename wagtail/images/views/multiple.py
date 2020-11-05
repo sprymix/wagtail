@@ -8,6 +8,7 @@ from django.views.decorators.vary import vary_on_headers
 
 from wagtail.admin.auth import PermissionPolicyChecker
 from wagtail.core.models import Collection
+from wagtail.core.utils import filename_to_human_readable
 from wagtail.images import get_image_model
 from wagtail.images.fields import ALLOWED_EXTENSIONS
 from wagtail.images.forms import get_image_form
@@ -56,8 +57,9 @@ def add(request):
             return HttpResponseBadRequest("Must upload a file")
 
         # Build a form for validation
+        title = filename_to_human_readable(request.FILES['files[]'].name)
         form = ImageForm({
-            'title': request.FILES['files[]'].name,
+            'title': title,
             'collection': request.POST.get('collection'),
         }, {
             'file': request.FILES['files[]'],

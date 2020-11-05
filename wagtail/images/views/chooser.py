@@ -25,6 +25,7 @@ from wagtail.admin.modal_workflow import render_modal_workflow
 from wagtail.admin.models import popular_tags_for_model
 from wagtail.core import hooks
 from wagtail.core.models import Collection
+from wagtail.core.utils import filename_to_human_readable
 from wagtail.images import get_image_model
 from wagtail.images.formats import get_image_format
 from wagtail.images.forms import ImageInsertionForm, get_image_form
@@ -255,7 +256,8 @@ def chooser_upload(request):
         return HttpResponseBadRequest("Must upload a file")
 
     # Save it
-    image = Image(uploaded_by_user=request.user, title=request.FILES['files[]'].name, file=request.FILES['files[]'])
+    title = filename_to_human_readable(request.FILES['files[]'].name)
+    image = Image(uploaded_by_user=request.user, title=title, file=request.FILES['files[]'])
     image.save()
 
     # Success! Send back an edit form for this image to the user
@@ -318,8 +320,9 @@ def chooser_import_youtube(request):
     file = _fetch_youtube_image(vid[0])
 
     # Save it
+    title = filename_to_human_readable(request.FILES['files[]'].name)
     image = Image(uploaded_by_user=request.user,
-                  title=file.name, file=file)
+                  title=title, file=file)
     image.save()
 
     # Success! Send back an edit form for this image to the user
