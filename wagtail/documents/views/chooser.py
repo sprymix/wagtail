@@ -13,6 +13,7 @@ from wagtail.admin.forms.search import SearchForm
 from wagtail.admin.modal_workflow import render_modal_workflow
 from wagtail.core import hooks
 from wagtail.core.models import Collection
+from wagtail.core.utils import filename_to_human_readable
 from wagtail.documents import get_document_model
 from wagtail.documents.forms import get_document_form
 from wagtail.documents.permissions import permission_policy
@@ -161,8 +162,9 @@ def chooser_upload(request):
             return http.HttpResponseBadRequest("Must upload a file")
 
         # Save it
+        title = filename_to_human_readable(request.FILES['files[]'].name)
         document = Document(uploaded_by_user=request.user,
-                            title=request.FILES['files[]'].name,
+                            title=title,
                             file=request.FILES['files[]'])
         document.save()
 
