@@ -8,6 +8,8 @@ from django.views.decorators.vary import vary_on_headers
 
 from wagtail.admin.auth import PermissionPolicyChecker
 from wagtail.core.models import Collection
+from wagtail.core.utils import filename_to_human_readable
+
 from wagtail.search.backends import get_search_backends
 
 from .. import get_document_model
@@ -39,8 +41,9 @@ def add(request):
             return HttpResponseBadRequest("Must upload a file")
 
         # Build a form for validation
+        title = filename_to_human_readable(request.FILES['files[]'].name)
         form = DocumentForm({
-            'title': request.FILES['files[]'].name,
+            'title': title,
             'collection': request.POST.get('collection'),
         }, {
             'file': request.FILES['files[]']

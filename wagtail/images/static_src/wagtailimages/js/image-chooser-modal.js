@@ -127,7 +127,11 @@ IMAGE_CHOOSER_MODAL_ONLOAD_HANDLERS = {
             });
         }
 
-        populateTitle(modal.body);
+        function humanReadableTitle(titleString) {
+            return titleString.replace(/\.[a-zA-Z]+$/, '').replaceAll(/[_\-]/g, ' ');
+        }
+
+        populateTitle(humanReadableTitle(modal.body));
 
         /* Create a function for adding image widgets (e.g. used together with
         drag/drop). */

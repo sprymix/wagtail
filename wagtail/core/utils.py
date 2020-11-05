@@ -103,3 +103,15 @@ def accepts_kwarg(func, kwarg):
         return True
     except TypeError:
         return False
+
+
+def filename_to_human_readable(string):
+    """
+    Converts a filename into something more human friendly. Ex `my-file.png` becomes `my file`.
+    This can create a nicer default title for uploaded files, with the added benefit that the
+    converted title will be more usable with the postgres search backend, due to it's limitations
+    with partial string matches.
+    """
+    string = re.sub(r'\.[a-zA-Z]+$', '', string)
+    string = re.sub(r'[_\-]', ' ', string)
+    return string
